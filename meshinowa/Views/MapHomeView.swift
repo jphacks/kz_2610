@@ -3,6 +3,7 @@ import SwiftUI
 
 /// 現在地や友達データを使わずに試せる、地図ホームの最初の実装。
 struct MapHomeView: View {
+    var showsSavedShortcut = true
     @EnvironmentObject private var saved: SavedRestaurantStore
 
     private static let initialRegion = MKCoordinateRegion(
@@ -76,13 +77,15 @@ struct MapHomeView: View {
                     .accessibilityLabel("検索結果\(visibleResults.count)件を一覧で見る")
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    SavedRestaurantsView()
-                } label: {
-                    Label("保存", systemImage: "bookmark")
+            if showsSavedShortcut {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        SavedRestaurantsView()
+                    } label: {
+                        Label("保存", systemImage: "bookmark")
+                    }
+                    .accessibilityLabel("保存したお店、\(saved.restaurants.count)件")
                 }
-                .accessibilityLabel("保存したお店、\(saved.restaurants.count)件")
             }
         }
     }

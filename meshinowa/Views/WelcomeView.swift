@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 共通の配色とカードを確認する、開発初期の歓迎画面。
 struct WelcomeView: View {
+    var onStart: (() -> Void)? = nil
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -27,10 +28,12 @@ struct WelcomeView: View {
                     .frame(maxWidth: .infinity)
                     .paperCard()
 
-                NavigationLink {
-                    MapHomeView()
-                } label: {
-                    Text("マップを開く")
+                Group {
+                    if let onStart {
+                        Button("マップを開く", action: onStart)
+                    } else {
+                        NavigationLink("マップを開く") { MapHomeView() }
+                    }
                 }
                 .buttonStyle(PaperButtonStyle())
 

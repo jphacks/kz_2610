@@ -7,10 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03407D98AF363D4563799FFA /* SavedRestaurantsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0036733C2F3052FCEA774D2 /* SavedRestaurantsView.swift */; };
+		0740130B922266080F76DF27 /* SavedRestaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EDDA12B5063E801A24C4F6 /* SavedRestaurant.swift */; };
 		1683D6227A849E444D075ED3 /* MeshinowaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */; };
 		2A2E0A04990C882A6F426B61 /* MPLUSRounded1c-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 323C45E1DFC74360C7BA6EA8 /* MPLUSRounded1c-Black.ttf */; };
 		300A66859AC7D8BEB0DCE649 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 985307791878B8EA8388A8CE /* Assets.xcassets */; };
 		41236D80CA53B999028FDE3D /* MeshinowaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */; };
+		47ABC580A8EDEB39D39DB752 /* SavedRestaurantStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814F4A29C7CB515BA282140E /* SavedRestaurantStoreTests.swift */; };
 		4B50F66AAEC57D4DFD406DED /* ZenMaruGothic-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CEEE3547A7BF68F1031D8C7A /* ZenMaruGothic-Bold.ttf */; };
 		4F1B5F7DFF4271A9FCA0B5AA /* ZenMaruGothic-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F293999A340A70CDE5B668D3 /* ZenMaruGothic-Medium.ttf */; };
 		6738D900A1C900AEB85788BA /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0183910F122A18A5FFB7B628 /* WelcomeView.swift */; };
@@ -20,6 +23,8 @@
 		A1AA46CB482784B0C9BCAE27 /* MPLUSRounded1c-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0C81B7B273326BB543505ADB /* MPLUSRounded1c-ExtraBold.ttf */; };
 		A1DC742042F979A4B3647D96 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 29F1BD9083BF65B7F222751D /* README.md */; };
 		A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */; };
+		B00ADA0B0E142FE980C128F2 /* SaveRestaurantButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D47C9B0C6921A9A6D9003C0 /* SaveRestaurantButton.swift */; };
+		B15F3120730430D4B8DB42AD /* SavedRestaurantStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B81A1FC735B0AE97C9F9025 /* SavedRestaurantStore.swift */; };
 		C5E8C6D45EB3A1B5636F1482 /* MPLUSRounded1c-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */; };
 		CD470AF0A99161FAD90A41F2 /* ZenMaruGothic-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */; };
 		D7DB55147F9173803C823407 /* MPLUSRounded1c-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 66EF4AF3CC92EDAB17294136 /* MPLUSRounded1c-Bold.ttf */; };
@@ -28,6 +33,16 @@
 		EE5DE494558883EA03123F4F /* MeshinowaFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		FB05180E5496BF049AC637F1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7CBE3CC3610A9A2C7D7F4CBB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 52B1D1DA44C3E424EE7DBDDD;
+			remoteInfo = meshinowa;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		0183910F122A18A5FFB7B628 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		0C81B7B273326BB543505ADB /* MPLUSRounded1c-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-ExtraBold.ttf"; sourceTree = "<group>"; };
@@ -35,19 +50,25 @@
 		25A8D1A4D948DAFE5D8262FA /* RestaurantPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPreview.swift; sourceTree = "<group>"; };
 		29F1BD9083BF65B7F222751D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		323C45E1DFC74360C7BA6EA8 /* MPLUSRounded1c-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-Black.ttf"; sourceTree = "<group>"; };
+		3B81A1FC735B0AE97C9F9025 /* SavedRestaurantStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRestaurantStore.swift; sourceTree = "<group>"; };
+		3D47C9B0C6921A9A6D9003C0 /* SaveRestaurantButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveRestaurantButton.swift; sourceTree = "<group>"; };
 		458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaFont.swift; sourceTree = "<group>"; };
 		5560E05FAC17103CF456F811 /* meshinowa.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = meshinowa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		56EDDA12B5063E801A24C4F6 /* SavedRestaurant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRestaurant.swift; sourceTree = "<group>"; };
 		5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ZenMaruGothic-OFL.txt"; sourceTree = "<group>"; };
 		66EF4AF3CC92EDAB17294136 /* MPLUSRounded1c-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-Bold.ttf"; sourceTree = "<group>"; };
 		723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "MPLUSRounded1c-OFL.txt"; sourceTree = "<group>"; };
 		77790088FF35C81509B62FA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		78547210CCC61EAD05DD939F /* MapHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapHomeView.swift; sourceTree = "<group>"; };
+		814F4A29C7CB515BA282140E /* SavedRestaurantStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRestaurantStoreTests.swift; sourceTree = "<group>"; };
 		985307791878B8EA8388A8CE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9B65E1E0933983489CB95551 /* ZenMaruGothic-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Black.ttf"; sourceTree = "<group>"; };
 		AC586D38E56B95D55CF0F629 /* RatingStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingStamp.swift; sourceTree = "<group>"; };
+		C0036733C2F3052FCEA774D2 /* SavedRestaurantsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRestaurantsView.swift; sourceTree = "<group>"; };
 		CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperCard.swift; sourceTree = "<group>"; };
 		CEEE3547A7BF68F1031D8C7A /* ZenMaruGothic-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Bold.ttf"; sourceTree = "<group>"; };
 		D0E0C2D0227B0ECA57AB21F4 /* PaperButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperButtonStyle.swift; sourceTree = "<group>"; };
+		D8CCA1BE30D8500DDA40C3AC /* meshinowaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = meshinowaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F293999A340A70CDE5B668D3 /* ZenMaruGothic-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Medium.ttf"; sourceTree = "<group>"; };
 		F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -68,6 +89,7 @@
 			isa = PBXGroup;
 			children = (
 				5560E05FAC17103CF456F811 /* meshinowa.app */,
+				D8CCA1BE30D8500DDA40C3AC /* meshinowaTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,10 +117,20 @@
 			path = zenmarugothic;
 			sourceTree = "<group>";
 		};
+		A6FB7F146545F3F034F1C344 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				56EDDA12B5063E801A24C4F6 /* SavedRestaurant.swift */,
+				3B81A1FC735B0AE97C9F9025 /* SavedRestaurantStore.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		BC0DFA885E1CA6BE23F20ACF = {
 			isa = PBXGroup;
 			children = (
 				C86424BEC27D39008532A9B4 /* meshinowa */,
+				FF7B237D58460F4C8767387E /* Tests */,
 				4A3C27817D30C95DF4739D71 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,6 +142,7 @@
 				77790088FF35C81509B62FA9 /* Info.plist */,
 				24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */,
 				57467B0690964F270C77FF7E /* DesignSystem */,
+				A6FB7F146545F3F034F1C344 /* Models */,
 				F07664E93D5D198EA767EFFD /* Resources */,
 				D5EE1A628518B74651808996 /* Views */,
 			);
@@ -121,6 +154,8 @@
 			children = (
 				78547210CCC61EAD05DD939F /* MapHomeView.swift */,
 				25A8D1A4D948DAFE5D8262FA /* RestaurantPreview.swift */,
+				C0036733C2F3052FCEA774D2 /* SavedRestaurantsView.swift */,
+				3D47C9B0C6921A9A6D9003C0 /* SaveRestaurantButton.swift */,
 				0183910F122A18A5FFB7B628 /* WelcomeView.swift */,
 			);
 			path = Views;
@@ -144,6 +179,14 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		FF7B237D58460F4C8767387E /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				814F4A29C7CB515BA282140E /* SavedRestaurantStoreTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -164,6 +207,24 @@
 			productName = meshinowa;
 			productReference = 5560E05FAC17103CF456F811 /* meshinowa.app */;
 			productType = "com.apple.product-type.application";
+		};
+		FA66FF4D3AE838A2DA11AE5E /* meshinowaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4E493B8D96194154DB3B40FA /* Build configuration list for PBXNativeTarget "meshinowaTests" */;
+			buildPhases = (
+				64A828FC5B3EF1D1A375090C /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C555549793D450E345190D75 /* PBXTargetDependency */,
+			);
+			name = meshinowaTests;
+			packageProductDependencies = (
+			);
+			productName = meshinowaTests;
+			productReference = D8CCA1BE30D8500DDA40C3AC /* meshinowaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -191,6 +252,7 @@
 			projectRoot = "";
 			targets = (
 				52B1D1DA44C3E424EE7DBDDD /* meshinowa */,
+				FA66FF4D3AE838A2DA11AE5E /* meshinowaTests */,
 			);
 		};
 /* End PBXProject section */
@@ -216,6 +278,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		64A828FC5B3EF1D1A375090C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				47ABC580A8EDEB39D39DB752 /* SavedRestaurantStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ABE02502181BADA1B83E2426 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -228,13 +298,42 @@
 				A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */,
 				E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */,
 				7D00D8D1A3CF7E9739B59FC3 /* RestaurantPreview.swift in Sources */,
+				B00ADA0B0E142FE980C128F2 /* SaveRestaurantButton.swift in Sources */,
+				0740130B922266080F76DF27 /* SavedRestaurant.swift in Sources */,
+				B15F3120730430D4B8DB42AD /* SavedRestaurantStore.swift in Sources */,
+				03407D98AF363D4563799FFA /* SavedRestaurantsView.swift in Sources */,
 				6738D900A1C900AEB85788BA /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		C555549793D450E345190D75 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 52B1D1DA44C3E424EE7DBDDD /* meshinowa */;
+			targetProxy = FB05180E5496BF049AC637F1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		33F35BEC7B6EC3463E8F9565 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/meshinowa.app/meshinowa";
+			};
+			name = Release;
+		};
 		6FE42CE45D024E4251937813 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -390,9 +489,35 @@
 			};
 			name = Release;
 		};
+		EA862B9969977C1C5CDA4B7A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/meshinowa.app/meshinowa";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4E493B8D96194154DB3B40FA /* Build configuration list for PBXNativeTarget "meshinowaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EA862B9969977C1C5CDA4B7A /* Debug */,
+				33F35BEC7B6EC3463E8F9565 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		8EE7D97C786DD155613C6A0B /* Build configuration list for PBXNativeTarget "meshinowa" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

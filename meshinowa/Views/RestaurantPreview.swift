@@ -35,7 +35,10 @@ struct RestaurantPreview: View {
             if typeSize.isAccessibilitySize {
                 VStack(spacing: 10) { actions }
             } else {
-                HStack(spacing: 10) { actions }
+                VStack(spacing: 10) {
+                    DirectionsButton(item: item)
+                    HStack(spacing: 10) { secondaryActions }
+                }
             }
         }
         .foregroundStyle(MeshinowaTheme.ink)
@@ -48,6 +51,11 @@ struct RestaurantPreview: View {
 
     @ViewBuilder private var actions: some View {
         DirectionsButton(item: item)
+        secondaryActions
+    }
+
+    @ViewBuilder private var secondaryActions: some View {
+        SaveRestaurantButton(item: item)
         Button("詳細") { showsDetails = true }
             .buttonStyle(PaperButtonStyle(kind: .secondary))
     }
@@ -84,9 +92,12 @@ struct RestaurantInformationView: View {
             .background(MeshinowaTheme.paper)
             .foregroundStyle(MeshinowaTheme.ink)
             .safeAreaInset(edge: .bottom) {
-                DirectionsButton(item: item)
-                    .padding(20)
-                    .background(MeshinowaTheme.paper)
+                VStack(spacing: 10) {
+                    SaveRestaurantButton(item: item)
+                    DirectionsButton(item: item)
+                }
+                .padding(20)
+                .background(MeshinowaTheme.paper)
             }
             .navigationTitle("お店の情報")
             .navigationBarTitleDisplayMode(.inline)

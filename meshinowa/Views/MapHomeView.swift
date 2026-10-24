@@ -3,6 +3,7 @@ import SwiftUI
 
 /// 現在地や友達データを使わずに試せる、地図ホームの最初の実装。
 struct MapHomeView: View {
+    @EnvironmentObject private var saved: SavedRestaurantStore
     private struct SearchResult: Identifiable {
         let id = UUID()
         let item: MKMapItem
@@ -29,8 +30,10 @@ struct MapHomeView: View {
     var body: some View {
         Map(position: $camera, selection: $selectedID) {
             ForEach(results) { result in
-                Marker(result.item.name ?? "飲食店", coordinate: result.item.placemark.coordinate)
-                    .tint(MeshinowaTheme.green)
+                Marker(result.item.name ?? "飲食店",
+                       systemImage: saved.contains(result.item) ? "bookmark.fill" : "fork.knife",
+                       coordinate: result.item.placemark.coordinate)
+                    .tint(saved.contains(result.item) ? MeshinowaTheme.accent : MeshinowaTheme.green)
                     .tag(result.id)
             }
         }
@@ -44,6 +47,16 @@ struct MapHomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MeshinowaTheme.paper, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    SavedRestaurantsView()
+                } label: {
+                    Label("保存", systemImage: "bookmark")
+                }
+                .accessibilityLabel("保存したお店、\(saved.restaurants.count)件")
+            }
+        }
     }
 
     private var searchHeader: some View {
@@ -138,4 +151,5 @@ struct MapHomeView: View {
 #Preview {
     NavigationStack { MapHomeView() }
         .preferredColorScheme(.light)
+        .environmentObject(SavedRestaurantStore())
 }

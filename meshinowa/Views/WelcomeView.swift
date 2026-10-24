@@ -50,4 +50,5 @@ struct WelcomeView: View {
         WelcomeView()
     }
     .preferredColorScheme(.light)
+    .environmentObject(SavedRestaurantStore())
 }

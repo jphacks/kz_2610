@@ -35,6 +35,17 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  meshinowaTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: meshinowa
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app.tests
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   meshinowa:
     build:
@@ -42,3 +53,6 @@ schemes:
         meshinowa: all
     run:
       config: Debug
+    test:
+      targets:
+        - meshinowaTests

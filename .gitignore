@@ -13,3 +13,7 @@ xcuserdata/
 *.p8
 *.p12
 *.mobileprovision
+node_modules/
+supabase/.temp/
+supabase/.branches/
+.supabase/

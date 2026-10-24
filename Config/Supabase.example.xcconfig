@@ -1,0 +1,4 @@
+// Copy to Supabase.xcconfig.local (ignored by Git) and replace both placeholders.
+// $() prevents // in the URL from being interpreted as an xcconfig comment.
+SUPABASE_URL = https:/$()/YOUR_PROJECT_REF.supabase.co
+SUPABASE_PUBLISHABLE_KEY = sb_publishable_REPLACE_ME

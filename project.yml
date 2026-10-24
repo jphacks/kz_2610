@@ -6,10 +6,20 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    exactVersion: 2.55.4
 targets:
   meshinowa:
     type: application
     platform: iOS
+    configFiles:
+      Debug: Config/Base.xcconfig
+      Release: Config/Base.xcconfig
+    dependencies:
+      - package: Supabase
+        product: Supabase
     sources:
       - path: meshinowa
     info:
@@ -18,6 +28,8 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: meshinowa
+        SupabaseURL: $(SUPABASE_URL)
+        SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false

@@ -12,13 +12,25 @@ targets:
     platform: iOS
     sources:
       - path: meshinowa
+    info:
+      path: meshinowa/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDisplayName: meshinowa
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIAppFonts:
+          - ZenMaruGothic-Medium.ttf
+          - ZenMaruGothic-Bold.ttf
+          - ZenMaruGothic-Black.ttf
+          - MPLUSRounded1c-Bold.ttf
+          - MPLUSRounded1c-ExtraBold.ttf
+          - MPLUSRounded1c-Black.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: meshinowa
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"

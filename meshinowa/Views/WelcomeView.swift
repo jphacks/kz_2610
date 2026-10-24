@@ -14,13 +14,13 @@ struct WelcomeView: View {
                     .accessibilityHidden(true)
 
                 Text("meshinowa")
-                    .font(.system(.largeTitle, design: .rounded, weight: .black))
+                    .font(MeshinowaFont.wordmark)
 
                 Text("おいしい店は、友達が知っている。")
-                    .font(.headline)
+                    .font(MeshinowaFont.text(19, weight: .black, relativeTo: .headline))
 
                 Text("友達が評価したお店が、そのまま地図になる。知らない人の星より、友達のおすすめで選べます。")
-                    .font(.body)
+                    .font(MeshinowaFont.text(14))
                     .foregroundStyle(MeshinowaTheme.secondaryText)
                     .lineSpacing(6)
                     .padding(24)

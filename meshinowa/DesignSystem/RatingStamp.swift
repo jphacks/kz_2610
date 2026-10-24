@@ -14,14 +14,14 @@ struct RatingStamp: View {
         VStack(spacing: 2) {
             if let rating, hasRating {
                 Text(rating, format: .number.precision(.fractionLength(1)))
-                    .font(.system(.title2, design: .rounded, weight: .black))
+                    .font(MeshinowaFont.number(27))
                 Text("友達\(friendCount)人")
-                    .font(.caption2.bold())
+                    .font(MeshinowaFont.text(9, weight: .black, relativeTo: .caption2))
             } else {
                 Text("—")
-                    .font(.title2.bold())
+                    .font(MeshinowaFont.number(27))
                 Text("未評価")
-                    .font(.caption2.bold())
+                    .font(MeshinowaFont.text(9, weight: .black, relativeTo: .caption2))
             }
         }
         .foregroundStyle(MeshinowaTheme.ink)

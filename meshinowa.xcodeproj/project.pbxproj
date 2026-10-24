@@ -8,24 +8,56 @@
 
 /* Begin PBXBuildFile section */
 		1683D6227A849E444D075ED3 /* MeshinowaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */; };
+		2A2E0A04990C882A6F426B61 /* MPLUSRounded1c-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 323C45E1DFC74360C7BA6EA8 /* MPLUSRounded1c-Black.ttf */; };
 		300A66859AC7D8BEB0DCE649 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 985307791878B8EA8388A8CE /* Assets.xcassets */; };
 		41236D80CA53B999028FDE3D /* MeshinowaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */; };
+		4B50F66AAEC57D4DFD406DED /* ZenMaruGothic-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CEEE3547A7BF68F1031D8C7A /* ZenMaruGothic-Bold.ttf */; };
+		4F1B5F7DFF4271A9FCA0B5AA /* ZenMaruGothic-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F293999A340A70CDE5B668D3 /* ZenMaruGothic-Medium.ttf */; };
 		6738D900A1C900AEB85788BA /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0183910F122A18A5FFB7B628 /* WelcomeView.swift */; };
+		9DA43F7000D4C1FDD787E227 /* ZenMaruGothic-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9B65E1E0933983489CB95551 /* ZenMaruGothic-Black.ttf */; };
+		A1AA46CB482784B0C9BCAE27 /* MPLUSRounded1c-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0C81B7B273326BB543505ADB /* MPLUSRounded1c-ExtraBold.ttf */; };
+		A1DC742042F979A4B3647D96 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 29F1BD9083BF65B7F222751D /* README.md */; };
 		A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */; };
+		C5E8C6D45EB3A1B5636F1482 /* MPLUSRounded1c-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */; };
+		CD470AF0A99161FAD90A41F2 /* ZenMaruGothic-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */; };
+		D7DB55147F9173803C823407 /* MPLUSRounded1c-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 66EF4AF3CC92EDAB17294136 /* MPLUSRounded1c-Bold.ttf */; };
 		E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC586D38E56B95D55CF0F629 /* RatingStamp.swift */; };
+		EE5DE494558883EA03123F4F /* MeshinowaFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0183910F122A18A5FFB7B628 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		0C81B7B273326BB543505ADB /* MPLUSRounded1c-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-ExtraBold.ttf"; sourceTree = "<group>"; };
 		24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaApp.swift; sourceTree = "<group>"; };
+		29F1BD9083BF65B7F222751D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		323C45E1DFC74360C7BA6EA8 /* MPLUSRounded1c-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-Black.ttf"; sourceTree = "<group>"; };
+		458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaFont.swift; sourceTree = "<group>"; };
 		5560E05FAC17103CF456F811 /* meshinowa.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = meshinowa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ZenMaruGothic-OFL.txt"; sourceTree = "<group>"; };
+		66EF4AF3CC92EDAB17294136 /* MPLUSRounded1c-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-Bold.ttf"; sourceTree = "<group>"; };
+		723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "MPLUSRounded1c-OFL.txt"; sourceTree = "<group>"; };
+		77790088FF35C81509B62FA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		985307791878B8EA8388A8CE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9B65E1E0933983489CB95551 /* ZenMaruGothic-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Black.ttf"; sourceTree = "<group>"; };
 		AC586D38E56B95D55CF0F629 /* RatingStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingStamp.swift; sourceTree = "<group>"; };
 		CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperCard.swift; sourceTree = "<group>"; };
+		CEEE3547A7BF68F1031D8C7A /* ZenMaruGothic-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Bold.ttf"; sourceTree = "<group>"; };
+		F293999A340A70CDE5B668D3 /* ZenMaruGothic-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Medium.ttf"; sourceTree = "<group>"; };
 		F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		295B97F155C187C0BB325A47 /* mplusrounded1c */ = {
+			isa = PBXGroup;
+			children = (
+				323C45E1DFC74360C7BA6EA8 /* MPLUSRounded1c-Black.ttf */,
+				66EF4AF3CC92EDAB17294136 /* MPLUSRounded1c-Bold.ttf */,
+				0C81B7B273326BB543505ADB /* MPLUSRounded1c-ExtraBold.ttf */,
+				723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */,
+			);
+			path = mplusrounded1c;
+			sourceTree = "<group>";
+		};
 		4A3C27817D30C95DF4739D71 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -37,11 +69,23 @@
 		57467B0690964F270C77FF7E /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */,
 				F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */,
 				CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */,
 				AC586D38E56B95D55CF0F629 /* RatingStamp.swift */,
 			);
 			path = DesignSystem;
+			sourceTree = "<group>";
+		};
+		8568C315C1CD0A025975A47A /* zenmarugothic */ = {
+			isa = PBXGroup;
+			children = (
+				9B65E1E0933983489CB95551 /* ZenMaruGothic-Black.ttf */,
+				CEEE3547A7BF68F1031D8C7A /* ZenMaruGothic-Bold.ttf */,
+				F293999A340A70CDE5B668D3 /* ZenMaruGothic-Medium.ttf */,
+				5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */,
+			);
+			path = zenmarugothic;
 			sourceTree = "<group>";
 		};
 		BC0DFA885E1CA6BE23F20ACF = {
@@ -56,8 +100,10 @@
 			isa = PBXGroup;
 			children = (
 				985307791878B8EA8388A8CE /* Assets.xcassets */,
+				77790088FF35C81509B62FA9 /* Info.plist */,
 				24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */,
 				57467B0690964F270C77FF7E /* DesignSystem */,
+				F07664E93D5D198EA767EFFD /* Resources */,
 				D5EE1A628518B74651808996 /* Views */,
 			);
 			path = meshinowa;
@@ -69,6 +115,24 @@
 				0183910F122A18A5FFB7B628 /* WelcomeView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		DB000CF2EAC442C2E29BD57C /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				29F1BD9083BF65B7F222751D /* README.md */,
+				295B97F155C187C0BB325A47 /* mplusrounded1c */,
+				8568C315C1CD0A025975A47A /* zenmarugothic */,
+			);
+			path = Fonts;
+			sourceTree = "<group>";
+		};
+		F07664E93D5D198EA767EFFD /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				DB000CF2EAC442C2E29BD57C /* Fonts */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -128,6 +192,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				300A66859AC7D8BEB0DCE649 /* Assets.xcassets in Resources */,
+				2A2E0A04990C882A6F426B61 /* MPLUSRounded1c-Black.ttf in Resources */,
+				D7DB55147F9173803C823407 /* MPLUSRounded1c-Bold.ttf in Resources */,
+				A1AA46CB482784B0C9BCAE27 /* MPLUSRounded1c-ExtraBold.ttf in Resources */,
+				C5E8C6D45EB3A1B5636F1482 /* MPLUSRounded1c-OFL.txt in Resources */,
+				A1DC742042F979A4B3647D96 /* README.md in Resources */,
+				9DA43F7000D4C1FDD787E227 /* ZenMaruGothic-Black.ttf in Resources */,
+				4B50F66AAEC57D4DFD406DED /* ZenMaruGothic-Bold.ttf in Resources */,
+				4F1B5F7DFF4271A9FCA0B5AA /* ZenMaruGothic-Medium.ttf in Resources */,
+				CD470AF0A99161FAD90A41F2 /* ZenMaruGothic-OFL.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -139,6 +212,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1683D6227A849E444D075ED3 /* MeshinowaApp.swift in Sources */,
+				EE5DE494558883EA03123F4F /* MeshinowaFont.swift in Sources */,
 				41236D80CA53B999028FDE3D /* MeshinowaTheme.swift in Sources */,
 				A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */,
 				E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */,
@@ -218,10 +292,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = meshinowa;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_FILE = meshinowa/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -295,10 +366,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = meshinowa;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_FILE = meshinowa/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

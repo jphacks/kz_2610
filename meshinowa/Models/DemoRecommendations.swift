@@ -30,9 +30,10 @@ struct FriendRatingSummary {
         return reviews.reduce(0) { $0 + $1.rating } / Double(reviews.count)
     }
 
-    init(restaurantID: String, reviews: [DemoReview]) {
+    init(restaurantID: String, reviews: [DemoReview], friendIDs: Set<String>? = nil) {
         var latest: [String: DemoReview] = [:]
         for review in reviews where review.restaurantID == restaurantID {
+            if let friendIDs, !friendIDs.contains(review.friendID) { continue }
             guard (1...5).contains(review.rating), review.rating * 2 == floor(review.rating * 2) else { continue }
             if let previous = latest[review.friendID], previous.updatedAt > review.updatedAt { continue }
             latest[review.friendID] = review
@@ -46,6 +47,7 @@ struct FriendRatingSummary {
 
 /// デモ専用。実在店舗の検索・保存データとは結合しない。
 enum DemoRecommendations {
+    static let favoriteFriendIDs: Set<String> = ["takuma", "saki", "mio"]
     static let friends = [
         DemoFriend(id: "takuma", name: "たくま"), DemoFriend(id: "yuki", name: "ゆうき"),
         DemoFriend(id: "ryo", name: "りょう"), DemoFriend(id: "saki", name: "さき"),
@@ -72,8 +74,8 @@ enum DemoRecommendations {
         review("r9", "mio", "bakery", 4.5, "朝の散歩に寄りたいお店。", 2)
     ]
 
-    static func summary(for restaurant: DemoRestaurant) -> FriendRatingSummary {
-        FriendRatingSummary(restaurantID: restaurant.id, reviews: reviews)
+    static func summary(for restaurant: DemoRestaurant, friendIDs: Set<String>? = nil) -> FriendRatingSummary {
+        FriendRatingSummary(restaurantID: restaurant.id, reviews: reviews, friendIDs: friendIDs)
     }
 
     static func friendName(_ id: String) -> String {

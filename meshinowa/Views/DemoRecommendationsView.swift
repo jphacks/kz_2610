@@ -8,6 +8,17 @@ struct DemoRecommendationsView: View {
     ))
     @State private var selectedID: String?
     @State private var detail: DemoRestaurant?
+    @State private var lens = FriendLens()
+    @State private var showsLens = false
+
+    private var includedIDs: Set<String> {
+        lens.includedFriendIDs(friends: DemoRecommendations.friends,
+                               favorites: DemoRecommendations.favoriteFriendIDs)
+    }
+
+    private func summary(for restaurant: DemoRestaurant) -> FriendRatingSummary {
+        DemoRecommendations.summary(for: restaurant, friendIDs: includedIDs)
+    }
 
     private var selected: DemoRestaurant? {
         DemoRecommendations.restaurants.first { $0.id == selectedID }
@@ -17,7 +28,7 @@ struct DemoRecommendationsView: View {
         Map(position: $camera, selection: $selectedID) {
             ForEach(DemoRecommendations.restaurants) { restaurant in
                 Annotation(restaurant.name, coordinate: restaurant.coordinate) {
-                    DemoRatingMarker(summary: DemoRecommendations.summary(for: restaurant))
+                    DemoRatingMarker(summary: summary(for: restaurant))
                         .scaleEffect(selectedID == restaurant.id ? 1.15 : 1)
                 }
                 .tag(restaurant.id)
@@ -25,15 +36,26 @@ struct DemoRecommendationsView: View {
         }
         .mapStyle(.standard(emphasis: .muted, pointsOfInterest: .excludingAll))
         .safeAreaInset(edge: .top) {
-            DemoNotice()
-                .padding(16)
+            VStack(spacing: 10) {
+                DemoNotice()
+                Button {
+                    showsLens = true
+                } label: {
+                    Label("\(lens.mode.title) · \(includedIDs.count)人", systemImage: "person.2")
+                }
+                .buttonStyle(PaperButtonStyle(kind: .secondary))
+                .accessibilityHint("Friend Lensを変更します")
+            }
+            .padding(16)
         }
         .safeAreaInset(edge: .bottom) {
             if let selected {
                 preview(selected)
                     .padding(16)
             } else {
-                Text("評価マーカーをタップして、友達のおすすめを見てみよう。")
+                Text(DemoRecommendations.restaurants.allSatisfy { summary(for: $0).count == 0 }
+                     ? "このLensでの評価はまだありません。上のボタンから友達を変えられます。"
+                     : "評価マーカーをタップして、友達のおすすめを見てみよう。")
                     .font(MeshinowaFont.text(14, weight: .bold))
                     .foregroundStyle(MeshinowaTheme.ink)
                     .padding(18)
@@ -44,12 +66,15 @@ struct DemoRecommendationsView: View {
         .navigationTitle("友達の評価デモ")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $detail) { restaurant in
-            DemoRestaurantDetail(restaurant: restaurant, summary: DemoRecommendations.summary(for: restaurant))
+            DemoRestaurantDetail(restaurant: restaurant, summary: summary(for: restaurant), lensTitle: lens.mode.title)
+        }
+        .sheet(isPresented: $showsLens) {
+            FriendLensPicker(lens: $lens)
         }
     }
 
     private func preview(_ restaurant: DemoRestaurant) -> some View {
-        let summary = DemoRecommendations.summary(for: restaurant)
+        let summary = summary(for: restaurant)
         return VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
@@ -65,6 +90,9 @@ struct DemoRecommendationsView: View {
                 Text("友達の評価はまだありません")
                     .font(MeshinowaFont.text(14))
             }
+            Text("Lens：\(lens.mode.title)")
+                .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
+                .foregroundStyle(MeshinowaTheme.secondaryText)
             Button("デモの詳細を見る") { detail = restaurant }
                 .buttonStyle(PaperButtonStyle())
             Button("選択を解除") { selectedID = nil }
@@ -119,6 +147,7 @@ private struct DemoRatingMarker: View {
 struct DemoRestaurantDetail: View {
     let restaurant: DemoRestaurant
     let summary: FriendRatingSummary
+    let lensTitle: String
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -126,6 +155,8 @@ struct DemoRestaurantDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     DemoNotice()
+                    Text("Lens：\(lensTitle)")
+                        .font(MeshinowaFont.text(14, weight: .bold))
                     Text(restaurant.name)
                         .font(MeshinowaFont.text(26, weight: .black, relativeTo: .title))
                     HStack {

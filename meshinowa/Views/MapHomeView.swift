@@ -73,21 +73,13 @@ struct MapHomeView: View {
         .padding(16)
     }
 
-    private var bottomCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let result = selectedResult {
-                Text(result.item.name ?? "飲食店")
-                    .font(MeshinowaFont.text(22, weight: .black, relativeTo: .title2))
-                if let address = result.item.placemark.title {
-                    Text(address)
-                        .font(MeshinowaFont.text(12, relativeTo: .caption))
-                        .foregroundStyle(MeshinowaTheme.secondaryText)
-                }
-                Text("友達の評価は準備中です")
-                    .font(MeshinowaFont.text(14))
-                Button("選択を解除") { selectedID = nil }
-                    .buttonStyle(PaperButtonStyle(kind: .secondary))
-            } else {
+    @ViewBuilder private var bottomCard: some View {
+        if let result = selectedResult {
+            RestaurantPreview(item: result.item) { selectedID = nil }
+                .id(result.id)
+                .padding(16)
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text(isSearching ? "お店を探しています" : "お店を探そう")
                         .font(MeshinowaFont.text(17, weight: .black, relativeTo: .headline))
@@ -102,12 +94,12 @@ struct MapHomeView: View {
                 .buttonStyle(PaperButtonStyle())
                 .disabled(isSearching)
             }
+            .foregroundStyle(MeshinowaTheme.ink)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .paperCard()
+            .padding(16)
         }
-        .foregroundStyle(MeshinowaTheme.ink)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(18)
-        .paperCard()
-        .padding(16)
     }
 
     private func beginSearch(nearby: Bool = false) {

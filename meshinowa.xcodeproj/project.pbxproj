@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1683D6227A849E444D075ED3 /* MeshinowaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */; };
+		300A66859AC7D8BEB0DCE649 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 985307791878B8EA8388A8CE /* Assets.xcassets */; };
 		41236D80CA53B999028FDE3D /* MeshinowaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */; };
 		6738D900A1C900AEB85788BA /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0183910F122A18A5FFB7B628 /* WelcomeView.swift */; };
 		A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */; };
@@ -18,6 +19,7 @@
 		0183910F122A18A5FFB7B628 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaApp.swift; sourceTree = "<group>"; };
 		5560E05FAC17103CF456F811 /* meshinowa.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = meshinowa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		985307791878B8EA8388A8CE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AC586D38E56B95D55CF0F629 /* RatingStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingStamp.swift; sourceTree = "<group>"; };
 		CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperCard.swift; sourceTree = "<group>"; };
 		F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaTheme.swift; sourceTree = "<group>"; };
@@ -53,6 +55,7 @@
 		C86424BEC27D39008532A9B4 /* meshinowa */ = {
 			isa = PBXGroup;
 			children = (
+				985307791878B8EA8388A8CE /* Assets.xcassets */,
 				24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */,
 				57467B0690964F270C77FF7E /* DesignSystem */,
 				D5EE1A628518B74651808996 /* Views */,
@@ -76,6 +79,7 @@
 			buildConfigurationList = 8EE7D97C786DD155613C6A0B /* Build configuration list for PBXNativeTarget "meshinowa" */;
 			buildPhases = (
 				ABE02502181BADA1B83E2426 /* Sources */,
+				2433BB4A005F3A4EF6CE81D1 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -117,6 +121,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2433BB4A005F3A4EF6CE81D1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				300A66859AC7D8BEB0DCE649 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		ABE02502181BADA1B83E2426 /* Sources */ = {

@@ -5,11 +5,12 @@ struct WelcomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                Image(systemName: "map.fill")
-                    .font(.system(.largeTitle, design: .rounded))
-                    .foregroundStyle(MeshinowaTheme.green)
-                    .padding(24)
-                    .paperCard()
+                Image("BrandIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 116, height: 116)
+                    .clipShape(RoundedRectangle(cornerRadius: 28))
+                    .paperCard(radius: 28, shadowOffset: 5)
                     .accessibilityHidden(true)
 
                 Text("meshinowa")

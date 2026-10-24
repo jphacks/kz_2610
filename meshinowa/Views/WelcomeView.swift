@@ -33,6 +33,13 @@ struct WelcomeView: View {
                     Text("マップを開く")
                 }
                 .buttonStyle(PaperButtonStyle())
+
+                NavigationLink {
+                    DemoRecommendationsView()
+                } label: {
+                    Text("架空データで友達の評価を試す")
+                }
+                .buttonStyle(PaperButtonStyle(kind: .secondary))
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: 420)

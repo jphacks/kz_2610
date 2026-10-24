@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SearchResultsView: View {
     let results: [RestaurantSearchResult]
+    var filterDescription: String? = nil
     var onSelect: (RestaurantSearchResult) -> Void
     @Environment(\.dismiss) private var dismiss
 
@@ -11,6 +12,11 @@ struct SearchResultsView: View {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     Text("\(results.count)件のお店")
                         .font(MeshinowaFont.text(22, weight: .black, relativeTo: .title2))
+                    if let filterDescription {
+                        Text("ジャンル：\(filterDescription)")
+                            .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
+                            .foregroundStyle(MeshinowaTheme.secondaryText)
+                    }
                     ForEach(results) { result in
                         VStack(alignment: .leading, spacing: 12) {
                             Button {

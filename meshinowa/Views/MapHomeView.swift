@@ -15,18 +15,31 @@ struct MapHomeView: View {
     @State private var query = ""
     @State private var results: [RestaurantSearchResult] = []
     @State private var showsResults = false
+    @State private var genre: RestaurantGenre = .all
     @State private var selectedID: UUID?
     @State private var isSearching = false
     @State private var message = "東京駅周辺から表示しています。地図を動かして、店名やジャンルで検索できます。"
     @FocusState private var isSearchFocused: Bool
 
     private var selectedResult: RestaurantSearchResult? {
-        results.first { $0.id == selectedID }
+        visibleResults.first { $0.id == selectedID }
+    }
+
+    private var visibleResults: [RestaurantSearchResult] {
+        results.filter { genre.matches($0.item) }
+    }
+
+    private var resultMessage: String {
+        guard !results.isEmpty else { return message }
+        if visibleResults.isEmpty {
+            return "取得した候補にこのジャンルのお店はありません。絞り込みを解除するか、このエリアを検索してみてください。"
+        }
+        return "\(visibleResults.count)件のお店を表示しています。マーカーか一覧からお店を選べます。"
     }
 
     var body: some View {
         Map(position: $camera, selection: $selectedID) {
-            ForEach(results) { result in
+            ForEach(visibleResults) { result in
                 Marker(result.item.name ?? "飲食店",
                        systemImage: saved.contains(result.item) ? "bookmark.fill" : "fork.knife",
                        coordinate: result.item.placemark.coordinate)
@@ -38,6 +51,7 @@ struct MapHomeView: View {
         .onMapCameraChange(frequency: .onEnd) { context in
             visibleRegion = context.region
         }
+        .onChange(of: genre) { _, _ in selectedID = nil }
         .safeAreaInset(edge: .top) { searchHeader }
         .safeAreaInset(edge: .bottom) { bottomCard }
         .navigationTitle("マップ")
@@ -45,7 +59,7 @@ struct MapHomeView: View {
         .toolbarBackground(MeshinowaTheme.paper, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .sheet(isPresented: $showsResults) {
-            SearchResultsView(results: results) { result in
+            SearchResultsView(results: visibleResults, filterDescription: genre.title) { result in
                 selectedID = result.id
                 camera = .region(MKCoordinateRegion(
                     center: result.item.placemark.coordinate,
@@ -54,12 +68,12 @@ struct MapHomeView: View {
             }
         }
         .toolbar {
-            if !results.isEmpty {
+            if !visibleResults.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showsResults = true } label: {
                         Label("一覧", systemImage: "list.bullet")
                     }
-                    .accessibilityLabel("検索結果\(results.count)件を一覧で見る")
+                    .accessibilityLabel("検索結果\(visibleResults.count)件を一覧で見る")
                 }
             }
             ToolbarItem(placement: .topBarTrailing) {
@@ -74,6 +88,17 @@ struct MapHomeView: View {
     }
 
     private var searchHeader: some View {
+        VStack(spacing: 10) {
+            searchField
+            RestaurantGenrePicker(selection: $genre)
+                .disabled(isSearching)
+        }
+        .padding(12)
+        .paperCard(radius: 22)
+        .padding(16)
+    }
+
+    private var searchField: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .accessibilityHidden(true)
@@ -94,10 +119,8 @@ struct MapHomeView: View {
             .disabled(isSearching || query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .foregroundStyle(MeshinowaTheme.ink)
-        .padding(.leading, 16)
+        .padding(.leading, 4)
         .padding(.trailing, 4)
-        .paperCard(radius: 22)
-        .padding(16)
     }
 
     @ViewBuilder private var bottomCard: some View {
@@ -112,17 +135,23 @@ struct MapHomeView: View {
                         .font(MeshinowaFont.text(17, weight: .black, relativeTo: .headline))
                     if isSearching { ProgressView() }
                 }
-                Text(message)
+                Text(resultMessage)
                     .font(MeshinowaFont.text(14))
                     .foregroundStyle(MeshinowaTheme.secondaryText)
-                Button("このエリアの飲食店を検索") {
+                Button("このエリアの\(genre.searchTerm)を検索") {
                     beginSearch(nearby: true)
                 }
                 .buttonStyle(PaperButtonStyle())
                 .disabled(isSearching)
-                if !results.isEmpty {
-                    Button("一覧で見る（\(results.count)件）") { showsResults = true }
+                if !visibleResults.isEmpty {
+                    Button("一覧で見る（\(visibleResults.count)件）") { showsResults = true }
                         .buttonStyle(PaperButtonStyle(kind: .secondary))
+                }
+                if genre != .all {
+                    Button("絞り込みを解除") { genre = .all }
+                        .font(MeshinowaFont.text(14, weight: .bold))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .disabled(isSearching)
                 }
             }
             .foregroundStyle(MeshinowaTheme.ink)
@@ -134,7 +163,7 @@ struct MapHomeView: View {
     }
 
     private func beginSearch(nearby: Bool = false) {
-        let term = nearby ? "飲食店" : query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let term = nearby ? genre.searchTerm : query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !isSearching, !term.isEmpty else { return }
         isSearchFocused = false
         isSearching = true
@@ -146,7 +175,7 @@ struct MapHomeView: View {
         request.naturalLanguageQuery = term
         request.region = visibleRegion
         request.resultTypes = .pointOfInterest
-        request.pointOfInterestFilter = MKPointOfInterestFilter(including: [.restaurant, .cafe, .bakery, .brewery])
+        request.pointOfInterestFilter = MKPointOfInterestFilter(including: genre.categories)
 
         Task { @MainActor in
             defer { isSearching = false }

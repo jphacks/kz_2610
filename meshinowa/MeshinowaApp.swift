@@ -4,8 +4,11 @@ import SwiftUI
 struct MeshinowaApp: App {
     var body: some Scene {
         WindowGroup {
-            WelcomeView()
-                .preferredColorScheme(.light)
+            NavigationStack {
+                WelcomeView()
+            }
+            .tint(MeshinowaTheme.green)
+            .preferredColorScheme(.light)
         }
     }
 }

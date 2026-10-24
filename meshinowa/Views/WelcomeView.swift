@@ -26,6 +26,13 @@ struct WelcomeView: View {
                     .padding(24)
                     .frame(maxWidth: .infinity)
                     .paperCard()
+
+                NavigationLink {
+                    MapHomeView()
+                } label: {
+                    Text("マップを開く")
+                }
+                .buttonStyle(PaperButtonStyle())
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: 420)
@@ -39,6 +46,8 @@ struct WelcomeView: View {
 }
 
 #Preview {
-    WelcomeView()
-        .preferredColorScheme(.light)
+    NavigationStack {
+        WelcomeView()
+    }
+    .preferredColorScheme(.light)
 }

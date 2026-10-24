@@ -8,13 +8,19 @@
 
 /* Begin PBXBuildFile section */
 		1683D6227A849E444D075ED3 /* MeshinowaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */; };
+		41236D80CA53B999028FDE3D /* MeshinowaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */; };
 		6738D900A1C900AEB85788BA /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0183910F122A18A5FFB7B628 /* WelcomeView.swift */; };
+		A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */; };
+		E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC586D38E56B95D55CF0F629 /* RatingStamp.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0183910F122A18A5FFB7B628 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaApp.swift; sourceTree = "<group>"; };
 		5560E05FAC17103CF456F811 /* meshinowa.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = meshinowa.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC586D38E56B95D55CF0F629 /* RatingStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingStamp.swift; sourceTree = "<group>"; };
+		CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperCard.swift; sourceTree = "<group>"; };
+		F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -24,6 +30,16 @@
 				5560E05FAC17103CF456F811 /* meshinowa.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		57467B0690964F270C77FF7E /* DesignSystem */ = {
+			isa = PBXGroup;
+			children = (
+				F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */,
+				CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */,
+				AC586D38E56B95D55CF0F629 /* RatingStamp.swift */,
+			);
+			path = DesignSystem;
 			sourceTree = "<group>";
 		};
 		BC0DFA885E1CA6BE23F20ACF = {
@@ -38,6 +54,7 @@
 			isa = PBXGroup;
 			children = (
 				24BA41015CE86FCD2AAEE65D /* MeshinowaApp.swift */,
+				57467B0690964F270C77FF7E /* DesignSystem */,
 				D5EE1A628518B74651808996 /* Views */,
 			);
 			path = meshinowa;
@@ -107,6 +124,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				1683D6227A849E444D075ED3 /* MeshinowaApp.swift in Sources */,
+				41236D80CA53B999028FDE3D /* MeshinowaTheme.swift in Sources */,
+				A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */,
+				E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */,
 				6738D900A1C900AEB85788BA /* WelcomeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

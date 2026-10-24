@@ -1,5 +1,6 @@
 import MapKit
 import SwiftUI
+import PhotosUI
 
 struct ReviewEditor: View {
     let item: MKMapItem
@@ -11,12 +12,25 @@ struct ReviewEditor: View {
     @State private var isSaving = false
     @State private var error: String?
     @State private var confirmsDelete = false
+    @State private var dish: String
+    @State private var wantAgain: Bool
+    @State private var recordsVisitDate: Bool
+    @State private var visitedOn: Date
+    @State private var retainedPhotoNames: [String]
+    @State private var newPhotos: [Data] = []
+    @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var isLoadingPhotos = false
 
     init(item: MKMapItem, existing: LocalReview?) {
         self.item = item
         self.existing = existing
         _rating = State(initialValue: existing?.rating ?? 0)
         _comment = State(initialValue: existing?.comment ?? "")
+        _dish = State(initialValue: existing?.dish ?? "")
+        _wantAgain = State(initialValue: existing?.wantAgain ?? false)
+        _recordsVisitDate = State(initialValue: existing?.visitedOn != nil)
+        _visitedOn = State(initialValue: existing?.visitedOn ?? .now)
+        _retainedPhotoNames = State(initialValue: existing?.photoFileNames ?? [])
     }
 
     var body: some View {
@@ -34,6 +48,27 @@ struct ReviewEditor: View {
                     Text("\(comment.count) / 300文字")
                         .foregroundStyle(comment.count > 300 ? .red : MeshinowaTheme.secondaryText)
                 } header: { Text("ひとこと（任意）") }
+                Section("追加の記録（すべて任意）") {
+                    TextField("おすすめ料理（100文字まで）", text: $dish)
+                    Toggle("また行きたい", isOn: $wantAgain)
+                    Toggle("来店日を記録する", isOn: $recordsVisitDate)
+                    if recordsVisitDate {
+                        DatePicker("来店日", selection: $visitedOn, in: ...Date.now, displayedComponents: .date)
+                    }
+                }
+                Section("写真（任意、5枚まで）") {
+                    photoAttachments
+                    if retainedPhotoNames.count + newPhotos.count < 5 {
+                        PhotosPicker(selection: $pickerItems, maxSelectionCount: 5 - retainedPhotoNames.count - newPhotos.count,
+                                     matching: .images, photoLibrary: .shared()) {
+                            Label("写真を選ぶ", systemImage: "photo.on.rectangle.angled")
+                        }
+                        .disabled(isLoadingPhotos)
+                    }
+                    if isLoadingPhotos { ProgressView("写真を読み込み中") }
+                    Text("写真の位置情報などのメタデータは保存しません。")
+                        .font(MeshinowaFont.text(12, relativeTo: .caption))
+                }
                 Section {
                     Text("今はこの端末だけに保存されます。友達への共有はまだ行いません。位置情報も自動では付きません。")
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
@@ -54,7 +89,9 @@ struct ReviewEditor: View {
                     Task { @MainActor in
                         await Task.yield()
                         do {
-                            try reviews.save(item: item, rating: rating, comment: comment)
+                            try reviews.save(item: item, rating: rating, comment: comment, dish: dish, wantAgain: wantAgain,
+                                             visitedOn: recordsVisitDate ? visitedOn : nil,
+                                             retainedPhotoNames: retainedPhotoNames, newPhotos: newPhotos)
                             dismiss()
                         } catch { self.error = error.localizedDescription }
                         isSaving = false
@@ -64,7 +101,7 @@ struct ReviewEditor: View {
                     else { Text(existing == nil ? "投稿する" : "更新する") }
                 }
                 .buttonStyle(PaperButtonStyle())
-                .disabled(isSaving || rating == 0 || comment.count > 300)
+                .disabled(isSaving || isLoadingPhotos || rating == 0 || comment.count > 300 || dish.count > 100)
                 .padding(20)
                 .background(MeshinowaTheme.paper)
             }
@@ -75,7 +112,26 @@ struct ReviewEditor: View {
                     Button("キャンセル") { dismiss() }.disabled(isSaving)
                 }
             }
-            .interactiveDismissDisabled(isSaving)
+            .interactiveDismissDisabled(isSaving || isLoadingPhotos)
+            .onChange(of: pickerItems) { _, items in
+                guard !items.isEmpty else { return }
+                isLoadingPhotos = true
+                Task { @MainActor in
+                    defer { isLoadingPhotos = false; pickerItems = [] }
+                    do {
+                        var loaded: [Data] = []
+                        for item in items {
+                            guard let data = try await item.loadTransferable(type: Data.self) else { throw ReviewError.invalidPhoto }
+                            let sanitized = try await Task.detached(priority: .userInitiated) {
+                                try ReviewPhotoCodec.sanitizedJPEG(from: data)
+                            }.value
+                            loaded.append(sanitized)
+                        }
+                        guard retainedPhotoNames.count + newPhotos.count + loaded.count <= 5 else { throw ReviewError.tooManyPhotos }
+                        newPhotos.append(contentsOf: loaded)
+                    } catch { self.error = error.localizedDescription }
+                }
+            }
             .confirmationDialog("このレビューを削除しますか？", isPresented: $confirmsDelete, titleVisibility: .visible) {
                 Button("削除する", role: .destructive) {
                     do {
@@ -87,6 +143,25 @@ struct ReviewEditor: View {
             .alert("保存を変更できませんでした", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("閉じる", role: .cancel) {}
             } message: { Text(error ?? "") }
+        }
+    }
+
+    @ViewBuilder private var photoAttachments: some View {
+        ForEach(retainedPhotoNames, id: \.self) { name in
+            HStack {
+                ReviewPhotoThumbnail(url: reviews.photoURL(name))
+                Spacer()
+                Button("写真を外す", role: .destructive) { retainedPhotoNames.removeAll { $0 == name } }
+            }
+        }
+        ForEach(newPhotos.indices, id: \.self) { index in
+            HStack {
+                if let image = UIImage(data: newPhotos[index]) {
+                    Image(uiImage: image).resizable().scaledToFit().frame(height: 80)
+                }
+                Spacer()
+                Button("写真を外す", role: .destructive) { newPhotos.remove(at: index) }
+            }
         }
     }
 }
@@ -134,6 +209,16 @@ struct MyReviewSection: View {
                 Text("★ " + review.rating.formatted(.number.precision(.fractionLength(1))))
                     .font(MeshinowaFont.number(22))
                 if !review.comment.isEmpty { Text(review.comment).font(MeshinowaFont.text(14)) }
+                if !review.dish.isEmpty { Text("おすすめ：\(review.dish)").font(MeshinowaFont.text(14)) }
+                if review.wantAgain { Label("また行きたい", systemImage: "heart.fill").font(MeshinowaFont.text(12, weight: .bold)) }
+                if let date = review.visitedOn { Text(date, style: .date).font(MeshinowaFont.text(12, relativeTo: .caption)) }
+                if !review.photoFileNames.isEmpty {
+                    ScrollView(.horizontal) {
+                        HStack {
+                            ForEach(review.photoFileNames, id: \.self) { ReviewPhotoThumbnail(url: reviews.photoURL($0)) }
+                        }
+                    }
+                }
             } else {
                 Text("星だけでも記録できます。")
                     .font(MeshinowaFont.text(14))
@@ -147,5 +232,20 @@ struct MyReviewSection: View {
         .sheet(isPresented: $showsEditor) {
             ReviewEditor(item: item, existing: reviews.review(for: item))
         }
+    }
+}
+
+struct ReviewPhotoThumbnail: View {
+    let url: URL?
+    var body: some View {
+        Group {
+            if let url, let image = UIImage(contentsOfFile: url.path) {
+                Image(uiImage: image).resizable().scaledToFit()
+            } else {
+                Label("写真を読み込めません", systemImage: "photo")
+            }
+        }
+        .frame(width: 100, height: 100)
+        .accessibilityLabel("レビューに添付した写真")
     }
 }

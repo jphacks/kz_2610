@@ -81,4 +81,47 @@ final class SavedRestaurantStoreTests: XCTestCase {
         let store = SavedRestaurantStore(fileURL: url)
         XCTAssertEqual(store.restaurants.map(\.name), ["後のお店", "先のお店"])
     }
+
+    @MainActor func testVisitedReplacesWantButKeepsFavorite() async throws {
+        let url = try temporaryURL()
+        let store = SavedRestaurantStore(fileURL: url)
+        let item = restaurant()
+        store.setSaved(item, isSaved: true)
+        store.setFavorite(item, isFavorite: true)
+        XCTAssertTrue(store.markVisited(item))
+        let reloaded = SavedRestaurantStore(fileURL: url)
+        XCTAssertEqual(reloaded.restaurant(for: item)?.status, .visited)
+        XCTAssertEqual(reloaded.restaurant(for: item)?.isFavorite, true)
+        reloaded.setVisitStatus(item, status: nil)
+        XCTAssertEqual(reloaded.restaurants.count, 1)
+        reloaded.setFavorite(item, isFavorite: false)
+        XCTAssertTrue(reloaded.restaurants.isEmpty)
+    }
+
+    @MainActor func testLegacySavedPlaceMigratesToWantToGo() async throws {
+        let url = try temporaryURL()
+        let entry = SavedRestaurant(item: restaurant())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(entry)) as? [String: Any])
+        object.removeValue(forKey: "status"); object.removeValue(forKey: "isFavorite")
+        try JSONSerialization.data(withJSONObject: [object]).write(to: url)
+        let store = SavedRestaurantStore(fileURL: url)
+        XCTAssertEqual(store.restaurants.first?.status, .wantToGo)
+        store.setVisitStatus(restaurant(), status: nil)
+        store.setFavorite(restaurant(), isFavorite: true)
+        XCTAssertNil(SavedRestaurantStore(fileURL: url).restaurants.first?.status)
+    }
+
+    @MainActor func testCollectionFilteringAndOwnRatingSort() async throws {
+        let store = SavedRestaurantStore(fileURL: try temporaryURL())
+        let first = restaurant(name: "テスト食堂A"), second = restaurant(name: "テスト食堂B")
+        store.setSaved(first, isSaved: true); store.setSaved(second, isSaved: true)
+        store.setFavorite(second, isFavorite: true)
+        let ratings = [SavedRestaurant.identifier(for: first): 3.0, SavedRestaurant.identifier(for: second): 5.0]
+        let sorted = SavedCollectionQuery.results(store.restaurants, collection: .wantToGo, search: "食堂", sort: .myRating, ratings: ratings)
+        XCTAssertEqual(sorted.map(\.name), ["テスト食堂B", "テスト食堂A"])
+        XCTAssertEqual(SavedCollectionQuery.results(store.restaurants, collection: .favorites, search: "", sort: .name, ratings: ratings).count, 1)
+        store.markVisited(second)
+        XCTAssertEqual(store.restaurants.filter(SavedCollection.wantToGo.includes).count, 1)
+        XCTAssertEqual(store.restaurants.filter(SavedCollection.visited.includes).count, 1)
+    }
 }

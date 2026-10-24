@@ -7,7 +7,7 @@ struct SaveRestaurantButton: View {
     @State private var showsError = false
 
     var body: some View {
-        let isSaved = saved.contains(item)
+        let isSaved = saved.restaurant(for: item)?.status == .wantToGo
         Button {
             saved.setSaved(item, isSaved: !isSaved)
             showsError = saved.errorMessage != nil

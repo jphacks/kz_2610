@@ -94,7 +94,7 @@ struct RestaurantInformationView: View {
             .foregroundStyle(MeshinowaTheme.ink)
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 10) {
-                    SaveRestaurantButton(item: item)
+                    RestaurantCollectionControls(item: item)
                     DirectionsButton(item: item)
                 }
                 .padding(20)

@@ -45,24 +45,42 @@ final class SavedRestaurantStore: ObservableObject {
         return restaurants.contains { $0.id == id }
     }
 
-    func setSaved(_ item: MKMapItem, isSaved: Bool) {
-        let entry = SavedRestaurant(item: item)
-        if isSaved {
-            guard !restaurants.contains(where: { $0.id == entry.id }) else { return }
-            persist([entry] + restaurants)
-        } else {
-            remove(id: entry.id)
-        }
+    func restaurant(for item: MKMapItem) -> SavedRestaurant? {
+        restaurants.first { $0.id == SavedRestaurant.identifier(for: item) }
     }
 
-    func remove(id: String) {
-        persist(restaurants.filter { $0.id != id })
+    @discardableResult func setSaved(_ item: MKMapItem, isSaved: Bool) -> Bool {
+        let old = restaurant(for: item)
+        return setVisitStatus(item, status: isSaved ? .wantToGo : (old?.status == .wantToGo ? nil : old?.status))
     }
 
-    private func persist(_ updated: [SavedRestaurant]) {
+    @discardableResult func setVisitStatus(_ item: MKMapItem, status: VisitStatus?) -> Bool {
+        var entry = restaurant(for: item) ?? SavedRestaurant(item: item, status: nil)
+        entry.status = status
+        return update(entry)
+    }
+
+    @discardableResult func setFavorite(_ item: MKMapItem, isFavorite: Bool) -> Bool {
+        var entry = restaurant(for: item) ?? SavedRestaurant(item: item, status: nil)
+        entry.isFavorite = isFavorite
+        return update(entry)
+    }
+
+    @discardableResult func markVisited(_ item: MKMapItem) -> Bool {
+        setVisitStatus(item, status: .visited)
+    }
+
+    private func update(_ entry: SavedRestaurant) -> Bool {
+        let others = restaurants.filter { $0.id != entry.id }
+        let updated = (entry.status != nil || entry.isFavorite ? [entry] + others : others)
+            .sorted { $0.savedAt > $1.savedAt }
+        return persist(updated)
+    }
+
+    private func persist(_ updated: [SavedRestaurant]) -> Bool {
         guard canWrite else {
             errorMessage = "保存データを読み込めていないため、変更できません。再読み込みをお試しください。"
-            return
+            return false
         }
         do {
             let data = try JSONEncoder().encode(updated)
@@ -71,8 +89,10 @@ final class SavedRestaurantStore: ObservableObject {
             // 書き込み成功後に表示を更新する。失敗時は保存済みに見せない。
             restaurants = updated
             errorMessage = nil
+            return true
         } catch {
             errorMessage = "お店の保存を変更できませんでした。空き容量などを確認して、もう一度お試しください。"
+            return false
         }
     }
 }

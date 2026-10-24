@@ -4,10 +4,6 @@ import SwiftUI
 /// 現在地や友達データを使わずに試せる、地図ホームの最初の実装。
 struct MapHomeView: View {
     @EnvironmentObject private var saved: SavedRestaurantStore
-    private struct SearchResult: Identifiable {
-        let id = UUID()
-        let item: MKMapItem
-    }
 
     private static let initialRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
@@ -17,13 +13,14 @@ struct MapHomeView: View {
     @State private var camera: MapCameraPosition = .region(initialRegion)
     @State private var visibleRegion = initialRegion
     @State private var query = ""
-    @State private var results: [SearchResult] = []
+    @State private var results: [RestaurantSearchResult] = []
+    @State private var showsResults = false
     @State private var selectedID: UUID?
     @State private var isSearching = false
     @State private var message = "東京駅周辺から表示しています。地図を動かして、店名やジャンルで検索できます。"
     @FocusState private var isSearchFocused: Bool
 
-    private var selectedResult: SearchResult? {
+    private var selectedResult: RestaurantSearchResult? {
         results.first { $0.id == selectedID }
     }
 
@@ -47,7 +44,24 @@ struct MapHomeView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(MeshinowaTheme.paper, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .sheet(isPresented: $showsResults) {
+            SearchResultsView(results: results) { result in
+                selectedID = result.id
+                camera = .region(MKCoordinateRegion(
+                    center: result.item.placemark.coordinate,
+                    latitudinalMeters: 1000, longitudinalMeters: 1000
+                ))
+            }
+        }
         .toolbar {
+            if !results.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showsResults = true } label: {
+                        Label("一覧", systemImage: "list.bullet")
+                    }
+                    .accessibilityLabel("検索結果\(results.count)件を一覧で見る")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink {
                     SavedRestaurantsView()
@@ -106,6 +120,10 @@ struct MapHomeView: View {
                 }
                 .buttonStyle(PaperButtonStyle())
                 .disabled(isSearching)
+                if !results.isEmpty {
+                    Button("一覧で見る（\(results.count)件）") { showsResults = true }
+                        .buttonStyle(PaperButtonStyle(kind: .secondary))
+                }
             }
             .foregroundStyle(MeshinowaTheme.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -134,7 +152,7 @@ struct MapHomeView: View {
             defer { isSearching = false }
             do {
                 let response = try await MKLocalSearch(request: request).start()
-                results = response.mapItems.map { SearchResult(item: $0) }
+                results = response.mapItems.map { RestaurantSearchResult(item: $0) }
                 if results.isEmpty {
                     message = "条件に合うお店が見つかりませんでした。検索語やエリアを変えてみてください。"
                 } else {

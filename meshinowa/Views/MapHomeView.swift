@@ -199,4 +199,5 @@ struct MapHomeView: View {
     NavigationStack { MapHomeView() }
         .preferredColorScheme(.light)
         .environmentObject(SavedRestaurantStore())
+        .environmentObject(LocalReviewStore())
 }

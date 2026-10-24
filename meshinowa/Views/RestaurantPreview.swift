@@ -73,6 +73,7 @@ struct RestaurantInformationView: View {
                         .font(MeshinowaFont.text(28, weight: .black, relativeTo: .title))
                     Text(item.restaurantCategory)
                         .font(MeshinowaFont.text(14, weight: .bold))
+                    MyReviewSection(item: item)
                     VStack(alignment: .leading, spacing: 14) {
                         information("住所", value: item.placemark.title ?? "住所の情報がありません")
                         if let phone = item.phoneNumber, !phone.isEmpty {

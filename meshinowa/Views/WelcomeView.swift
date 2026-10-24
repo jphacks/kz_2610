@@ -58,4 +58,5 @@ struct WelcomeView: View {
     }
     .preferredColorScheme(.light)
     .environmentObject(SavedRestaurantStore())
+    .environmentObject(LocalReviewStore())
 }

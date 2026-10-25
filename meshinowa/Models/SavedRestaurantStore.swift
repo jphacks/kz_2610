@@ -49,30 +49,15 @@ final class SavedRestaurantStore: ObservableObject {
         restaurants.first { $0.id == SavedRestaurant.identifier(for: item) }
     }
 
-    @discardableResult func setSaved(_ item: MKMapItem, isSaved: Bool) -> Bool {
-        let old = restaurant(for: item)
-        return setVisitStatus(item, status: isSaved ? .wantToGo : (old?.status == .wantToGo ? nil : old?.status))
-    }
-
-    @discardableResult func setVisitStatus(_ item: MKMapItem, status: VisitStatus?) -> Bool {
-        var entry = restaurant(for: item) ?? SavedRestaurant(item: item, status: nil)
-        entry.status = status
+    @discardableResult func setLiked(_ item: MKMapItem, isLiked: Bool) -> Bool {
+        var entry = restaurant(for: item) ?? SavedRestaurant(item: item, isLiked: false)
+        entry.isLiked = isLiked
         return update(entry)
-    }
-
-    @discardableResult func setFavorite(_ item: MKMapItem, isFavorite: Bool) -> Bool {
-        var entry = restaurant(for: item) ?? SavedRestaurant(item: item, status: nil)
-        entry.isFavorite = isFavorite
-        return update(entry)
-    }
-
-    @discardableResult func markVisited(_ item: MKMapItem) -> Bool {
-        setVisitStatus(item, status: .visited)
     }
 
     private func update(_ entry: SavedRestaurant) -> Bool {
         let others = restaurants.filter { $0.id != entry.id }
-        let updated = (entry.status != nil || entry.isFavorite ? [entry] + others : others)
+        let updated = (entry.isLiked ? [entry] + others : others)
             .sorted { $0.savedAt > $1.savedAt }
         return persist(updated)
     }

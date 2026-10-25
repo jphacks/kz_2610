@@ -1,6 +1,7 @@
 import MapKit
 
-enum RestaurantGenre: String, CaseIterable, Identifiable {
+/// 地図のジャンル切り替え。ケースを足すと、のれんのタブにもそのまま並ぶ。
+enum RestaurantGenre: String, CaseIterable, Identifiable, NorenTabItem {
     case all
     case restaurant
     case cafe
@@ -14,6 +15,15 @@ enum RestaurantGenre: String, CaseIterable, Identifiable {
         case .restaurant: return "飲食店"
         case .cafe: return "カフェ"
         case .bakery: return "ベーカリー"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .all: return "square.grid.2x2.fill"
+        case .restaurant: return "fork.knife"
+        case .cafe: return "cup.and.saucer.fill"
+        case .bakery: return "birthday.cake.fill"
         }
     }
 

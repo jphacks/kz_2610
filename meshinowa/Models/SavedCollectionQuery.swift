@@ -1,20 +1,19 @@
 import Foundation
 
 enum SavedCollection: String, CaseIterable, Identifiable {
-    case wantToGo, visited, favorites
+    case liked, visited
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .wantToGo: return "行きたい"
+        case .liked: return "いいね"
         case .visited: return "行った"
-        case .favorites: return "お気に入り"
         }
     }
-    func includes(_ restaurant: SavedRestaurant) -> Bool {
+    /// 行った＝レビューしたお店。`reviewed` はレビューのあるお店のID。
+    func includes(_ restaurant: SavedRestaurant, reviewed: Set<String>) -> Bool {
         switch self {
-        case .wantToGo: return restaurant.status == .wantToGo
-        case .visited: return restaurant.status == .visited
-        case .favorites: return restaurant.isFavorite
+        case .liked: return restaurant.isLiked
+        case .visited: return reviewed.contains(restaurant.id)
         }
     }
 }
@@ -33,10 +32,12 @@ enum SavedSort: String, CaseIterable, Identifiable {
 
 enum SavedCollectionQuery {
     static func results(_ restaurants: [SavedRestaurant], collection: SavedCollection, search: String,
-                        sort: SavedSort, ratings: [String: Double]) -> [SavedRestaurant] {
+                        sort: SavedSort, ratings: [String: Double], unreviewedOnly: Bool = false) -> [SavedRestaurant] {
+        let reviewed = Set(ratings.keys)
         let text = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return restaurants.filter {
-            collection.includes($0) && (text.isEmpty || $0.name.localizedStandardContains(text) || $0.address.localizedStandardContains(text))
+            collection.includes($0, reviewed: reviewed) && !(unreviewedOnly && reviewed.contains($0.id))
+                && (text.isEmpty || $0.name.localizedStandardContains(text) || $0.address.localizedStandardContains(text))
         }.sorted {
             switch sort {
             case .newest:

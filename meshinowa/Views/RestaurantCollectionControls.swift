@@ -1,45 +1,26 @@
 import MapKit
 import SwiftUI
 
+/// 詳しい画面の「行った」の入り口。レビューを書いたお店が行ったお店になる。
 struct RestaurantCollectionControls: View {
     let item: MKMapItem
-    @EnvironmentObject private var saved: SavedRestaurantStore
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var showsError = false
+    @EnvironmentObject private var reviews: LocalReviewStore
+    @State private var showsEditor = false
 
     var body: some View {
-        let entry = saved.restaurant(for: item)
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 10)) : AnyLayout(HStackLayout(spacing: 10))
-        layout {
-            control("行きたい", symbol: "bookmark", selected: entry?.status == .wantToGo) {
-                saved.setVisitStatus(item, status: entry?.status == .wantToGo ? nil : .wantToGo)
-            }
-            control("行った", symbol: "checkmark.circle", selected: entry?.status == .visited) {
-                saved.setVisitStatus(item, status: entry?.status == .visited ? nil : .visited)
-            }
-            control("お気に入り", symbol: "heart", selected: entry?.isFavorite == true) {
-                saved.setFavorite(item, isFavorite: entry?.isFavorite != true)
+        let review = reviews.review(for: item)
+        Button { showsEditor = true } label: {
+            if let review {
+                Label("レビューを編集（★\(review.rating.formatted(.number.precision(.fractionLength(1)))))",
+                      systemImage: "square.and.pencil")
+            } else {
+                Label("行ったらレビューを書く", systemImage: "star")
             }
         }
-        .alert("保存を変更できませんでした", isPresented: $showsError) {
-            Button("閉じる", role: .cancel) {}
-        } message: { Text(saved.errorMessage ?? "もう一度お試しください。") }
-    }
-
-    private func control(_ title: String, symbol: String, selected: Bool, action: @escaping () -> Bool) -> some View {
-        Button { showsError = !action() } label: {
-            VStack(spacing: 6) {
-                Image(systemName: selected ? symbol + ".fill" : symbol)
-                Text(title).font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
-            }
-            .frame(maxWidth: .infinity, minHeight: 64)
-            .foregroundStyle(selected ? MeshinowaTheme.card : MeshinowaTheme.ink)
-            .background(selected ? MeshinowaTheme.ink : MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(MeshinowaTheme.ink, lineWidth: 2))
-            .contentShape(Rectangle())
+        .buttonStyle(PaperButtonStyle(kind: review == nil ? .primary : .secondary))
+        .disabled(reviews.loadError != nil)
+        .sheet(isPresented: $showsEditor) {
+            ReviewEditor(item: item, existing: review)
         }
-        .buttonStyle(.plain)
-        .accessibilityValue(selected ? "登録済み" : "未登録")
-        .accessibilityHint(selected ? "登録を解除します" : "登録します")
     }
 }

@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>メシノワ UIモック</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800;900&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 既存の基調色 */
+  --paper:#F3ECDC; --card:#FFFBF1; --ink:#183E31; --green:#27755B; --mustard:#E8AD45; --sub:#6A6150;
+  /* 追加のポップ色（友達ごとの色・アクセント） */
+  --green-deep:#1D5C47; --mint:#D4EBDC; --leaf:#9FD4B3;
+  --tomato:#EE6A4C; --sky:#5FA8D3; --lilac:#9C8BDB; --pink:#F09BB0; --orange:#F28C38; --rose:#D9779B; --mintpop:#6CC29A;
+  --map:#EDE3CB; --block:#F8F2E3; --water:#BCDDD0; --park:#CDE3BE;
+  --sh:3px 3px 0 var(--ink);
+  --r:22px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E6DEC8;color:var(--ink);font-family:"Zen Maru Gothic",system-ui,sans-serif;font-weight:500;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.num{font-family:"M PLUS Rounded 1c",sans-serif;font-weight:900;letter-spacing:-.02em}
+
+/* ---------- page ---------- */
+.page{max-width:2100px;margin:0 auto;padding:48px 32px 80px}
+.hero{display:flex;flex-wrap:wrap;gap:24px 48px;align-items:flex-end;justify-content:space-between;margin-bottom:40px}
+.hero h1{font-family:"M PLUS Rounded 1c";font-weight:900;font-size:clamp(34px,4vw,54px);line-height:1.05;letter-spacing:-.02em}
+.hero h1 span{background:var(--mustard);padding:0 .2em;border-radius:.25em;box-shadow:var(--sh);border:2.5px solid var(--ink);display:inline-block;transform:rotate(-2deg)}
+.hero p{color:var(--sub);margin-top:12px;font-size:15px;max-width:52ch;line-height:1.8}
+.rules{display:flex;gap:12px;flex-wrap:wrap;max-width:760px}
+.rule{background:var(--card);border:2.5px solid var(--ink);border-radius:18px;box-shadow:var(--sh);padding:12px 16px;font-size:13px;line-height:1.6;flex:1 1 200px}
+.rule b{display:block;font-weight:900;font-size:14px}
+.rail{display:flex;gap:40px;flex-wrap:wrap;justify-content:center}
+.shot{display:flex;flex-direction:column;align-items:center;gap:16px}
+.cap{text-align:center;max-width:340px}
+.cap b{font-family:"M PLUS Rounded 1c";font-weight:900;font-size:18px;display:flex;align-items:center;gap:8px;justify-content:center}
+.cap b i{font-style:normal;background:var(--ink);color:var(--card);width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px}
+.cap small{display:block;color:var(--sub);font-size:13px;line-height:1.7;margin-top:6px}
+
+/* ---------- phone ---------- */
+.phone{width:375px;height:812px;border-radius:54px;background:#111;padding:11px;box-shadow:0 30px 60px -20px rgba(24,62,49,.45),0 0 0 2px #2a2a2a inset;flex:none}
+.screen{position:relative;width:100%;height:100%;border-radius:44px;overflow:hidden;background:var(--paper)}
+.status{position:absolute;top:0;left:0;right:0;height:50px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0 34px;font-family:"M PLUS Rounded 1c";font-weight:800;font-size:15px;z-index:30;pointer-events:none}
+.status .isl{position:absolute;left:50%;top:11px;width:120px;height:34px;margin-left:-60px;background:#000;border-radius:20px}
+.status .bat{display:flex;gap:5px;align-items:center}
+.status .bat i{display:block;width:24px;height:12px;border:1.8px solid currentColor;border-radius:4px;position:relative}
+.status .bat i::after{content:"";position:absolute;inset:1.5px;right:5px;background:currentColor;border-radius:1.5px}
+.on-dark{color:var(--card)}
+.scroll{position:absolute;inset:0;overflow-y:auto;scrollbar-width:none;padding:58px 18px 120px}
+.scroll::-webkit-scrollbar{display:none}
+
+/* tab bar */
+.tabbar{position:absolute;left:14px;right:14px;bottom:24px;height:66px;background:var(--card);border:2.5px solid var(--ink);border-radius:26px;box-shadow:var(--sh);display:flex;align-items:center;justify-content:space-around;padding:0 8px;z-index:25}
+.tab{height:48px;min-width:48px;border-radius:18px;display:flex;align-items:center;justify-content:center;gap:6px;color:var(--ink);opacity:.55;font-weight:900;font-size:13px}
+.tab svg{width:24px;height:24px}
+.tab.on{opacity:1;background:var(--green);color:var(--card);padding:0 14px}
+.tab .dot{position:absolute}
+
+/* avatars */
+.av{--c:var(--mustard);width:34px;height:34px;border-radius:50%;background:var(--c);border:2.5px solid var(--ink);display:grid;place-items:center;font-weight:900;font-size:14px;color:var(--ink);flex:none;position:relative}
+.av.s{width:24px;height:24px;font-size:11px;border-width:2px}
+.av.l{width:46px;height:46px;font-size:18px}
+.stack{display:flex}.stack .av+.av{margin-left:-8px}
+
+/* chips & buttons */
+.chip{height:38px;padding:0 14px;border-radius:19px;border:2.5px solid var(--ink);background:var(--card);display:inline-flex;align-items:center;gap:6px;font-weight:900;font-size:13px;white-space:nowrap;transition:transform .15s}
+.chip svg{width:18px;height:18px}
+.chip.on{background:var(--ink);color:var(--card)}
+.chip:active{transform:scale(.94)}
+.btn{height:54px;border-radius:18px;border:2.5px solid var(--ink);box-shadow:var(--sh);display:flex;align-items:center;justify-content:center;gap:8px;font-weight:900;font-size:16px;width:100%;transition:transform .12s,box-shadow .12s}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.btn.pri{background:var(--mustard)}
+.btn.grn{background:var(--green);color:var(--card)}
+.btn.ghost{background:var(--card)}
+.btn svg{width:20px;height:20px}
+
+/* stamp */
+.stamp{--size:74px;width:var(--size);height:var(--size);border-radius:50%;background:var(--mustard);border:2.5px solid var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-8deg);flex:none;position:relative;box-shadow:var(--sh)}
+.stamp::before{content:"";position:absolute;inset:5px;border-radius:50%;border:1.5px dashed rgba(24,62,49,.45)}
+.stamp .num{font-size:calc(var(--size)*.36);line-height:1}
+.stamp small{font-size:9px;font-weight:900;margin-top:1px}
+.stamp.none{background:var(--card)}
+
+@keyframes pop{0%{transform:scale(1)}35%{transform:scale(1.18) rotate(-6deg)}70%{transform:scale(.94)}100%{transform:scale(1)}}
+.pop{animation:pop .42s cubic-bezier(.3,1.6,.5,1)}
+@keyframes rise{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+@keyframes float{0%,100%{transform:translateY(0) rotate(var(--rot,0deg))}50%{transform:translateY(-8px) rotate(var(--rot,0deg))}}
+
+/* ============ 1. welcome ============ */
+.welcome{background:var(--green);color:var(--card);height:100%;position:relative;overflow:hidden}
+.welcome .grain{position:absolute;inset:0;background-image:radial-gradient(rgba(255,251,241,.09) 1.2px,transparent 1.3px);background-size:14px 14px}
+.bowlzone{position:absolute;top:110px;left:0;right:0;height:330px}
+.bowl{position:absolute;left:50%;top:50%;width:200px;height:200px;margin:-100px 0 0 -100px}
+.qb{position:absolute;background:var(--card);color:var(--ink);border:2.5px solid var(--ink);border-radius:18px;box-shadow:var(--sh);padding:8px 12px 8px 8px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:900;white-space:nowrap;animation:float 4s ease-in-out infinite}
+.qb .num{font-size:13px;background:var(--mustard);border-radius:8px;padding:1px 6px;border:2px solid var(--ink)}
+.welcome h2{position:absolute;left:28px;right:20px;top:458px;font-family:"M PLUS Rounded 1c";font-weight:900;font-size:31px;line-height:1.18;letter-spacing:-.01em}
+.welcome h2 em{font-style:normal;color:var(--mustard)}
+.welcome .lead{position:absolute;left:28px;right:28px;top:548px;font-size:14px;line-height:1.8;opacity:.86}
+.welcome .cta{position:absolute;left:24px;right:24px;bottom:44px;display:flex;flex-direction:column;gap:12px}
+.welcome .cta .btn.ghost{background:transparent;color:var(--card);border-color:var(--card);box-shadow:none;height:46px;font-size:14px}
+.wordmark{position:absolute;top:62px;left:28px;font-family:"M PLUS Rounded 1c";font-weight:900;font-size:20px;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+.wordmark i{width:10px;height:10px;border-radius:50%;background:var(--mustard)}
+
+/* ============ 2. map ============ */
+.map{position:absolute;inset:0;background:var(--map)}
+.map svg.base{position:absolute;inset:0;width:100%;height:100%}
+.searchbar{position:absolute;top:56px;left:14px;right:14px;z-index:10;display:flex;gap:8px}
+.search{flex:1;height:52px;background:var(--card);border:2.5px solid var(--ink);border-radius:20px;box-shadow:var(--sh);display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;font-size:15px;color:var(--sub)}
+.search svg{width:20px;height:20px;color:var(--ink)}
+.search .go{margin-left:auto;width:36px;height:36px;border-radius:13px;background:var(--green);display:grid;place-items:center;color:var(--card)}
+.search .go svg{color:var(--card)}
+.sq{width:52px;height:52px;background:var(--card);border:2.5px solid var(--ink);border-radius:18px;box-shadow:var(--sh);display:grid;place-items:center;position:relative}
+.sq svg{width:22px;height:22px}
+.badge{position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:var(--tomato);border:2px solid var(--ink);font-family:"M PLUS Rounded 1c";font-weight:900;font-size:11px;display:grid;place-items:center;color:var(--card)}
+.genres{position:absolute;top:120px;left:0;right:0;z-index:10;display:flex;gap:8px;overflow-x:auto;padding:4px 14px 8px;scrollbar-width:none}
+.genres::-webkit-scrollbar{display:none}
+.genres .chip{box-shadow:2px 2px 0 var(--ink)}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;z-index:5;transition:transform .25s cubic-bezier(.3,1.6,.5,1),opacity .2s}
+.pin .bub{white-space:nowrap;background:var(--card);border:2.5px solid var(--ink);border-radius:16px;box-shadow:var(--sh);padding:5px 8px 5px 5px;display:flex;align-items:center;gap:6px}
+.pin .sc{background:var(--mustard);border:2px solid var(--ink);border-radius:10px;padding:1px 7px;font-size:16px}
+.pin .tail{width:14px;height:14px;background:var(--card);border-right:2.5px solid var(--ink);border-bottom:2.5px solid var(--ink);transform:rotate(45deg);margin-top:-9px;box-shadow:3px 3px 0 -0px rgba(0,0,0,0)}
+.pin .lbl{margin-top:4px;font-size:11px;font-weight:900;background:rgba(255,251,241,.92);padding:1px 7px;border-radius:8px;white-space:nowrap}
+.pin.sel{transform:translate(-50%,-100%) scale(1.16);z-index:8}
+.pin.sel .bub{background:var(--green);color:var(--card)}
+.pin.sel .tail{background:var(--green)}
+.pin.dim{opacity:.0;pointer-events:none;transform:translate(-50%,-80%) scale(.6)}
+.pin.unrated .bub{padding:5px 9px;font-size:11px;font-weight:900;color:var(--sub)}
+.pin.unrated .bub::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--leaf);border:2px solid var(--ink)}
+.me{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--sky);border:3px solid var(--card);box-shadow:0 0 0 2.5px var(--ink),0 0 0 14px rgba(95,168,211,.22);z-index:4}
+
+.sheet{position:absolute;left:0;right:0;bottom:0;height:322px;background:var(--card);border-top:2.5px solid var(--ink);border-radius:30px 30px 0 0;z-index:12;padding:10px 0 0}
+.grab{width:44px;height:5px;border-radius:3px;background:var(--ink);opacity:.25;margin:0 auto 10px}
+.lens{display:flex;align-items:center;gap:10px;padding:0 18px 12px}
+.lens .t{font-size:12px;font-weight:900;color:var(--sub);white-space:nowrap}
+.lens .avs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:3px 2px}
+.lens .av{cursor:pointer;transition:transform .2s,filter .2s,opacity .2s}
+.lens .av.off{filter:grayscale(1);opacity:.35;transform:scale(.86)}
+.lens .av:not(.off)::after{content:"";position:absolute;right:-3px;bottom:-3px;width:11px;height:11px;border-radius:50%;background:var(--green);border:2px solid var(--card)}
+.lensall{font-size:11px;font-weight:900;border:2px solid var(--ink);border-radius:12px;padding:3px 8px;white-space:nowrap}
+.sheet h3{font-size:18px;font-weight:900;padding:0 18px;display:flex;align-items:baseline;gap:8px}
+.sheet h3 .num{font-size:14px;color:var(--green)}
+.cards{display:flex;gap:12px;overflow-x:auto;padding:12px 18px 0;scroll-snap-type:x mandatory;scrollbar-width:none}
+.cards::-webkit-scrollbar{display:none}
+.rc{flex:none;width:236px;scroll-snap-align:start;background:var(--paper);border:2.5px solid var(--ink);border-radius:20px;padding:14px;position:relative;cursor:pointer;transition:transform .15s;animation:rise .35s both}
+.rc:active{transform:scale(.97)}
+.rc.sel{background:var(--mint)}
+.rc .row{display:flex;gap:10px;align-items:flex-start}
+.rc .nm{font-weight:900;font-size:16px;line-height:1.3}
+.rc .gn{font-size:11px;font-weight:900;color:var(--green);margin-top:2px;display:flex;gap:4px;align-items:center}
+.rc .stamp{--size:52px;margin-left:auto;box-shadow:2px 2px 0 var(--ink)}
+.rc .stamp small{font-size:7px}
+.rc .q{margin-top:10px;font-size:12.5px;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.rc .q p{background:var(--card);border:2px solid var(--ink);border-radius:4px 14px 14px 14px;padding:6px 10px}
+.rc .act{display:flex;gap:8px;margin-top:12px}
+.rc .act button{flex:1;height:38px;border-radius:13px;border:2.5px solid var(--ink);font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--card)}
+.rc .act button svg{width:16px;height:16px}
+.rc .act button.on{background:var(--mustard)}
+.rc .act button.dark{background:var(--ink);color:var(--card)}
+
+/* ============ 3. detail ============ */
+.dhead{position:absolute;inset:0 0 auto 0;height:300px;background:var(--green);overflow:hidden}
+.dhead .grain{position:absolute;inset:0;background-image:radial-gradient(rgba(255,251,241,.1) 1.2px,transparent 1.3px);background-size:14px 14px}
+.dhead .plate{position:absolute;right:70px;top:36px;width:270px;height:270px}
+.topbtns{position:absolute;top:56px;left:16px;right:16px;display:flex;justify-content:space-between;z-index:5}
+.cbtn{width:44px;height:44px;border-radius:50%;background:var(--card);border:2.5px solid var(--ink);display:grid;place-items:center;box-shadow:2px 2px 0 var(--ink)}
+.cbtn svg{width:20px;height:20px}
+.dbody{position:absolute;inset:228px 0 0 0;background:var(--paper);border-radius:30px 30px 0 0;border-top:2.5px solid var(--ink);overflow-y:auto;scrollbar-width:none;padding:24px 18px 150px}
+.dbody::-webkit-scrollbar{display:none}
+.dstamp{position:absolute!important;right:22px;top:176px;--size:96px!important;z-index:10;cursor:pointer}
+.dstamp small{font-size:10px!important}
+.dtag{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:900;background:var(--mint);border:2px solid var(--ink);border-radius:10px;padding:3px 9px}
+.dname{font-family:"M PLUS Rounded 1c";font-weight:900;font-size:30px;line-height:1.15;margin-top:10px;letter-spacing:-.01em}
+.daddr{font-size:13px;color:var(--sub);margin-top:6px;display:flex;align-items:center;gap:4px}
+.daddr svg{width:14px;height:14px}
+.saves{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:18px}
+.sv{height:72px;border-radius:18px;border:2.5px solid var(--ink);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:900;font-size:12px;transition:background .2s}
+.sv svg{width:24px;height:24px}
+.sv.on{box-shadow:var(--sh)}
+.sv[data-k=want].on{background:var(--mustard)}
+.sv[data-k=went].on{background:var(--leaf)}
+.sv[data-k=fav].on{background:var(--pink)}
+.sv[data-k=fav].on svg{fill:var(--tomato)}
+.sect{margin-top:24px;display:flex;align-items:baseline;justify-content:space-between}
+.sect h4{font-size:17px;font-weight:900}
+.sect span{font-size:12px;font-weight:900;color:var(--green)}
+.meter{margin-top:12px;background:var(--card);border:2.5px solid var(--ink);border-radius:20px;padding:14px 16px;display:flex;gap:14px;align-items:center}
+.meter .big{font-size:40px;line-height:1}
+.meter .bars{flex:1;display:flex;flex-direction:column;gap:4px}
+.meter .bar{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:900}
+.meter .bar i{flex:1;height:8px;border-radius:4px;background:var(--paper);border:1.5px solid var(--ink);overflow:hidden;position:relative}
+.meter .bar i b{position:absolute;inset:0 auto 0 0;background:var(--green)}
+.voice{display:flex;gap:10px;margin-top:12px;animation:rise .4s both}
+.voice .body{flex:1}
+.voice .who{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:900}
+.voice .who .num{background:var(--mustard);border:2px solid var(--ink);border-radius:9px;padding:0 7px;font-size:13px}
+.voice p{margin-top:5px;background:var(--card);border:2.5px solid var(--ink);border-radius:4px 18px 18px 18px;padding:10px 13px;font-size:14px;line-height:1.65}
+.voice .when{font-size:10.5px;color:var(--sub);margin-top:4px;font-weight:700}
+.dfoot{position:absolute;left:0;right:0;bottom:0;padding:14px 16px 32px;background:linear-gradient(to top,var(--paper) 70%,rgba(243,236,220,0));display:flex;gap:10px;z-index:6}
+.dfoot .btn.ghost{width:64px;flex:none}
+
+/* ============ 4. saved ============ */
+.ttl{font-family:"M PLUS Rounded 1c";font-weight:900;font-size:32px;letter-spacing:-.01em;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.sg{border:2.5px solid var(--ink);border-radius:18px;padding:10px 12px;background:var(--card);text-align:left;transition:transform .15s}
+.sg .num{font-size:30px;line-height:1;display:block}
+.sg span{font-size:12px;font-weight:900;display:flex;align-items:center;gap:4px;margin-top:4px}
+.sg span svg{width:14px;height:14px}
+.sg.on{box-shadow:var(--sh);transform:translate(-2px,-2px)}
+.sg.on[data-g=want]{background:var(--mustard)}
+.sg.on[data-g=went]{background:var(--leaf)}
+.sg.on[data-g=fav]{background:var(--pink)}
+.tools{display:flex;gap:8px;margin-top:14px}
+.tools .search{height:44px;border-radius:15px;box-shadow:none;font-size:14px}
+.tools .sq{width:44px;height:44px;border-radius:15px;box-shadow:none}
+.tools .sq svg{width:20px;height:20px}
+.ticket{display:flex;margin-top:12px;background:var(--card);border:2.5px solid var(--ink);border-radius:20px;overflow:hidden;animation:rise .35s both}
+.ticket .art{width:84px;flex:none;border-right:2.5px dashed var(--ink);display:grid;place-items:center;position:relative}
+.ticket .art svg{width:46px;height:46px}
+.ticket .inf{padding:12px 14px;flex:1;min-width:0}
+.ticket .nm{font-weight:900;font-size:16px}
+.ticket .mt{font-size:11.5px;color:var(--sub);font-weight:700;margin-top:3px}
+.ticket .ft{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+.mine{font-size:12px;font-weight:900;background:var(--ink);color:var(--card);border-radius:10px;padding:3px 9px;display:inline-flex;gap:4px;align-items:center}
+.mine .num{font-size:13px}
+.fr{font-size:11px;font-weight:900;color:var(--green);display:flex;align-items:center;gap:6px}
+
+/* ============ 5. profile ============ */
+.pcard{margin-top:12px;background:var(--green);color:var(--card);border:2.5px solid var(--ink);border-radius:26px;box-shadow:var(--sh);padding:18px;position:relative;overflow:hidden}
+.pcard .grain{position:absolute;inset:0;background-image:radial-gradient(rgba(255,251,241,.1) 1.2px,transparent 1.3px);background-size:12px 12px}
+.pcard .who{display:flex;gap:12px;align-items:center;position:relative}
+.pcard .av{--c:var(--mustard);width:58px;height:58px;font-size:22px}
+.pcard .nm{font-family:"M PLUS Rounded 1c";font-weight:900;font-size:22px}
+.pcard .tag{font-size:12px;opacity:.85;margin-top:2px}
+.pstats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;position:relative;background:rgba(0,0,0,.14);border-radius:16px;padding:10px 0}
+.pstats div{text-align:center;font-size:11px;font-weight:900}
+.pstats div+div{border-left:1.5px solid rgba(255,251,241,.25)}
+.pstats .num{font-size:26px;display:block;line-height:1.1;color:var(--mustard)}
+.book{margin-top:12px;background:var(--card);border:2.5px solid var(--ink);border-radius:24px;padding:16px;position:relative}
+.book .hd{display:flex;justify-content:space-between;align-items:baseline}
+.book .hd b{font-size:16px;font-weight:900}
+.book .hd span{font-size:11px;font-weight:900;color:var(--sub)}
+.slots{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.slot{aspect-ratio:1;border-radius:50%;border:2px dashed rgba(24,62,49,.3);display:grid;place-items:center;position:relative}
+.slot.got{border:2.5px solid var(--ink);background:var(--c,var(--mustard));transform:rotate(var(--rot,-6deg));box-shadow:2px 2px 0 var(--ink)}
+.slot.got svg{width:52%;height:52%}
+.slot.got::after{content:attr(data-n);position:absolute;bottom:-7px;left:50%;transform:translateX(-50%) rotate(calc(var(--rot,-6deg) * -1));font-size:8.5px;font-weight:900;background:var(--card);border:1.5px solid var(--ink);border-radius:6px;padding:0 4px;white-space:nowrap}
+.slot.next{border-color:var(--green);color:var(--green);font-weight:900;font-size:18px}
+.prog{margin-top:18px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:900}
+.prog i{flex:1;height:12px;border-radius:6px;border:2px solid var(--ink);background:var(--paper);position:relative;overflow:hidden}
+.prog i b{position:absolute;inset:0 auto 0 0;width:58%;background:repeating-linear-gradient(-45deg,var(--green) 0 6px,var(--green-deep) 6px 12px)}
+.mini{display:flex;gap:12px;align-items:center;margin-top:10px;background:var(--card);border:2.5px solid var(--ink);border-radius:18px;padding:12px}
+.mini .ic{width:44px;height:44px;border-radius:14px;border:2px solid var(--ink);display:grid;place-items:center;flex:none;background:var(--c)}
+.mini .ic svg{width:26px;height:26px}
+.mini .nm{font-weight:900;font-size:14.5px}
+.mini p{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.5}
+.mini .num{margin-left:auto;font-size:20px;align-self:flex-start}
+
+.note{margin:56px auto 0;max-width:900px;background:var(--card);border:2.5px solid var(--ink);border-radius:24px;box-shadow:var(--sh);padding:24px 28px;line-height:1.85;font-size:14px}
+.note h2{font-family:"M PLUS Rounded 1c";font-weight:900;font-size:22px;margin-bottom:8px}
+.note ul{padding-left:1.2em}
+.note li{margin:4px 0}
+@media (max-width:440px){.page{padding:28px 8px 60px}.phone{transform:scale(.9);transform-origin:top center;margin-bottom:-80px}}
+</style>
+</head>
+<body>
+<!-- icon sprites -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-map" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z"/><path d="M9 4v13.5M15 6.5V20"/></symbol>
+    <symbol id="i-bm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M6 3.5h12v17l-6-4.2-6 4.2z"/></symbol>
+    <symbol id="i-ppl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.5"/><circle cx="17" cy="9.5" r="2.7"/><path d="M2.8 19.5c.8-3.6 3.3-5.5 6.2-5.5s5.4 1.9 6.2 5.5M15.5 14.3c2.6-.4 4.9 1.1 5.7 4.2"/></symbol>
+    <symbol id="i-me" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3.2"/><path d="M6.3 18.6c1.3-2.4 3.3-3.6 5.7-3.6s4.4 1.2 5.7 3.6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v7.5h14V12"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m7.8 12.3 2.9 2.9 5.6-6"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M12 20s-7.5-4.4-7.5-10.1A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.5 2.6C19.5 15.6 12 20 12 20z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+    <symbol id="i-walk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4.5" r="1.8"/><path d="m9 21 2.5-6.5L14 17v4M8 11l3-3.5 3 1 2.5 3.5M11.5 14.5 12.3 8"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19.5 8.5a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+    <symbol id="i-sort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></symbol>
+    <!-- genre glyphs -->
+    <symbol id="g-all" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"><circle cx="7" cy="7" r="2.6"/><circle cx="17" cy="7" r="2.6"/><circle cx="7" cy="17" r="2.6"/><circle cx="17" cy="17" r="2.6"/></symbol>
+    <symbol id="g-meal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18a9 9 0 0 1-18 0z"/><path d="M8 8.5c0-1.5 1.2-1.5 1.2-3M12 8.5c0-1.5 1.2-1.5 1.2-3M16 8.5c0-1.5 1.2-1.5 1.2-3"/></symbol>
+    <symbol id="g-noodle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18a9 9 0 0 1-18 0z"/><path d="M14 2.5 9 12M19 3l-7.5 9"/></symbol>
+    <symbol id="g-cafe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16M8 3.5c0 1.3 1 1.3 1 2.8M12 3.5c0 1.3 1 1.3 1 2.8"/></symbol>
+    <symbol id="g-bread" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19.5V11a3.5 3.5 0 0 1-.5-7h15a3.5 3.5 0 0 1-.5 7v8.5z"/><path d="M9.5 9.5l2 2M13 9l2 2"/></symbol>
+    <symbol id="g-omu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="16" rx="9.5" ry="3.5"/><path d="M5 15.2C5 10.5 8.3 8 12 8s7 2.5 7 7.2"/><path d="M9 11.5c1.5 1 4.5 1 6 0"/></symbol>
+  </defs>
+</svg>
+
+<main class="page">
+  <header class="hero">
+    <div>
+      <h1>メシノワ<br><span>UIモック</span> v1</h1>
+      <p>「友達の“うまい”が、地図にポンと立つ」をそのまま画面にした案です。緑・紙・からしの配色はそのままに、太い線とスタンプで“手ざわりのあるポップさ”を足しています。マップ画面は友達アイコン・ジャンル・ピンを実際に触れます。</p>
+    </div>
+    <div class="rules">
+      <div class="rule"><b>主役は友達の顔</b>星の数より「誰が言ったか」。ピンにも一覧にも、必ず友達のアイコンと一言を添える。</div>
+      <div class="rule"><b>押したくなるスタンプ</b>評価・保存・訪問はハンコとシール。押すと弾む。記録がたまる楽しさに。</div>
+      <div class="rule"><b>片手で完結</b>操作は画面下半分に集める。シートとタブは親指の届く位置に。</div>
+    </div>
+  </header>
+
+  <section class="rail">
+
+    <!-- ============ 1. WELCOME ============ -->
+    <div class="shot">
+      <div class="phone"><div class="screen">
+        <div class="status on-dark"><span>9:41</span><span class="isl"></span><span class="bat">5G<i></i></span></div>
+        <div class="welcome">
+          <div class="grain"></div>
+          <div class="wordmark"><i></i>meshinowa</div>
+          <div class="bowlzone">
+            <svg class="bowl" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="106" r="74" fill="#FFFBF1" stroke="#183E31" stroke-width="5"/>
+              <circle cx="100" cy="106" r="38" fill="#27755B" stroke="#183E31" stroke-width="5"/>
+              <circle cx="100" cy="106" r="56" fill="none" stroke="#183E31" stroke-width="2" stroke-dasharray="3 9" stroke-linecap="round" opacity=".35"/>
+              <g stroke="#183E31" stroke-width="5" stroke-linecap="round"><line x1="40" y1="44" x2="176" y2="118"/><line x1="30" y1="62" x2="166" y2="136"/></g>
+              <g stroke="#E8AD45" stroke-width="11" stroke-linecap="round"><line x1="40" y1="44" x2="176" y2="118"/><line x1="30" y1="62" x2="166" y2="136"/></g>
+            </svg>
+            <div class="qb" style="left:22px;top:18px;--rot:-5deg"><span class="av s" style="--c:var(--tomato)">た</span>オムライス最高<span class="num">5.0</span></div>
+            <div class="qb" style="right:18px;top:96px;--rot:4deg;animation-delay:-1.3s"><span class="av s" style="--c:var(--pink)">さ</span>プリンが神<span class="num">5.0</span></div>
+            <div class="qb" style="left:30px;bottom:24px;--rot:3deg;animation-delay:-2.4s"><span class="av s" style="--c:var(--rose)">あ</span>焼きたて買いたい<span class="num">5.0</span></div>
+          </div>
+          <h2>おいしい店は、<br><em>友達</em>が知っている。</h2>
+          <p class="lead">知らない人の星じゃなく、友達の「ここ、うまいよ」で選ぶ。みんなのおすすめが、そのまま地図になります。</p>
+          <div class="cta">
+            <button class="btn pri">マップをひらく<svg><use href="#i-arrow"/></svg></button>
+            <button class="btn ghost">架空の友達で試してみる</button>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap"><b><i>1</i>はじめまして</b><small>アイコンの「お椀の輪」を主役に、友達の一言がふわっと浮かぶ。最初の5秒でアプリの価値が伝わる構成に。</small></div>
+    </div>
+
+    <!-- ============ 2. MAP ============ -->
+    <div class="shot">
+      <div class="phone"><div class="screen" id="mapScreen">
+        <div class="status"><span>9:41</span><span class="isl"></span><span class="bat">5G<i></i></span></div>
+        <div class="map">
+          <svg class="base" viewBox="0 0 353 790" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="353" height="790" fill="#EDE3CB"/>
+            <path d="M-20 300 C 60 280, 90 340, 160 330 S 280 260, 380 290 L380 330 C 290 300, 230 370, 160 372 S 50 320 -20 345Z" fill="#BCDDD0"/>
+            <g fill="#F8F2E3" stroke="#D9CCAD" stroke-width="1.5">
+              <rect x="14" y="150" width="70" height="56" rx="10"/><rect x="96" y="148" width="84" height="40" rx="10"/><rect x="192" y="150" width="58" height="62" rx="10"/><rect x="262" y="144" width="80" height="48" rx="10"/>
+              <rect x="20" y="218" width="58" height="64" rx="10"/><rect x="96" y="200" width="60" height="86" rx="10"/><rect x="170" y="226" width="80" height="44" rx="10"/><rect x="262" y="206" width="72" height="54" rx="10"/>
+              <rect x="10" y="382" width="80" height="64" rx="10"/><rect x="104" y="392" width="62" height="54" rx="10"/><rect x="182" y="384" width="70" height="70" rx="10"/><rect x="266" y="372" width="74" height="50" rx="10"/>
+              <rect x="22" y="460" width="66" height="60" rx="10"/><rect x="104" y="460" width="74" height="40" rx="10"/><rect x="266" y="436" width="70" height="66" rx="10"/><rect x="194" y="468" width="58" height="46" rx="10"/>
+            </g>
+            <rect x="104" y="512" width="74" height="36" rx="14" fill="#CDE3BE" stroke="#B4CFA2" stroke-width="1.5"/>
+            <g fill="#9FC48A"><circle cx="118" cy="528" r="5"/><circle cx="134" cy="534" r="6"/><circle cx="152" cy="526" r="5"/><circle cx="166" cy="536" r="4"/></g>
+            <g stroke="#FFFBF1" stroke-width="10" stroke-linecap="round" fill="none"><path d="M-10 214 H 370"/><path d="M90 120 V 600"/><path d="M258 120 V 600"/><path d="M-10 458 H 370"/></g>
+            <g stroke="#183E31" stroke-width="3" stroke-dasharray="10 7" fill="none" opacity=".35"><path d="M176 110 C 172 300, 186 420, 186 620"/></g>
+            <rect x="152" y="242" width="52" height="20" rx="10" fill="#183E31"/><text x="178" y="256" fill="#FFFBF1" font-size="10" font-weight="900" text-anchor="middle" font-family="Zen Maru Gothic">東京駅</text>
+          </svg>
+          <div class="me" style="left:170px;top:300px"></div>
+          <div id="pins"></div>
+        </div>
+        <div class="searchbar">
+          <div class="search"><svg><use href="#i-search"/></svg>店名・ジャンルで検索<span class="go"><svg><use href="#i-arrow"/></svg></span></div>
+        </div>
+        <div class="genres" id="genres"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="lens"><span class="t">だれの目で？</span><div class="avs" id="lens"></div><button class="lensall" id="lensAll">全員</button></div>
+          <h3 id="sheetTitle">友達のおすすめ <span class="num" id="cnt"></span></h3>
+          <div class="cards" id="cards"></div>
+        </div>
+      </div></div>
+      <div class="cap"><b><i>2</i>マップ（触れます）</b><small>ピンは「点数＋言った友達の顔」。シート上の顔を外すと、その友達ぬきの点数に即座に変わる＝Friend Lensを“遊び”に。</small></div>
+    </div>
+
+    <!-- ============ 3. DETAIL ============ -->
+    <div class="shot">
+      <div class="phone"><div class="screen">
+        <div class="status on-dark"><span>9:41</span><span class="isl"></span><span class="bat">5G<i></i></span></div>
+        <div class="dhead">
+          <div class="grain"></div>
+          <svg class="plate" viewBox="0 0 200 200" aria-hidden="true">
+            <ellipse cx="100" cy="112" rx="88" ry="72" fill="#FFFBF1" stroke="#183E31" stroke-width="4"/>
+            <ellipse cx="100" cy="112" rx="64" ry="50" fill="none" stroke="#183E31" stroke-width="2" opacity=".2"/>
+            <path d="M44 112c0-30 26-48 56-48s56 18 56 48c0 6-25 12-56 12s-56-6-56-12z" fill="#E8AD45" stroke="#183E31" stroke-width="4"/>
+            <path d="M62 96c14 10 62 10 76 0" fill="none" stroke="#B3462E" stroke-width="7" stroke-linecap="round"/>
+            <path d="M74 84c8 4 44 4 52 0" fill="none" stroke="#183E31" stroke-width="2.5" stroke-linecap="round" opacity=".3"/>
+          </svg>
+          <div class="topbtns"><span class="cbtn"><svg><use href="#i-back"/></svg></span><span class="cbtn"><svg><use href="#i-share"/></svg></span></div>
+        </div>
+        <div class="stamp dstamp" id="dStamp"><span class="num">4.7</span><small>友達3人</small></div>
+        <div class="dbody">
+          <span class="dtag"><svg width="14" height="14"><use href="#g-omu"/></svg>洋食</span>
+          <div class="dname">こもれび食堂</div>
+          <div class="daddr"><svg><use href="#i-pin"/></svg>東京都千代田区丸の内（デモ）</div>
+          <div class="saves" id="saves">
+            <button class="sv" data-k="want"><svg><use href="#i-flag"/></svg>行きたい</button>
+            <button class="sv on" data-k="went"><svg><use href="#i-check"/></svg>行った</button>
+            <button class="sv" data-k="fav"><svg fill="none"><use href="#i-heart"/></svg>お気に入り</button>
+          </div>
+          <div class="sect"><h4>友達の評価</h4><span>3人が記録</span></div>
+          <div class="meter">
+            <div><span class="num big">4.7</span><div class="stack" style="margin-top:6px"><span class="av s" style="--c:var(--tomato)">た</span><span class="av s" style="--c:var(--sky)">ゆ</span><span class="av s" style="--c:var(--lilac)">り</span></div></div>
+            <div class="bars">
+              <div class="bar">5<i><b style="width:34%"></b></i>1</div>
+              <div class="bar">4<i><b style="width:66%"></b></i>2</div>
+              <div class="bar">3<i><b style="width:0"></b></i>0</div>
+              <div class="bar">2<i><b style="width:0"></b></i>0</div>
+              <div class="bar">1<i><b style="width:0"></b></i>0</div>
+            </div>
+          </div>
+          <div class="voice"><span class="av" style="--c:var(--tomato)">た</span><div class="body"><div class="who">たくま<span class="num">5.0</span></div><p>デミグラスのオムライスが好き。</p><div class="when">2日前</div></div></div>
+          <div class="voice" style="animation-delay:.08s"><span class="av" style="--c:var(--sky)">ゆ</span><div class="body"><div class="who">ゆうき<span class="num">4.5</span></div><p>ランチをゆっくり楽しめた。</p><div class="when">3日前</div></div></div>
+          <div class="voice" style="animation-delay:.16s"><span class="av" style="--c:var(--lilac)">り</span><div class="body"><div class="who">りょう<span class="num">4.5</span></div><p>また友達と来たい。</p><div class="when">4日前</div></div></div>
+        </div>
+        <div class="dfoot">
+          <button class="btn ghost" aria-label="経路"><svg><use href="#i-walk"/></svg></button>
+          <button class="btn pri"><svg><use href="#i-pen"/></svg>わたしも記録する</button>
+        </div>
+      </div></div>
+      <div class="cap"><b><i>3</i>お店の詳細</b><small>評価はハンコ、友達の声は吹き出し。保存3種は大きなシール型トグル（行きたい⇄行ったは自動で切替）。主ボタンは親指の位置に固定。</small></div>
+    </div>
+
+    <!-- ============ 4. SAVED ============ -->
+    <div class="shot">
+      <div class="phone"><div class="screen">
+        <div class="status"><span>9:41</span><span class="isl"></span><span class="bat">5G<i></i></span></div>
+        <div class="scroll">
+          <div class="ttl">保存<span class="sq" style="width:44px;height:44px;border-radius:15px;box-shadow:2px 2px 0 var(--ink)"><svg style="width:20px;height:20px"><use href="#i-map"/></svg></span></div>
+          <div class="seg" id="seg">
+            <button class="sg on" data-g="want"><span class="num">12</span><span><svg><use href="#i-flag"/></svg>行きたい</span></button>
+            <button class="sg" data-g="went"><span class="num">8</span><span><svg><use href="#i-check"/></svg>行った</span></button>
+            <button class="sg" data-g="fav"><span class="num">5</span><span><svg fill="none"><use href="#i-heart"/></svg>お気に入り</span></button>
+          </div>
+          <div class="tools"><div class="search"><svg><use href="#i-search"/></svg>保存したお店をさがす</div><span class="sq"><svg><use href="#i-sort"/></svg></span></div>
+          <div id="tickets"></div>
+        </div>
+        <nav class="tabbar">
+          <span class="tab"><svg><use href="#i-map"/></svg></span>
+          <span class="tab on"><svg><use href="#i-bm"/></svg>保存</span>
+          <span class="tab"><svg><use href="#i-ppl"/></svg></span>
+          <span class="tab"><svg><use href="#i-me"/></svg></span>
+        </nav>
+      </div></div>
+      <div class="cap"><b><i>4</i>保存</b><small>3つの棚を大きな数字のタブに。1枚1枚を「食券チケット」に見立て、友達の評価とあなたの評価を並べて比べられる。</small></div>
+    </div>
+
+    <!-- ============ 5. PROFILE ============ -->
+    <div class="shot">
+      <div class="phone"><div class="screen">
+        <div class="status"><span>9:41</span><span class="isl"></span><span class="bat">5G<i></i></span></div>
+        <div class="scroll">
+          <div class="ttl">プロフィール<span class="sq" style="width:44px;height:44px;border-radius:15px;box-shadow:2px 2px 0 var(--ink)"><svg style="width:20px;height:20px"><use href="#i-gear"/></svg></span></div>
+          <div class="pcard">
+            <div class="grain"></div>
+            <div class="who"><span class="av">わ</span><div><div class="nm">わたし</div><div class="tag">この端末の記録・友達には非公開</div></div></div>
+            <div class="pstats"><div><span class="num">8</span>レビュー</div><div><span class="num">12</span>行った</div><div><span class="num">5</span>お気に入り</div></div>
+          </div>
+          <div class="book">
+            <div class="hd"><b>メシ帳</b><span>行ったお店がハンコになる</span></div>
+            <div class="slots" id="slots"></div>
+            <div class="prog">7/12<i><b></b></i>あと5軒で1冊め完成</div>
+          </div>
+          <div class="sect"><h4>最近のレビュー</h4><span>すべて見る</span></div>
+          <div class="mini"><span class="ic" style="--c:var(--mustard)"><svg><use href="#g-noodle"/></svg></span><div><div class="nm">めん処 ひだまり</div><p>スープがすっきり。次は大盛りで。</p></div><span class="num">4.5</span></div>
+          <div class="mini"><span class="ic" style="--c:var(--pink)"><svg><use href="#g-cafe"/></svg></span><div><div class="nm">まるい喫茶室</div><p>窓ぎわの席が落ち着く。</p></div><span class="num">4.0</span></div>
+        </div>
+        <nav class="tabbar">
+          <span class="tab"><svg><use href="#i-map"/></svg></span>
+          <span class="tab"><svg><use href="#i-bm"/></svg></span>
+          <span class="tab"><svg><use href="#i-ppl"/></svg></span>
+          <span class="tab on"><svg><use href="#i-me"/></svg>わたし</span>
+        </nav>
+      </div></div>
+      <div class="cap"><b><i>5</i>プロフィール</b><small>件数の羅列をやめ、行ったお店がジャンル柄のハンコで埋まっていく「メシ帳」に。続ける理由になる、いちばん“感動”を担う画面。</small></div>
+    </div>
+  </section>
+
+  <section class="note">
+    <h2>今のUIから変えたところ</h2>
+    <ul>
+      <li><b>色</b>：紙・緑・からしの3色はそのまま。友達ごとの識別色（トマト・空・ラベンダーなど）だけを追加し、「人」が一目で区別できるように。</li>
+      <li><b>線と影</b>：細い枠＋ぼかし影 → 2.5pxのインク線＋ずらし影。押すと影が消えて“沈む”、ステッカーのような触り心地。</li>
+      <li><b>情報量</b>：説明文（「〇件のお店を表示しています…」など）を画面から外し、数字・顔・アイコンで伝える。説明はVoiceOverラベルへ。</li>
+      <li><b>マップ</b>：上の検索カード＋下の大きい説明カードで地図が半分隠れていた構成を、細い検索バー＋引き出しシートに。ピンは店名だけのMarkerから「点数＋友達の顔」へ。</li>
+      <li><b>タブ</b>：標準TabBarを、選択中だけラベルが出る浮きピル型に（4タブ構成はそのまま）。</li>
+      <li><b>未実装の画面</b>：友達タブ、レビュー入力、検索結果一覧は次のモックで。</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+const F = {
+  takuma:{n:"たくま",c:"var(--tomato)"}, yuki:{n:"ゆうき",c:"var(--sky)"}, ryo:{n:"りょう",c:"var(--lilac)"}, saki:{n:"さき",c:"var(--pink)"},
+  haruto:{n:"はると",c:"var(--mustard)"}, mio:{n:"みお",c:"var(--mintpop)"}, kenta:{n:"けんた",c:"var(--orange)"}, ayane:{n:"あやね",c:"var(--rose)"}
+};
+const R = [
+  {id:"diner",n:"こもれび食堂",g:"洋食",cat:"meal",icon:"g-omu",x:92,y:268},
+  {id:"cafe",n:"まるい喫茶室",g:"カフェ",cat:"cafe",icon:"g-cafe",x:62,y:405},
+  {id:"noodles",n:"めん処 ひだまり",g:"ラーメン",cat:"meal",icon:"g-noodle",x:272,y:262},
+  {id:"bakery",n:"パン工房 つむぎ",g:"ベーカリー",cat:"bakery",icon:"g-bread",x:226,y:440},
+  {id:"unrated",n:"夕凪キッチン",g:"洋食",cat:"meal",icon:"g-meal",x:300,y:372}
+];
+const V = [
+  ["takuma","diner",5,"デミグラスのオムライスが好き。"],["yuki","diner",4.5,"ランチをゆっくり楽しめた。"],["ryo","diner",4.5,"また友達と来たい。"],
+  ["saki","cafe",5,"プリンとコーヒーの組み合わせが最高。"],["mio","cafe",4,"読書したい日にぴったり。"],
+  ["haruto","noodles",4.5,"スープがすっきりしていた。"],["kenta","noodles",4,"細い麺が好みだった。"],
+  ["ayane","bakery",5,"焼きたてのパンを買いたい。"],["mio","bakery",4.5,"朝の散歩に寄りたいお店。"]
+];
+const G = [["all","すべて","g-all"],["meal","飲食店","g-meal"],["cafe","カフェ","g-cafe"],["bakery","ベーカリー","g-bread"]];
+const st = {on:new Set(Object.keys(F)), genre:"all", sel:null, want:new Set(["bakery"])};
+
+const av = (id,cls="s") => `<span class="av ${cls}" style="--c:${F[id].c}">${F[id].n[0]}</span>`;
+const sum = rid => {
+  const v = V.filter(r => r[1]===rid && st.on.has(r[0]));
+  return {v, avg: v.length ? v.reduce((a,r)=>a+r[2],0)/v.length : null};
+};
+const visible = () => R.filter(r => st.genre==="all" || r.cat===st.genre);
+
+function render(){
+  // genres
+  document.getElementById("genres").innerHTML = G.map(([k,l,i]) =>
+    `<button class="chip ${st.genre===k?"on":""}" data-g="${k}"><svg><use href="#${i}"/></svg>${l}</button>`).join("");
+  // lens
+  document.getElementById("lens").innerHTML = Object.keys(F).map(id =>
+    `<span class="av ${st.on.has(id)?"":"off"}" data-f="${id}" style="--c:${F[id].c}" title="${F[id].n}">${F[id].n[0]}</span>`).join("");
+  // pins
+  const vis = visible();
+  document.getElementById("pins").innerHTML = R.map(r => {
+    const s = sum(r.id), hidden = !vis.includes(r);
+    if (s.avg===null) return `<div class="pin unrated ${hidden?"dim":""}" style="left:${r.x}px;top:${r.y}px" data-r="${r.id}"><div class="bub">${r.n}</div><div class="tail"></div></div>`;
+    return `<div class="pin ${st.sel===r.id?"sel":""} ${hidden?"dim":""}" style="left:${r.x}px;top:${r.y}px" data-r="${r.id}">
+      <div class="bub"><span class="sc num">${s.avg.toFixed(1)}</span><span class="stack">${s.v.slice(0,3).map(v=>av(v[0])).join("")}</span></div><div class="tail"></div>
+      <div class="lbl">${r.n}</div></div>`;
+  }).join("");
+  // cards
+  let list = vis.map(r => ({r, s:sum(r.id)})).filter(x => x.s.avg!==null).sort((a,b)=>b.s.avg-a.s.avg);
+  if (st.sel) list.sort((a,b)=> (b.r.id===st.sel) - (a.r.id===st.sel));
+  document.getElementById("cnt").textContent = list.length + "軒";
+  document.getElementById("sheetTitle").firstChild.textContent = st.on.size===Object.keys(F).length ? "友達のおすすめ " : `${st.on.size}人のおすすめ `;
+  document.getElementById("cards").innerHTML = list.length ? list.map(({r,s},i) => {
+    const top = s.v.slice().sort((a,b)=>b[2]-a[2])[0];
+    return `<div class="rc ${st.sel===r.id?"sel":""}" data-r="${r.id}" style="animation-delay:${i*.05}s">
+      <div class="row"><div><div class="nm">${r.n}</div><div class="gn"><svg width="14" height="14"><use href="#${r.icon}"/></svg>${r.g}</div></div>
+      <div class="stamp"><span class="num">${s.avg.toFixed(1)}</span><small>友達${s.v.length}人</small></div></div>
+      <div class="q">${av(top[0])}<p>${top[3]}</p></div>
+      <div class="act"><button class="want ${st.want.has(r.id)?"on":""}" data-w="${r.id}"><svg><use href="#i-flag"/></svg>${st.want.has(r.id)?"行きたい済":"行きたい"}</button><button class="dark">詳細<svg><use href="#i-arrow"/></svg></button></div>
+    </div>`;}).join("") : `<div class="rc" style="width:100%;flex:1;text-align:center;font-weight:900;color:var(--sub)">この組み合わせのおすすめはまだありません</div>`;
+}
+document.getElementById("mapScreen").addEventListener("click", e => {
+  const g = e.target.closest("[data-g]"), f = e.target.closest("[data-f]"), w = e.target.closest("[data-w]"), p = e.target.closest(".pin[data-r], .rc[data-r]");
+  if (g) { st.genre = g.dataset.g; st.sel = null; render(); return; }
+  if (f) { st.on.has(f.dataset.f) ? st.on.delete(f.dataset.f) : st.on.add(f.dataset.f); render(); return; }
+  if (e.target.closest("#lensAll")) { st.on = new Set(Object.keys(F)); render(); return; }
+  if (w) { const id=w.dataset.w; st.want.has(id)?st.want.delete(id):st.want.add(id); render(); const b=document.querySelector(`[data-w="${id}"]`); b&&b.classList.add("pop"); return; }
+  if (p) { st.sel = st.sel===p.dataset.r ? null : p.dataset.r; render(); document.getElementById("cards").scrollTo({left:0,behavior:"smooth"}); const pin=document.querySelector(`.pin[data-r="${st.sel}"] .bub`); pin&&pin.classList.add("pop"); }
+});
+render();
+
+// detail: save toggles (行きたい と 行った は排他)
+document.getElementById("saves").addEventListener("click", e => {
+  const b = e.target.closest(".sv"); if (!b) return;
+  const k = b.dataset.k, on = !b.classList.contains("on");
+  b.classList.toggle("on", on);
+  if (on && k!=="fav") document.querySelector(`.sv[data-k="${k==="want"?"went":"want"}"]`).classList.remove("on");
+  b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
+});
+document.getElementById("dStamp").addEventListener("click", e => { const s=e.currentTarget; s.classList.remove("pop"); void s.offsetWidth; s.classList.add("pop"); });
+
+// saved tickets
+const T = {
+  want:[["bakery","パン工房 つむぎ","ベーカリー","g-bread","var(--rose)",4.8,["ayane","mio"],null,"10/22 保存"],["noodles","めん処 ひだまり","ラーメン","g-noodle","var(--mustard)",4.3,["haruto","kenta"],null,"10/19 保存"],["unrated","夕凪キッチン","洋食","g-meal","var(--leaf)",null,[],null,"10/12 保存"]],
+  went:[["diner","こもれび食堂","洋食","g-omu","var(--mustard)",4.7,["takuma","yuki","ryo"],4.5,"10/20 に行った"],["cafe","まるい喫茶室","カフェ","g-cafe","var(--pink)",4.5,["saki","mio"],4.0,"10/14 に行った"]],
+  fav:[["diner","こもれび食堂","洋食","g-omu","var(--mustard)",4.7,["takuma","yuki","ryo"],4.5,"10/20 に行った"]]
+};
+function renderT(k){
+  document.getElementById("tickets").innerHTML = T[k].map((t,i)=>`<div class="ticket" style="animation-delay:${i*.06}s">
+    <div class="art" style="background:${t[4]}"><svg><use href="#${t[3]}"/></svg></div>
+    <div class="inf"><div class="nm">${t[1]}</div><div class="mt">${t[2]} ・ ${t[8]}</div>
+    <div class="ft">${t[5]?`<span class="fr"><span class="stack">${t[6].map(id=>av(id)).join("")}</span>友達 ★${t[5].toFixed(1)}</span>`:`<span class="fr" style="color:var(--sub)">友達の評価はまだ</span>`}
+    ${t[7]?`<span class="mine">わたし <span class="num">${t[7].toFixed(1)}</span></span>`:""}</div></div></div>`).join("");
+}
+document.getElementById("seg").addEventListener("click", e => {
+  const b = e.target.closest(".sg"); if (!b) return;
+  document.querySelectorAll(".sg").forEach(x=>x.classList.toggle("on", x===b)); renderT(b.dataset.g);
+});
+renderT("want");
+
+// stamp book
+const S = [["g-omu","var(--mustard)","こもれび",-8],["g-cafe","var(--pink)","まるい",6],["g-noodle","var(--orange)","ひだまり",-4],["g-bread","var(--rose)","つむぎ",9],["g-meal","var(--leaf)","夕凪",-10],["g-cafe","var(--sky)","木陰",5],["g-noodle","var(--lilac)","一番星",-6]];
+document.getElementById("slots").innerHTML = Array.from({length:12},(_,i)=> i<S.length
+  ? `<div class="slot got" data-n="${S[i][2]}" style="--c:${S[i][1]};--rot:${S[i][3]}deg"><svg><use href="#${S[i][0]}"/></svg></div>`
+  : `<div class="slot ${i===S.length?"next":""}">${i===S.length?"+":""}</div>`).join("");
+</script>
+</body>
+</html>

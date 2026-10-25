@@ -23,7 +23,7 @@ final class SavedRestaurantStoreTests: XCTestCase {
         let url = try temporaryURL()
         let item = restaurant()
         let store = SavedRestaurantStore(fileURL: url)
-        store.setSaved(item, isSaved: true)
+        store.setLiked(item, isLiked: true)
         let reloaded = SavedRestaurantStore(fileURL: url)
         XCTAssertTrue(reloaded.contains(item))
         XCTAssertEqual(reloaded.restaurants.first?.name, item.name)
@@ -32,10 +32,10 @@ final class SavedRestaurantStoreTests: XCTestCase {
 
     @MainActor func testRepeatedSearchResultDoesNotDuplicateSavedPlace() async throws {
         let store = SavedRestaurantStore(fileURL: try temporaryURL())
-        store.setSaved(restaurant(), isSaved: true)
-        store.setSaved(restaurant(name: " テスト食堂 ", latitude: 35.681201), isSaved: true)
+        store.setLiked(restaurant(), isLiked: true)
+        store.setLiked(restaurant(name: " テスト食堂 ", latitude: 35.681201), isLiked: true)
         XCTAssertEqual(store.restaurants.count, 1)
-        store.setSaved(restaurant(name: "別の食堂"), isSaved: true)
+        store.setLiked(restaurant(name: "別の食堂"), isLiked: true)
         XCTAssertEqual(store.restaurants.count, 2)
     }
 
@@ -43,8 +43,8 @@ final class SavedRestaurantStoreTests: XCTestCase {
         let url = try temporaryURL()
         let store = SavedRestaurantStore(fileURL: url)
         let item = restaurant()
-        store.setSaved(item, isSaved: true)
-        store.setSaved(item, isSaved: false)
+        store.setLiked(item, isLiked: true)
+        store.setLiked(item, isLiked: false)
         XCTAssertFalse(SavedRestaurantStore(fileURL: url).contains(item))
     }
 
@@ -53,7 +53,7 @@ final class SavedRestaurantStoreTests: XCTestCase {
         let original = Data("not valid JSON".utf8)
         try original.write(to: url)
         let store = SavedRestaurantStore(fileURL: url)
-        store.setSaved(restaurant(), isSaved: true)
+        store.setLiked(restaurant(), isLiked: true)
         XCTAssertTrue(store.restaurants.isEmpty)
         XCTAssertNotNil(store.errorMessage)
         XCTAssertEqual(try Data(contentsOf: url), original)
@@ -64,11 +64,11 @@ final class SavedRestaurantStoreTests: XCTestCase {
         // 保存先の親がフォルダではなくファイルなので、書き込みは失敗する。
         try Data().write(to: url)
         let store = SavedRestaurantStore(fileURL: url.appendingPathComponent("saved.json"))
-        store.setSaved(restaurant(), isSaved: true)
+        store.setLiked(restaurant(), isLiked: true)
         XCTAssertTrue(store.restaurants.isEmpty)
         XCTAssertNotNil(store.errorMessage)
         try FileManager.default.removeItem(at: url)
-        store.setSaved(restaurant(), isSaved: true)
+        store.setLiked(restaurant(), isLiked: true)
         XCTAssertEqual(store.restaurants.count, 1)
         XCTAssertNil(store.errorMessage)
     }
@@ -82,46 +82,55 @@ final class SavedRestaurantStoreTests: XCTestCase {
         XCTAssertEqual(store.restaurants.map(\.name), ["後のお店", "先のお店"])
     }
 
-    @MainActor func testVisitedReplacesWantButKeepsFavorite() async throws {
+    @MainActor func testUnlikeRemovesSavedPlace() async throws {
         let url = try temporaryURL()
         let store = SavedRestaurantStore(fileURL: url)
         let item = restaurant()
-        store.setSaved(item, isSaved: true)
-        store.setFavorite(item, isFavorite: true)
-        XCTAssertTrue(store.markVisited(item))
-        let reloaded = SavedRestaurantStore(fileURL: url)
-        XCTAssertEqual(reloaded.restaurant(for: item)?.status, .visited)
-        XCTAssertEqual(reloaded.restaurant(for: item)?.isFavorite, true)
-        reloaded.setVisitStatus(item, status: nil)
-        XCTAssertEqual(reloaded.restaurants.count, 1)
-        reloaded.setFavorite(item, isFavorite: false)
-        XCTAssertTrue(reloaded.restaurants.isEmpty)
+        store.setLiked(item, isLiked: true)
+        XCTAssertEqual(SavedRestaurantStore(fileURL: url).restaurant(for: item)?.isLiked, true)
+        store.setLiked(item, isLiked: false)
+        XCTAssertTrue(SavedRestaurantStore(fileURL: url).restaurants.isEmpty)
     }
 
-    @MainActor func testLegacySavedPlaceMigratesToWantToGo() async throws {
+    /// 以前の保存形式は、行きたい・お気に入り・行ったのどれもいいねに移る（行ったはレビューで表す）。
+    @MainActor func testLegacyDataMigratesToLike() async throws {
         let url = try temporaryURL()
-        let entry = SavedRestaurant(item: restaurant())
-        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(entry)) as? [String: Any])
-        object.removeValue(forKey: "status"); object.removeValue(forKey: "isFavorite")
-        try JSONSerialization.data(withJSONObject: [object]).write(to: url)
+        func object(_ name: String, _ fields: [String: Any]) throws -> [String: Any] {
+            var object = try XCTUnwrap(JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(SavedRestaurant(item: restaurant(name: name)))) as? [String: Any])
+            object.removeValue(forKey: "isLiked")
+            return object.merging(fields) { $1 }
+        }
+        let objects = [
+            try object("最初期のお店", [:]),
+            try object("行きたいお店", ["status": "wantToGo", "isFavorite": false]),
+            try object("お気に入りのお店", ["status": NSNull(), "isFavorite": true]),
+            try object("行ったお店", ["status": "visited", "isFavorite": false]),
+            try object("行っただけのお店", ["isLiked": false, "isVisited": true]),
+        ]
+        try JSONSerialization.data(withJSONObject: objects).write(to: url)
         let store = SavedRestaurantStore(fileURL: url)
-        XCTAssertEqual(store.restaurants.first?.status, .wantToGo)
-        store.setVisitStatus(restaurant(), status: nil)
-        store.setFavorite(restaurant(), isFavorite: true)
-        XCTAssertNil(SavedRestaurantStore(fileURL: url).restaurants.first?.status)
+        XCTAssertEqual(store.restaurants.filter(\.isLiked).count, 5)
+        // 新しい形式で書き直したあとも同じ内容で読める。
+        store.setLiked(restaurant(name: "行きたいお店"), isLiked: false)
+        let reloaded = SavedRestaurantStore(fileURL: url)
+        XCTAssertEqual(reloaded.restaurants.count, 4)
+        XCTAssertTrue(reloaded.restaurants.allSatisfy(\.isLiked))
     }
 
-    @MainActor func testCollectionFilteringAndOwnRatingSort() async throws {
+    @MainActor func testCollectionsTreatReviewedPlacesAsVisited() async throws {
         let store = SavedRestaurantStore(fileURL: try temporaryURL())
         let first = restaurant(name: "テスト食堂A"), second = restaurant(name: "テスト食堂B")
-        store.setSaved(first, isSaved: true); store.setSaved(second, isSaved: true)
-        store.setFavorite(second, isFavorite: true)
-        let ratings = [SavedRestaurant.identifier(for: first): 3.0, SavedRestaurant.identifier(for: second): 5.0]
-        let sorted = SavedCollectionQuery.results(store.restaurants, collection: .wantToGo, search: "食堂", sort: .myRating, ratings: ratings)
-        XCTAssertEqual(sorted.map(\.name), ["テスト食堂B", "テスト食堂A"])
-        XCTAssertEqual(SavedCollectionQuery.results(store.restaurants, collection: .favorites, search: "", sort: .name, ratings: ratings).count, 1)
-        store.markVisited(second)
-        XCTAssertEqual(store.restaurants.filter(SavedCollection.wantToGo.includes).count, 1)
-        XCTAssertEqual(store.restaurants.filter(SavedCollection.visited.includes).count, 1)
+        store.setLiked(first, isLiked: true); store.setLiked(second, isLiked: true)
+        let reviewedOnly = SavedRestaurant(item: restaurant(name: "テスト食堂C"), isLiked: false)
+        let ratings = [SavedRestaurant.identifier(for: second): 5.0, reviewedOnly.id: 3.0]
+        let library = store.restaurants + [reviewedOnly]
+        let liked = SavedCollectionQuery.results(library, collection: .liked, search: "食堂", sort: .myRating, ratings: ratings)
+        XCTAssertEqual(liked.map(\.name), ["テスト食堂B", "テスト食堂A"])
+        let unreviewed = SavedCollectionQuery.results(library, collection: .liked, search: "", sort: .name,
+                                                      ratings: ratings, unreviewedOnly: true)
+        XCTAssertEqual(unreviewed.map(\.name), ["テスト食堂A"])
+        let visited = SavedCollectionQuery.results(library, collection: .visited, search: "", sort: .myRating, ratings: ratings)
+        XCTAssertEqual(visited.map(\.name), ["テスト食堂B", "テスト食堂C"])
     }
 }

@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>お店の詳細 4案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* MeshinowaTheme.swift と同じ値 */
+  --paper:#FFFFFF; --field:#F4F5F2; --hair:#E3E5E2; --outline:#D5D8D4; --photo:#EADFCB;
+  --ink:#1C1F1D; --body:#4F5550; --sub:#6B716D;
+  --green:#27755B; --mint:#DDF0E4; --mintInk:#1F6B4F;
+  --accent:#E8AD45; --mustardSoft:#FBEBC8; --mustardInk:#7A5410;
+  --like:#E5577E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#ECEDE9;color:var(--ink);font-family:"Noto Sans JP",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.r{font-family:"M PLUS Rounded 1c",sans-serif;font-weight:800}
+.n{font-family:"M PLUS Rounded 1c",sans-serif;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.min{font-family:"Shippori Mincho",serif}
+
+.page{max-width:1760px;margin:0 auto;padding:48px 32px 96px}
+header.top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:40px;align-items:start;margin-bottom:56px}
+header.top h1{font-size:34px;line-height:1.25}
+header.top p{color:var(--body);font-size:14px;line-height:1.9;margin-top:12px;max-width:46ch}
+.critique{font-size:13.5px;line-height:1.75;color:var(--body);border-top:2px solid var(--ink)}
+.critique h2{font-size:13px;color:var(--ink);padding:10px 0 4px;font-weight:700}
+.critique li{list-style:none;display:grid;grid-template-columns:9.5em 1fr;gap:12px;padding:9px 0;border-bottom:1px solid #D9DBD6}
+.critique li b{color:var(--ink);font-weight:700}
+
+.rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(375px,1fr));gap:56px 32px;justify-items:center}
+.shot{display:flex;flex-direction:column;gap:18px;width:375px}
+.cap h3{font-size:19px;display:flex;gap:10px;align-items:baseline}
+.cap h3 span{font-size:13px;color:var(--sub);font-family:"Noto Sans JP";font-weight:500}
+.cap p{font-size:13px;line-height:1.8;color:var(--body);margin-top:6px}
+.cap dl{display:grid;grid-template-columns:4.5em 1fr;gap:4px 10px;font-size:12.5px;line-height:1.7;margin-top:10px;color:var(--body)}
+.cap dt{color:var(--sub)}
+
+/* phone */
+.phone{width:375px;height:812px;border-radius:52px;background:#151615;padding:10px;box-shadow:0 30px 50px -28px rgba(0,0,0,.45);flex:none}
+.screen{position:relative;width:100%;height:100%;border-radius:43px;overflow:hidden;background:var(--paper)}
+.status{height:46px;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0 34px;font-size:14px;font-weight:700;position:relative;z-index:5}
+.status i{width:66px;height:12px;background:currentColor;border-radius:4px;opacity:.85;-webkit-mask:linear-gradient(90deg,#000 0 28%,transparent 28% 36%,#000 36% 60%,transparent 60% 68%,#000 68%)}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:112px;height:32px;border-radius:20px;background:#000;z-index:6}
+.scroll{position:absolute;inset:46px 0 0;overflow:hidden}
+.home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:128px;height:5px;border-radius:3px;background:var(--ink);z-index:9}
+.grab{width:36px;height:5px;border-radius:3px;background:#C9CCC8;margin:6px auto 0}
+
+.navrow{display:flex;justify-content:space-between;align-items:center;padding:6px 20px 0;font-size:15px}
+.navrow a{color:var(--green);font-weight:500;text-decoration:none}
+.hl{height:1px;background:var(--hair)}
+.photo{background:
+  radial-gradient(ellipse at 30% 35%,rgba(255,255,255,.35),transparent 55%),
+  linear-gradient(135deg,#D9C29B,#B98E5C 60%,#8C6239);border-radius:6px}
+.photo.b{background:radial-gradient(ellipse at 60% 40%,rgba(255,255,255,.3),transparent 60%),linear-gradient(160deg,#E6D7B0,#C9A86A)}
+.photo.c{background:radial-gradient(ellipse at 40% 60%,rgba(255,255,255,.25),transparent 60%),linear-gradient(120deg,#C7B48A,#8E7A4E)}
+
+/* ---------- 1 記録帳 ---------- */
+.p1 .head{padding:18px 20px 0}
+.p1 h4{font-size:27px;line-height:1.25}
+.p1 .meta{font-size:13px;color:var(--body);margin-top:8px;line-height:1.6}
+.p1 .meta em{font-style:normal;color:var(--ink);font-weight:700}
+.p1 .scores{display:grid;grid-template-columns:1fr 1fr;margin:20px 20px 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--hair)}
+.p1 .scores > div{padding:12px 0 14px}
+.p1 .scores > div + div{border-left:1px solid var(--hair);padding-left:16px}
+.p1 .lab{font-size:12px;color:var(--sub);font-weight:500}
+.p1 .big{font-size:40px;line-height:1.05;margin-top:2px}
+.p1 .big small{font-size:14px;color:var(--sub);margin-left:4px;font-weight:700}
+.p1 .who{font-size:12px;color:var(--body);margin-top:6px;line-height:1.7}
+.p1 .who b{font-family:"M PLUS Rounded 1c";font-weight:800;color:var(--ink)}
+.p1 .sec{display:flex;justify-content:space-between;align-items:baseline;padding:22px 20px 8px}
+.p1 .sec h5{font-size:15px;font-weight:700}
+.p1 .sec a{font-size:13px;color:var(--green);font-weight:700;text-decoration:none}
+.p1 .log{margin:0 20px}
+.p1 .log li{list-style:none;display:grid;grid-template-columns:52px 1fr 48px;gap:12px;padding:12px 0;border-top:1px solid var(--hair)}
+.p1 .log .d{font-size:13px;line-height:1.25;color:var(--sub)}
+.p1 .log .d b{display:block;color:var(--ink);font-size:17px}
+.p1 .log .dish{font-size:14px;font-weight:700}
+.p1 .log .dish span{font-family:"M PLUS Rounded 1c";color:var(--mustardInk);margin-left:6px}
+.p1 .log .c{font-size:13px;color:var(--body);line-height:1.6;margin-top:3px}
+.p1 .log .photo{width:48px;height:48px}
+.p1 dl{margin:0 20px;display:grid;grid-template-columns:4.5em 1fr;font-size:13.5px;line-height:1.6}
+.p1 dt,.p1 dd{padding:10px 0;border-top:1px solid var(--hair)}
+.p1 dt{color:var(--sub)}
+.p1 dd a{color:var(--green);text-decoration:none;font-weight:700}
+.p1 .bar{position:absolute;left:0;right:0;bottom:0;padding:10px 16px 30px;background:var(--paper);border-top:1px solid var(--hair);display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:8px}
+.p1 .bar button{height:48px;border-radius:12px;font:700 15px "Noto Sans JP";border:1.5px solid var(--outline);background:var(--paper);color:var(--ink)}
+.p1 .bar .on{border-color:var(--green);color:var(--green);background:#F1F8F4}
+.p1 .bar .go{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* ---------- 2 友達の声 ---------- */
+.p2 .head{padding:16px 22px 18px}
+.p2 h4{font-size:24px}
+.p2 .meta{font-size:13px;color:var(--sub);margin-top:6px}
+.p2 .summary{margin:0 22px;padding:16px 0 18px;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:14px}
+.p2 .summary .n{font-size:44px;color:var(--green);line-height:1}
+.p2 .summary p{font-size:13px;line-height:1.65;color:var(--body)}
+.p2 .summary p b{color:var(--ink)}
+.p2 .bars{display:flex;gap:3px;align-items:flex-end;height:30px;margin-left:auto}
+.p2 .bars i{width:7px;background:var(--hair);border-radius:2px}
+.p2 .bars i.f{background:var(--green)}
+.p2 .voices{margin:0 22px}
+.p2 .v{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:18px 0;border-bottom:1px solid var(--hair)}
+.p2 .v .n{font-size:20px;color:var(--green);padding-top:2px}
+.p2 .v q{display:block;font-family:"Shippori Mincho",serif;font-weight:500;font-size:17px;line-height:1.7;quotes:none}
+.p2 .v .by{font-size:12px;color:var(--sub);margin-top:6px;display:flex;align-items:center;gap:6px}
+.p2 .v .by i{width:18px;height:18px;border-radius:50%;display:inline-grid;place-items:center;font-style:normal;font-size:10px;font-weight:700;color:var(--ink)}
+.p2 .mine{margin:18px 22px 0;padding:14px 16px;border:1.5px dashed #D9B56A;border-radius:12px;background:#FFFBF0}
+.p2 .mine .t{font-size:13px;color:var(--mustardInk);font-weight:700}
+.p2 .stars{display:flex;gap:6px;margin-top:8px;font-size:26px;color:#E6D3A6;letter-spacing:0}
+.p2 .bar{position:absolute;left:0;right:0;bottom:0;padding:10px 16px 30px;background:var(--paper);display:flex;gap:8px;box-shadow:0 -1px 0 var(--hair)}
+.p2 .bar .go{flex:1;height:50px;border-radius:14px;background:var(--green);color:#fff;font:700 15px "Noto Sans JP";border:0;display:flex;justify-content:center;align-items:center;gap:8px}
+.p2 .bar .go small{font-weight:500;opacity:.8;font-size:13px}
+.p2 .bar .sq{width:50px;height:50px;border-radius:14px;border:1.5px solid var(--outline);background:#fff;display:grid;place-items:center}
+
+/* ---------- 3 地図から ---------- */
+.p3 .map{position:absolute;inset:0 0 auto;height:360px;background:#EEF0EA}
+.p3 .map svg{width:100%;height:100%;display:block}
+.p3 .back{position:absolute;top:56px;left:16px;width:38px;height:38px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.18);z-index:4}
+.p3 .route{position:absolute;top:252px;left:16px;background:var(--ink);color:#fff;border-radius:10px;padding:7px 11px;font-size:13px;font-weight:700;z-index:4}
+.p3 .route span{font-weight:400;opacity:.75;margin-left:6px}
+.p3 .sheet{position:absolute;top:310px;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding:0 20px}
+.p3 h4{font-size:25px;margin-top:14px}
+.p3 .meta{font-size:13px;color:var(--sub);margin-top:5px}
+.p3 .sentence{font-size:16px;line-height:1.85;margin-top:16px;color:var(--ink)}
+.p3 .sentence .n{font-size:20px}
+.p3 .sentence .g{color:var(--green)} .p3 .sentence .y{color:#B57A10}
+.p3 .sentence a{color:var(--sub);font-size:13px;text-decoration:underline;text-underline-offset:3px}
+.p3 .acts{display:flex;gap:8px;margin-top:16px}
+.p3 .acts button{flex:1;height:44px;border-radius:22px;border:1.5px solid var(--outline);background:#fff;font:700 14px "Noto Sans JP";color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px}
+.p3 .acts .liked{border-color:var(--like);color:var(--like);background:#FFF5F8}
+.p3 .strip{display:grid;grid-template-columns:1.4fr 1fr 1fr;grid-template-rows:72px 72px;gap:4px;margin-top:18px}
+.p3 .strip .photo:first-child{grid-row:span 2}
+.p3 .strip .more{display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700;background:linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),linear-gradient(120deg,#C7B48A,#8E7A4E)}
+.p3 .info{margin-top:16px;font-size:13px;color:var(--body);line-height:1.9}
+.p3 .info a{color:var(--green);font-weight:700;text-decoration:none}
+
+/* ---------- 4 のれん ---------- */
+.p4 .noren{position:absolute;top:0;bottom:0;left:0;width:96px;background:var(--green);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:68px}
+.p4 .noren::after{content:"";position:absolute;top:0;bottom:0;left:47px;width:2px;background:rgba(255,255,255,.14)}
+.p4 .tate{writing-mode:vertical-rl;font-size:34px;letter-spacing:.12em;line-height:1;position:relative;z-index:1}
+.p4 .tate small{font-size:13px;letter-spacing:.2em;opacity:.75;font-family:"Noto Sans JP";font-weight:500;margin-top:16px}
+.p4 .stamp{position:absolute;bottom:120px;left:50%;transform:translateX(-50%) rotate(-8deg);width:64px;height:64px;border-radius:50%;border:2.5px solid #F3C875;color:#F3C875;display:grid;place-items:center;text-align:center;line-height:1;z-index:1}
+.p4 .stamp b{font-size:22px;display:block}
+.p4 .stamp span{font-size:9px;letter-spacing:.1em;font-family:"Noto Sans JP";font-weight:700}
+.p4 .body{position:absolute;top:46px;left:96px;right:0;bottom:0;padding:16px 18px 0 20px}
+.p4 .tools{display:flex;justify-content:space-between;font-size:14px;color:var(--green)}
+.p4 .addr{font-size:13px;line-height:1.7;color:var(--body);margin-top:18px}
+.p4 .addr b{color:var(--ink)}
+.p4 .k{font-size:11px;letter-spacing:.14em;color:var(--sub);font-weight:700;margin-top:22px;padding-bottom:6px;border-bottom:1.5px solid var(--ink)}
+.p4 .f{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.p4 .f .n{font-size:17px;color:var(--green)}
+.p4 .f small{display:block;font-size:12px;color:var(--sub);margin-top:2px;line-height:1.5}
+.p4 .memo{margin-top:12px;font-size:14px;line-height:1.75}
+.p4 .memo .n{color:#B57A10;font-size:22px;margin-right:6px}
+.p4 .memo p{margin-top:4px;color:var(--body);font-size:13.5px}
+.p4 .marks{display:flex;gap:16px;margin-top:14px;font-size:13px;font-weight:700}
+.p4 .marks span{display:flex;align-items:center;gap:5px;color:var(--sub)}
+.p4 .marks .on{color:var(--green)}
+.p4 .bar{position:absolute;left:96px;right:0;bottom:0;padding:10px 16px 30px 20px;background:#fff;border-top:1px solid var(--hair)}
+.p4 .bar button{width:100%;height:48px;border-radius:12px;border:0;background:var(--ink);color:#fff;font:700 15px "Noto Sans JP"}
+
+svg.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+@media (max-width:900px){header.top{grid-template-columns:1fr}}
+@media (max-width:420px){.page{padding:32px 16px 64px}.shot{width:100%}.phone{transform:scale(.88);transform-origin:top left;margin-bottom:-96px}}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="top">
+  <div>
+    <h1 class="r">お店の詳細、4つの方向</h1>
+    <p>色・フォントは今の MeshinowaTheme / MeshinowaFont のまま、情報の並べ方だけを変えた案です。どれも「このお店について、自分と友達は何を知っているか」を最初に見せることを軸にしています。</p>
+  </div>
+  <ul class="critique">
+    <h2>今の画面が“それっぽく”見える理由</h2>
+    <li><b>行頭アイコンの羅列</b>住所・種類・評価が全部「SF Symbol＋文」の同じ形で並び、どれが大事か分からない。</li>
+    <li><b>同じ操作が複数</b>いいねが右上のハートと「このお店を」ボタンの2か所にある。住所も上と「情報」タブで2回出る。</li>
+    <li><b>記号入りの写真枠</b>写真がないときの fork.knife 入りベージュ枠が、中身のない飾りになっている。</li>
+    <li><b>タブで中身を隠す</b>友達の声・自分の記録・情報の量はどれも少ないのに、3つのタブに分けて1つしか見えない。</li>
+    <li><b>根拠のない「準備中」</b>「友達の評価は準備中です」が上と下に出て、空っぽの印象が強い。</li>
+  </ul>
+</header>
+
+<div class="rail">
+
+<!-- 1 -->
+<section class="shot">
+<div class="phone"><div class="screen p1">
+  <div class="island"></div><div class="status"><span>9:41</span><i></i></div>
+  <div class="scroll">
+    <div class="grab"></div>
+    <div class="navrow"><a>閉じる</a><a>共有</a></div>
+    <div class="head">
+      <h4 class="r">キッチン こもれび</h4>
+      <p class="meta">定食・和食　渋谷区神南1-12-16　<em>徒歩6分</em></p>
+    </div>
+    <div class="scores">
+      <div>
+        <div class="lab">友達3人</div>
+        <div class="big n" style="color:var(--green)">4.8</div>
+        <div class="who">さき <b>5.0</b>・ゆい <b>4.8</b><br>けんた <b>4.5</b></div>
+      </div>
+      <div>
+        <div class="lab">自分</div>
+        <div class="big n" style="color:#B57A10">4.5<small>2回</small></div>
+        <div class="who">最後は 10月12日<br>また行きたい</div>
+      </div>
+    </div>
+    <div class="sec"><h5>自分の記録</h5><a>＋ 記録する</a></div>
+    <ul class="log">
+      <li><div class="d n"><b>10/12</b>2026</div>
+        <div><div class="dish">唐揚げ定食<span>4.5</span></div><div class="c">揚げたてが最高。ご飯おかわり無料。</div></div>
+        <div class="photo"></div></li>
+      <li><div class="d n"><b>8/03</b>2026</div>
+        <div><div class="dish">生姜焼き<span>4.0</span></div><div class="c">昼は並ぶ。11:30前が正解。</div></div>
+        <div class="photo b"></div></li>
+    </ul>
+    <div class="sec"><h5>お店</h5></div>
+    <dl>
+      <dt>住所</dt><dd>東京都渋谷区神南1-12-16</dd>
+      <dt>電話</dt><dd><a>03-0000-0000</a></dd>
+      <dt>営業</dt><dd style="color:var(--sub)">Appleマップに情報がありません</dd>
+    </dl>
+  </div>
+  <div class="bar">
+    <button class="on">✓ 行った</button>
+    <button>いいね</button>
+    <button class="go">経路を見る</button>
+  </div>
+  <div class="home"></div>
+</div></div>
+<div class="cap">
+  <h3 class="r">1. 記録帳 <span>自分の記録が主役</span></h3>
+  <p>友達と自分の点数を罫線の表で横に並べ、その下に日付つきの来店ログ。アイコンをほぼ使わず、数字と罫線で階層をつくる。タブなしの1枚スクロール。</p>
+  <dl><dt>向く場合</dt><dd>自分用のグルメ記録として使ってほしいとき</dd>
+  <dt>必要な変更</dt><dd>LocalReview が1店1件なので、来店ログにするなら1店に複数件持てる形に</dd></dl>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="shot">
+<div class="phone"><div class="screen p2">
+  <div class="island"></div><div class="status"><span>9:41</span><i></i></div>
+  <div class="scroll">
+    <div class="grab"></div>
+    <div class="navrow"><a>閉じる</a><a>共有</a></div>
+    <div class="head">
+      <h4 class="r">キッチン こもれび</h4>
+      <p class="meta">定食・和食 ・ 渋谷区神南</p>
+    </div>
+    <div class="summary">
+      <span class="n">4.8</span>
+      <p><b>友達3人</b>が行って、<br>全員が「また行きたい」。</p>
+      <div class="bars" aria-hidden="true"><i style="height:20%"></i><i style="height:20%"></i><i style="height:20%"></i><i class="f" style="height:55%"></i><i class="f" style="height:100%"></i></div>
+    </div>
+    <div class="voices">
+      <div class="v"><span class="n">5.0</span><div><q>揚げたての唐揚げが最高。レモンをかけずに一口目を食べてほしい。</q><div class="by"><i style="background:#F2C9A8">さ</i>さき ・ 10月12日</div></div></div>
+      <div class="v"><span class="n">4.8</span><div><q>だし巻きを必ず追加で頼む。</q><div class="by"><i style="background:#BFD9ED">ゆ</i>ゆい ・ 9月28日</div></div></div>
+      <div class="v"><span class="n">4.5</span><div><q>昼は11時半前に入らないと並ぶ。</q><div class="by"><i style="background:#E8D699">け</i>けんた ・ 8月3日</div></div></div>
+    </div>
+    <div class="mine">
+      <div class="t">あなたはまだ記録していません</div>
+      <div class="stars">★★★★★</div>
+    </div>
+  </div>
+  <div class="bar">
+    <button class="go">経路<small>徒歩6分</small></button>
+    <button class="sq" aria-label="行った"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg></button>
+    <button class="sq" aria-label="いいね"><svg class="ic" viewBox="0 0 24 24" style="color:var(--like)"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+  </div>
+  <div class="home"></div>
+</div></div>
+<div class="cap">
+  <h3 class="r">2. 友達の声 <span>口コミを読ませる</span></h3>
+  <p>ひとことを明朝体で大きく引用し、点数は左の細い列に寄せる。ゴシックだらけの画面に「人の言葉」の質感が出る。自分の記録は点線の空き枠で、星をその場で押せる。</p>
+  <dl><dt>向く場合</dt><dd>友達の評価がアプリの差別化ポイントのとき</dd>
+  <dt>必要な変更</dt><dd>明朝体を1書体追加。友達データがないときの空状態を別に設計</dd></dl>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="shot">
+<div class="phone"><div class="screen p3">
+  <div class="map">
+    <svg viewBox="0 0 355 360" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <rect width="355" height="360" fill="#EEF0EA"/>
+      <path d="M-10 70 L380 40" stroke="#fff" stroke-width="16"/>
+      <path d="M-10 190 L380 215" stroke="#fff" stroke-width="22"/>
+      <path d="M90 -10 L120 380" stroke="#fff" stroke-width="12"/>
+      <path d="M250 -10 L235 380" stroke="#fff" stroke-width="14"/>
+      <path d="M-10 300 L380 280" stroke="#fff" stroke-width="10"/>
+      <rect x="140" y="80" width="80" height="90" rx="6" fill="#DCEBD3"/>
+      <rect x="265" y="230" width="100" height="40" rx="6" fill="#E3E6DE"/>
+      <rect x="10" y="215" width="70" height="70" rx="6" fill="#E3E6DE"/>
+      <path d="M110 300 L120 205 L238 213 L244 120" fill="none" stroke="#1C1F1D" stroke-width="4" stroke-dasharray="2 7" stroke-linecap="round"/>
+      <circle cx="110" cy="300" r="9" fill="#3B82F6" stroke="#fff" stroke-width="3"/>
+      <circle cx="244" cy="112" r="17" fill="#27755B" stroke="#fff" stroke-width="3"/>
+      <path d="M238 112h12M244 106v12" stroke="#fff" stroke-width="0"/>
+      <text x="244" y="117" text-anchor="middle" font-size="13" fill="#fff" font-family="M PLUS Rounded 1c" font-weight="800">4.8</text>
+    </svg>
+  </div>
+  <div class="island"></div><div class="status"><span>9:41</span><i></i></div>
+  <div class="back"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+  <div class="route">徒歩6分<span>450m</span></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <h4 class="r">キッチン こもれび</h4>
+    <p class="meta">定食・和食 ・ 渋谷区神南1-12-16</p>
+    <p class="sentence">友達3人の平均は <span class="n g">4.8</span>。<br>あなたは2回行って <span class="n y">4.5</span> をつけています。 <a>記録を見る</a></p>
+    <div class="acts">
+      <button class="liked"><svg class="ic" viewBox="0 0 24 24" style="fill:currentColor"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>いいね済み</button>
+      <button>記録する</button>
+    </div>
+    <div class="strip">
+      <div class="photo"></div><div class="photo b"></div><div class="photo c"></div>
+      <div class="photo"></div><div class="photo more">＋5枚</div>
+    </div>
+    <p class="info">電話 <a>03-0000-0000</a>　営業時間は不明</p>
+  </div>
+  <div class="home"></div>
+</div></div>
+<div class="cap">
+  <h3 class="r">3. 地図から <span>「今から行く」に寄せる</span></h3>
+  <p>上半分を経路つきの地図にして、距離を最初に見せる。点数は3つの数字カードにせず、1つの文章にまとめる。写真は友達と自分の分をまとめて、なければ帯ごと出さない。</p>
+  <dl><dt>向く場合</dt><dd>地図タブから開くことが一番多いとき</dd>
+  <dt>必要な変更</dt><dd>MKDirections で徒歩時間を取得。地図は Map を詳細シートに埋め込む</dd></dl>
+</div>
+</section>
+
+<!-- 4 -->
+<section class="shot">
+<div class="phone"><div class="screen p4">
+  <div class="noren">
+    <div class="tate r">キッチンこもれび<small>定食・和食</small></div>
+    <div class="stamp n"><div><b>4.8</b><span>友達3人</span></div></div>
+  </div>
+  <div class="island"></div><div class="status" style="padding-left:30px"><span style="color:#fff">9:41</span><i></i></div>
+  <div class="body">
+    <div class="tools"><span>閉じる</span><span>共有</span></div>
+    <p class="addr"><b>渋谷区神南1-12-16</b><br>渋谷駅から徒歩6分 ・ 03-0000-0000</p>
+
+    <div class="k">友達</div>
+    <div class="f"><div>さき<small>揚げたての唐揚げが最高</small></div><span class="n">5.0</span></div>
+    <div class="f"><div>ゆい<small>だし巻きを必ず追加で</small></div><span class="n">4.8</span></div>
+    <div class="f"><div>けんた<small>昼は11時半前に</small></div><span class="n">4.5</span></div>
+
+    <div class="k">自分</div>
+    <div class="memo"><span class="n">4.5</span>唐揚げ定食
+      <p>ご飯おかわり無料。次は生姜焼き。</p></div>
+    <div class="marks"><span class="on">✓ 行った</span><span>♡ いいね</span><span style="margin-left:auto;color:var(--green)">編集</span></div>
+  </div>
+  <div class="bar"><button>経路を見る</button></div>
+  <div class="home" style="left:calc(50% + 48px)"></div>
+</div></div>
+<div class="cap">
+  <h3 class="r">4. のれん <span>店の顔をつくる</span></h3>
+  <p>左端に店名を縦書きした緑の帯、評価は判子の形。中身は罫線だけの名簿風。日本の店らしさが一目で出て、他の地図アプリと見分けやすい。</p>
+  <dl><dt>向く場合</dt><dd>ブランドの印象を強く残したいとき</dd>
+  <dt>注意</dt><dd>長い店名や英字名は縦書きで崩れる。文字数で横書きに切り替える処理が要る</dd></dl>
+</div>
+</section>
+
+</div>
+</div>
+</body>
+</html>

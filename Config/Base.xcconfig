@@ -2,6 +2,6 @@
 CLOUDFLARE_API_URL =
 #include? "Cloudflare.xcconfig.local"
 
-// iOS-restricted Places UI Kit key. Never put a server/management key here.
+// iOS-restricted Maps / Places key. Never put a server/management key here.
 GOOGLE_PLACES_IOS_API_KEY =
 #include? "GooglePlaces.xcconfig.local"

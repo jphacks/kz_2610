@@ -145,23 +145,46 @@ struct FriendAvatarStack: View {
     }
 }
 
-/// お椀とお箸のロゴ。
+/// お椀とお箸のロゴ。輪の右上の小さな丸2つは、輪をくり抜いた穴として背景の色で描く。
 struct BowlMark: View {
     var size: CGFloat = 24
+    var ring: Color = MeshinowaTheme.green
+    /// 穴の色。置く場所の背景に合わせる。
+    var holes: Color = MeshinowaTheme.paper
 
     var body: some View {
         Canvas { context, canvasSize in
             let s = canvasSize.width / 200
-            let ring = Path(ellipseIn: CGRect(x: 42 * s, y: 48 * s, width: 116 * s, height: 116 * s))
-            context.stroke(ring, with: .color(MeshinowaTheme.green), lineWidth: 26 * s)
+            let circle = Path(ellipseIn: CGRect(x: 50 * s, y: 50 * s, width: 98 * s, height: 98 * s))
+            context.stroke(circle, with: .color(ring), lineWidth: 22 * s)
+            for center in [CGPoint(x: 120, y: 52), CGPoint(x: 133, y: 61)] {
+                let r: CGFloat = 3.8
+                context.fill(Path(ellipseIn: CGRect(x: (center.x - r) * s, y: (center.y - r) * s,
+                                                    width: 2 * r * s, height: 2 * r * s)), with: .color(holes))
+            }
             var sticks = Path()
-            sticks.move(to: CGPoint(x: 34 * s, y: 42 * s)); sticks.addLine(to: CGPoint(x: 176 * s, y: 120 * s))
-            sticks.move(to: CGPoint(x: 24 * s, y: 66 * s)); sticks.addLine(to: CGPoint(x: 166 * s, y: 144 * s))
+            sticks.move(to: CGPoint(x: 55 * s, y: 43 * s)); sticks.addLine(to: CGPoint(x: 167 * s, y: 115 * s))
+            sticks.move(to: CGPoint(x: 45 * s, y: 59 * s)); sticks.addLine(to: CGPoint(x: 161 * s, y: 131 * s))
             context.stroke(sticks, with: .color(MeshinowaTheme.accent),
-                           style: StrokeStyle(lineWidth: 16 * s, lineCap: .round))
+                           style: StrokeStyle(lineWidth: 10 * s, lineCap: .round))
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+/// アプリアイコンと同じ、緑の丸に白い輪のロゴ。
+struct BowlBadge: View {
+    var size: CGFloat = 56
+
+    var body: some View {
+        Circle()
+            .fill(MeshinowaTheme.green)
+            .overlay {
+                BowlMark(size: size * 0.78, ring: MeshinowaTheme.cream, holes: MeshinowaTheme.green)
+            }
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }
 

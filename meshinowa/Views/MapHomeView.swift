@@ -8,6 +8,7 @@ struct MapHomeView: View {
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @Environment(\.floatingTabBarSpace) private var tabBarSpace
+    @Environment(\.reportsMapSelection) private var reportsMapSelection
 
     private static let initialRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
@@ -137,6 +138,7 @@ struct MapHomeView: View {
             carouselItems = Self.nearestChain(visibleResults)
         }
         .onChange(of: selectedID) { _, id in
+            reportsMapSelection?(selectedResult?.item)
             guard let id else { return }
             follow(id)
             // ピンから選んだときは、カードを真ん中の周に合わせる。

@@ -159,7 +159,7 @@ struct FriendsHomeView: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(alignment: .bottomTrailing) {
-            BowlMark(size: 150)
+            BowlMark(size: 150, holes: MeshinowaTheme.mint)
                 .opacity(0.9)
                 .offset(x: 34, y: 30)
         }

@@ -41,7 +41,7 @@ struct FriendsHomeView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .refreshable { await store.refresh() }
+        .refreshable { await store.retryConnection() }
         .task(id: isActive && scenePhase == .active) {
             guard isActive && scenePhase == .active else { return }
             while !Task.isCancelled {

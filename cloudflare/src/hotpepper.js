@@ -108,7 +108,8 @@ export async function findRestaurantPhoto(query, apiKey, fetcher = fetch) {
   try {
     const response = await fetcher(url, {
       headers: { Accept: "application/json" },
-      redirect: "error",
+      // Workers supports manual/follow; reject 3xx below without forwarding the key.
+      redirect: "manual",
       signal: AbortSignal.timeout(8000),
     });
     if (!response.ok) throw new HotPepperError();

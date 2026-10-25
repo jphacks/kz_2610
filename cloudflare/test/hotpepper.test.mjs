@@ -98,7 +98,7 @@ test("API request uses fixed HTTPS endpoint and server-only key, location and na
       assert.equal(url.searchParams.get("count"), "100");
       assert.equal(url.searchParams.get("datum"), "world");
       assert.equal(url.searchParams.get("format"), "json");
-      assert.equal(options.redirect, "error");
+      assert.equal(options.redirect, "manual");
       assert.ok(options.signal);
       return Response.json({
         results: { shop: [fixture], results_available: 1 },

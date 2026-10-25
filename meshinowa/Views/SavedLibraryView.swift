@@ -13,10 +13,29 @@ struct SavedRestaurantsView: View {
     @State private var query = ""
     @State private var showsMap = false
     @State private var unreviewedOnly = false
+    /// 上部の切り替え。保存の画面では「いいね」と「行きたい」だけを出す。
+    @State private var collection: SavedCollection = .liked
+    /// 「行きたい」（お店スワイプの右スワイプや地図の「行きたい」ボタンで入れたお店。いいねとは別）。
+    @ObservedObject private var wantToGo = SwipeDiscoveryEntry.wantToGoStore
+    @State private var wantToGoError: String?
 
-    /// いいねしたお店とレビューしたお店。保存の画面ではいいねだけを出す。
+    /// いいねしたお店とレビューしたお店と行きたいお店。
     private var library: [SavedRestaurant] {
-        PersonalLibrary.restaurants(saved: saved.restaurants, reviews: reviews.reviews)
+        PersonalLibrary.restaurants(saved: saved.restaurants, reviews: reviews.reviews,
+                                    wantToGo: wantToGoRestaurants.map { $0.restaurant })
+    }
+
+    /// 行きたいの元の記録と、保存画面で使う形の組。
+    private var wantToGoRestaurants: [(entryID: String, restaurant: SavedRestaurant)] {
+        wantToGo.entries.map { ($0.id, $0.savedRestaurant) }
+    }
+
+    private var wantToGoIDs: Set<String> {
+        Set(wantToGoRestaurants.map { $0.restaurant.id })
+    }
+
+    private func count(of collection: SavedCollection) -> Int {
+        library.filter { collection.includes($0, reviewed: Set(ratings.keys), wantToGo: wantToGoIDs) }.count
     }
 
     private var ratings: [String: Double] {
@@ -24,14 +43,14 @@ struct SavedRestaurantsView: View {
     }
 
     private var visibleRestaurants: [SavedRestaurant] {
-        SavedCollectionQuery.results(library, collection: .liked, search: query, sort: sort, ratings: ratings,
+        SavedCollectionQuery.results(library, collection: collection, search: query, sort: sort, ratings: ratings,
                                      friendRatings: Dictionary(uniqueKeysWithValues: library.compactMap { entry in
                                          friends.summary(for: entry.mapItem).average.map { (entry.id, $0) }
                                      }),
                                      distances: Dictionary(uniqueKeysWithValues: library.compactMap { entry in
                                          location.location.map { (entry.id, $0.distance(from: CLLocation(latitude: entry.latitude, longitude: entry.longitude))) }
                                      }),
-                                     unreviewedOnly: unreviewedOnly)
+                                     unreviewedOnly: collection == .liked && unreviewedOnly, wantToGo: wantToGoIDs)
     }
 
     var body: some View {
@@ -48,22 +67,29 @@ struct SavedRestaurantsView: View {
                 }
                 .padding(.horizontal, 20)
 
+                UnderlineTabs(items: [SavedCollection.liked, .wantToGo].map {
+                    .init(value: $0, title: $0.title, badge: "\(count(of: $0))")
+                }, selection: $collection)
+                .padding(.horizontal, 20)
+
                 searchField
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
 
                 // 件数と、絞り込み・並び替え。並び替えは1つのボタンにまとめ、横にはみ出さないようにする。
                 HStack(spacing: 8) {
-                    Text("いいね \(visibleRestaurants.count)件")
+                    Text("\(collection.title) \(visibleRestaurants.count)件")
                         .font(MeshinowaFont.text(13, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.secondaryText)
                         .lineLimit(1)
                     Spacer(minLength: 0)
-                    Button { unreviewedOnly.toggle() } label: {
-                        Label("未レビュー", systemImage: unreviewedOnly ? "checkmark" : "line.3.horizontal.decrease")
+                    if collection == .liked {
+                        Button { unreviewedOnly.toggle() } label: {
+                            Label("未レビュー", systemImage: unreviewedOnly ? "checkmark" : "line.3.horizontal.decrease")
+                        }
+                        .buttonStyle(PillButtonStyle(isOn: unreviewedOnly))
+                        .accessibilityAddTraits(unreviewedOnly ? .isSelected : [])
                     }
-                    .buttonStyle(PillButtonStyle(isOn: unreviewedOnly))
-                    .accessibilityAddTraits(unreviewedOnly ? .isSelected : [])
                     Menu {
                         Picker("並び替え", selection: $sort) {
                             ForEach(SavedSort.allCases) { option in
@@ -109,9 +135,17 @@ struct SavedRestaurantsView: View {
                                 Button { selected = restaurant } label: {
                                     SavedRow(restaurant: restaurant,
                                              rating: reviews.review(for: restaurant.mapItem)?.rating,
-                                             friends: friends.summary(for: restaurant.mapItem))
+                                             friends: friends.summary(for: restaurant.mapItem),
+                                             isWantToGo: wantToGoIDs.contains(restaurant.id))
                                 }
                                 .buttonStyle(.plain)
+                                .contextMenu {
+                                    if wantToGoIDs.contains(restaurant.id) {
+                                        Button("行きたいから外す", systemImage: "flag.slash", role: .destructive) {
+                                            removeFromWantToGo(restaurant)
+                                        }
+                                    }
+                                }
                                 RestaurantPhotoView(item: restaurant.mapItem)
                             }
                             .padding(.bottom, 12)
@@ -136,6 +170,23 @@ struct SavedRestaurantsView: View {
         .foregroundStyle(MeshinowaTheme.ink)
         .toolbar(onFindRestaurants == nil ? .visible : .hidden, for: .navigationBar)
         .sheet(item: $selected) { RestaurantInformationView(item: $0.mapItem) }
+        // 行きたいはレビューを書いた（行った）ら外れる。サーバーとも同期する。
+        .task { await SwipeDiscoveryEntry.refreshWantToGo(reviewedIDs: Set(reviews.reviews.map(\.id))) }
+        .alert("行きたいを変更できませんでした", isPresented: Binding(get: { wantToGoError != nil },
+                                                          set: { if !$0 { wantToGoError = nil } })) {
+            Button("閉じる", role: .cancel) {}
+        } message: {
+            Text(wantToGoError ?? "")
+        }
+    }
+
+    private func removeFromWantToGo(_ restaurant: SavedRestaurant) {
+        guard let entryID = wantToGoRestaurants.first(where: { $0.restaurant.id == restaurant.id })?.entryID else { return }
+        do {
+            try SwipeDiscoveryEntry.removeFromWantToGo(shopID: entryID)
+        } catch {
+            wantToGoError = (error as? LocalizedError)?.errorDescription ?? "もう一度お試しください。"
+        }
     }
 
     private var searchField: some View {
@@ -166,10 +217,12 @@ struct SavedRestaurantsView: View {
             FoodGenreMark(genre: .washoku, size: 46)
                 .frame(width: 80, height: 80)
                 .background(MeshinowaTheme.mint, in: Circle())
-            Text(query.isEmpty ? "いいねのお店はまだありません" : "検索に一致するお店がありません")
+            Text(query.isEmpty ? "\(collection.title)のお店はまだありません" : "検索に一致するお店がありません")
                 .font(MeshinowaFont.heading(18))
             if query.isEmpty {
-                Text("マップでお店のハートを押すと、ここに集まります。")
+                Text(collection == .wantToGo
+                     ? "お店スワイプで右にスワイプするか、マップのお店の「行きたい」を押すと、ここに集まります。"
+                     : "マップでお店のハートを押すと、ここに集まります。")
                     .font(MeshinowaFont.text(14))
                     .foregroundStyle(MeshinowaTheme.bodyText)
             } else {
@@ -193,10 +246,12 @@ private struct SavedRow: View {
     let restaurant: SavedRestaurant
     let rating: Double?
     let friends: FriendRatingSummary
+    var isWantToGo = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            FoodGenreMark(genre: restaurant.foodGenre, tone: rating == nil ? .liked : .reviewed, size: 34)
+            FoodGenreMark(genre: restaurant.foodGenre,
+                          tone: rating != nil ? .reviewed : (restaurant.isLiked ? .liked : .plain), size: 34)
                 .frame(width: 52, height: 52)
                 .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
@@ -215,11 +270,19 @@ private struct SavedRow: View {
                 } else if let average = friends.average {
                     RatingStamp(rating: average, friendCount: friends.count, size: 18)
                 }
-                if restaurant.isLiked {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(MeshinowaTheme.like)
-                        .accessibilityLabel("いいね済み")
+                HStack(spacing: 6) {
+                    if isWantToGo {
+                        Image(systemName: "flag.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(MeshinowaTheme.green)
+                            .accessibilityLabel("行きたい")
+                    }
+                    if restaurant.isLiked {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(MeshinowaTheme.like)
+                            .accessibilityLabel("いいね済み")
+                    }
                 }
             }
         }
@@ -244,7 +307,7 @@ struct SavedRestaurantMap: View {
             GoogleMapPin(id: restaurant.id, title: restaurant.name,
                          coordinate: restaurant.mapItem.placemark.coordinate,
                          genre: restaurant.foodGenre,
-                         mark: ratings[restaurant.id].map { .reviewed($0) } ?? .liked)
+                         mark: ratings[restaurant.id].map { .reviewed($0) } ?? (restaurant.isLiked ? .liked : .none))
         }, selectedID: $selectedID)
         .onAppear { camera = .fit(restaurants.map { $0.mapItem.placemark.coordinate }) }
         .onChange(of: restaurants.map(\.id)) { _, _ in

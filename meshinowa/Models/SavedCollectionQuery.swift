@@ -1,18 +1,21 @@
 import Foundation
 
 enum SavedCollection: String, CaseIterable, Identifiable {
-    case liked, visited
+    case liked, wantToGo, visited
     var id: String { rawValue }
     var title: String {
         switch self {
         case .liked: return "いいね"
+        case .wantToGo: return "行きたい"
         case .visited: return "行った"
         }
     }
     /// 行った＝レビューしたお店。`reviewed` はレビューのあるお店のID。
-    func includes(_ restaurant: SavedRestaurant, reviewed: Set<String>) -> Bool {
+    /// 行きたい＝お店スワイプで右スワイプしたお店（いいねとは別）。`wantToGo` はそのお店のID。
+    func includes(_ restaurant: SavedRestaurant, reviewed: Set<String>, wantToGo: Set<String> = []) -> Bool {
         switch self {
         case .liked: return restaurant.isLiked
+        case .wantToGo: return wantToGo.contains(restaurant.id)
         case .visited: return reviewed.contains(restaurant.id)
         }
     }
@@ -34,11 +37,12 @@ enum SavedSort: String, CaseIterable, Identifiable {
 
 enum SavedCollectionQuery {
     static func results(_ restaurants: [SavedRestaurant], collection: SavedCollection, search: String,
-                        sort: SavedSort, ratings: [String: Double], friendRatings: [String: Double] = [:], distances: [String: Double] = [:], unreviewedOnly: Bool = false) -> [SavedRestaurant] {
+                        sort: SavedSort, ratings: [String: Double], friendRatings: [String: Double] = [:], distances: [String: Double] = [:], unreviewedOnly: Bool = false,
+                        wantToGo: Set<String> = []) -> [SavedRestaurant] {
         let reviewed = Set(ratings.keys)
         let text = search.trimmingCharacters(in: .whitespacesAndNewlines)
         return restaurants.filter {
-            collection.includes($0, reviewed: reviewed) && !(unreviewedOnly && reviewed.contains($0.id))
+            collection.includes($0, reviewed: reviewed, wantToGo: wantToGo) && !(unreviewedOnly && reviewed.contains($0.id))
                 && (text.isEmpty || $0.name.localizedStandardContains(text) || $0.address.localizedStandardContains(text))
         }.sorted {
             switch sort {

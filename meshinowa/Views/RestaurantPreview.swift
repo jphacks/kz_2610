@@ -45,6 +45,7 @@ struct RestaurantPreview: View {
                     detailLine(symbol: "mappin.and.ellipse",
                                text: item.placemark.title.map { $0.withoutPostalCode.replacingOccurrences(of: "\n", with: " ") }
                                    ?? "住所の情報がありません")
+                    SwipeDiscoveryEntry.wantToGoButton(item: item)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { showsDetails = true }

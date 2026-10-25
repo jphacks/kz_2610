@@ -512,6 +512,35 @@ async function route(request, env) {
     );
     return json({ ok: true });
   }
+  // 「行きたい」：いいね・保存一覧とは別。レビューを書くとトリガーで外れる。
+  if (path === "/v1/want-to-go" && method === "GET")
+    return json(
+      await all(
+        "select w.restaurant_id,w.added_at,s.external_key,s.name,s.category,s.address,s.latitude,s.longitude from want_to_go w join restaurants s on s.id=w.restaurant_id where w.user_id=? order by w.added_at desc,w.restaurant_id limit 1000",
+        actor,
+      ),
+    );
+  const wantMatch = path.match(/^\/v1\/want-to-go\/([^/]+)$/);
+  if (wantMatch && method === "PUT") {
+    const restaurant = id(wantMatch[1]);
+    if (!(await one("select 1 from restaurants where id=?", restaurant)))
+      fail(404, "not_found");
+    // 既にあれば追加した日時を保つ。
+    await run(
+      "insert into want_to_go(user_id,restaurant_id) values(?,?) on conflict(user_id,restaurant_id) do nothing",
+      actor,
+      restaurant,
+    );
+    return json({ ok: true });
+  }
+  if (wantMatch && method === "DELETE") {
+    await run(
+      "delete from want_to_go where user_id=? and restaurant_id=?",
+      actor,
+      id(wantMatch[1]),
+    );
+    return json({ ok: true });
+  }
   if (path === "/v1/photos" && method === "GET") {
     const review = id(url.searchParams.get("review_id"));
     return json(

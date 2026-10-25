@@ -504,3 +504,53 @@ test("auth rate limit rejects guest sign-up before creating users", async () => 
     env.AUTH_RATE_LIMITER = previous;
   }
 });
+test("want-to-go is owner-only, separate from saved, keeps its date and clears on review", async () => {
+  const other = await data(
+    A,
+    "POST",
+    "/restaurants",
+    {
+      external_key: "fixture:want",
+      name: "架空の喫茶",
+      category: "MKPOICategoryCafe",
+      latitude: 35.1,
+      longitude: 139.1,
+    },
+    201,
+  );
+  await data(A, "PUT", `/want-to-go/${other.id}`);
+  await data(A, "PUT", `/want-to-go/${shop.id}`);
+  const first = await data(A, "GET", "/want-to-go");
+  assert.equal(first.length, 2);
+  const cafe = first.find((row) => row.restaurant_id === other.id);
+  assert.equal(cafe.external_key, "fixture:want");
+  assert.equal(cafe.name, "架空の喫茶");
+  assert.equal(cafe.category, "MKPOICategoryCafe");
+  // Re-adding keeps the original timestamp; saved/likes stay untouched.
+  await data(A, "PUT", `/want-to-go/${other.id}`);
+  const again = await data(A, "GET", "/want-to-go");
+  assert.equal(
+    again.find((row) => row.restaurant_id === other.id).added_at,
+    cafe.added_at,
+  );
+  assert.equal((await data(A, "GET", "/saved")).length, 0);
+  // Other users cannot see or remove it.
+  assert.equal((await data(B, "GET", "/want-to-go")).length, 0);
+  await data(B, "DELETE", `/want-to-go/${other.id}`);
+  assert.equal((await data(A, "GET", "/want-to-go")).length, 2);
+  // Writing a review (visited) removes the restaurant from want-to-go.
+  await data(A, "PUT", "/reviews", { restaurant_id: shop.id, rating: 4 });
+  const afterReview = await data(A, "GET", "/want-to-go");
+  assert.deepEqual(
+    afterReview.map((row) => row.restaurant_id),
+    [other.id],
+  );
+  await data(A, "DELETE", `/want-to-go/${other.id}`);
+  assert.equal((await data(A, "GET", "/want-to-go")).length, 0);
+});
+test("want-to-go rejects unknown restaurants, malformed IDs and anonymous callers", async () => {
+  await data(A, "PUT", `/want-to-go/${"0".repeat(8)}-0000-0000-0000-${"0".repeat(12)}`, undefined, 404);
+  await data(A, "PUT", "/want-to-go/not-a-uuid", undefined, 400);
+  const anonymous = await api(null, "GET", "/want-to-go");
+  assert.equal(anonymous.status, 401);
+});

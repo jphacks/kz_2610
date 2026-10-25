@@ -171,6 +171,7 @@ struct FriendsHomeView: View {
 
     private var feed: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
+            SwipeDiscoveryEntry.feedBanner()
             HStack {
                 Text(dataset.isDemo ? "架空の友達の記録" : "友達の記録")
                     .font(MeshinowaFont.text(13, relativeTo: .caption))

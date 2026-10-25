@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 /// お店スワイプの色と文字。既存の共通色（MeshinowaTheme）・文字（MeshinowaFont）は読むだけで変更しない。
-/// 矢印・ボタン・オーバーレイが同じ色になるよう、気になる色・イマイチ色はここだけで定義する。
+/// 矢印・ボタン・オーバーレイが同じ色になるよう、行きたい色・イマイチ色はここだけで定義する。
 enum SwipeTheme {
     // MARK: 面
     /// 和モダンな生成り色の背景。
@@ -21,7 +21,7 @@ enum SwipeTheme {
     static let brand = MeshinowaTheme.green
     static let star = MeshinowaTheme.accent
 
-    // MARK: 判断の色（灰色＝イマイチ、ピンク＝気になる）。明るさにも差を付ける。
+    // MARK: 判断の色（灰色＝イマイチ、ピンク＝行きたい）。明るさにも差を付ける。
     static let interested = dynamic(light: 0xE5577E, dark: 0xF07A9A)
     static let notInterested = dynamic(light: 0x6E7681, dark: 0x9AA3AE)
     static let undo = dynamic(light: 0x4F5550, dark: 0xC9CDC8)

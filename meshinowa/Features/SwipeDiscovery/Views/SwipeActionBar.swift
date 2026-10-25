@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 下部のボタン。左から「戻す（↺）」「イマイチ（渦巻き）」「気になる（♥）」（v5で紙飛行機を外して3つ）。
+/// 下部のボタン。左から「戻す（↺）」「イマイチ（渦巻き）」「行きたい（旗）」（v5で紙飛行機を外して3つ）。
 struct SwipeActionBar: View {
     let canUndo: Bool
     let isEnabled: Bool
@@ -15,7 +15,7 @@ struct SwipeActionBar: View {
             button(title: "イマイチ", symbol: "hurricane", tint: SwipeTheme.notInterested, size: 64, filled: true,
                    hint: "24時間はこのお店を出しません") { onDecide(.notInterested) }
                 .disabled(!isEnabled)
-            button(title: "気になる", symbol: "heart.fill", tint: SwipeTheme.interested, size: 64, filled: true,
+            button(title: "行きたい", symbol: "flag.fill", tint: SwipeTheme.interested, size: 64, filled: true,
                    hint: "行きたいに保存します") { onDecide(.interested) }
                 .disabled(!isEnabled)
         }

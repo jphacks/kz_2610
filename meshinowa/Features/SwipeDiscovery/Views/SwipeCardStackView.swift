@@ -209,7 +209,7 @@ private struct TopCardMotion: ViewModifier {
     }
 }
 
-/// VoiceOver ではスワイプなしで「気になる」「イマイチ」「詳細」を操作できるようにする。
+/// VoiceOver ではスワイプなしで「行きたい」「イマイチ」「詳細」を操作できるようにする。
 private struct CardAccessibility: ViewModifier {
     let isTop: Bool
     let candidate: SwipeCandidate
@@ -223,8 +223,8 @@ private struct CardAccessibility: ViewModifier {
             content
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(label)
-                .accessibilityHint("右にスワイプで気になる、左にスワイプでイマイチ")
-                .accessibilityAction(named: "気になる") { decide(.interested) }
+                .accessibilityHint("右にスワイプで行きたい、左にスワイプでイマイチ")
+                .accessibilityAction(named: "行きたい") { decide(.interested) }
                 .accessibilityAction(named: "イマイチ") { decide(.notInterested) }
                 .accessibilityAction(named: "詳細") { showDetail() }
                 .accessibilityAction(named: "地図") { showMap() }

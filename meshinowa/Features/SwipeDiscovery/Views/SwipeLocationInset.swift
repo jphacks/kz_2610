@@ -49,9 +49,7 @@ struct SwipeLocationInset: View {
 struct SwipeLargeMapSheet: View {
     let candidate: SwipeCandidate
     let distanceMeters: Double
-    let directionsURL: URL?
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
@@ -64,14 +62,6 @@ struct SwipeLargeMapSheet: View {
                         Text("\(SwipeDistanceFormatter.label(meters: distanceMeters))（直線距離の目安）")
                             .font(SwipeTheme.text(13))
                             .foregroundStyle(SwipeTheme.bodyText)
-                        if let directionsURL {
-                            Button { openURL(directionsURL) } label: {
-                                Label("Google Mapsで徒歩経路", systemImage: "figure.walk")
-                                    .frame(maxWidth: .infinity, minHeight: 44)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(SwipeTheme.brand)
-                        }
                     }
                     .foregroundStyle(SwipeTheme.ink)
                     .padding(16)

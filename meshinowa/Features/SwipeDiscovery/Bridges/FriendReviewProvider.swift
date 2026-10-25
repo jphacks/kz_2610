@@ -110,7 +110,7 @@ struct FriendDatasetReviewProvider: FriendReviewProvider {
 }
 
 /// 候補ごとの MKMapItem を覚えておく。写真の検索で見つかった Google の Place ID を、
-/// 保存・経路でも使い回すため（MKMapItem は参照型で、写真の取得時に Place ID が書き込まれる）。
+/// 保存でも使い回すため（MKMapItem は参照型で、写真の取得時に Place ID が書き込まれる）。
 @MainActor
 final class SwipeMapItemRegistry {
     private var items: [String: MKMapItem] = [:]

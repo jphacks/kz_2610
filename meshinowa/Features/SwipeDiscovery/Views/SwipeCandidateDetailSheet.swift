@@ -4,10 +4,8 @@ import SwiftUI
 struct SwipeCandidateDetailSheet: View {
     let candidate: SwipeCandidate
     let distanceMeters: Double
-    let directionsURL: URL?
     @ObservedObject var placePhotos: SwipePlacePhotoCache
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
@@ -56,21 +54,6 @@ struct SwipeCandidateDetailSheet: View {
             }
             .foregroundStyle(SwipeTheme.ink)
             .background(SwipeTheme.background)
-            .safeAreaInset(edge: .bottom) {
-                if let directionsURL {
-                    Button { openURL(directionsURL) } label: {
-                        Label("Google Mapsで徒歩経路", systemImage: "figure.walk")
-                            .font(SwipeTheme.heading(16))
-                            .frame(maxWidth: .infinity, minHeight: 50)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(SwipeTheme.brand)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(SwipeTheme.background)
-                    .accessibilityHint("Google Mapsで徒歩の経路を開きます")
-                }
-            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

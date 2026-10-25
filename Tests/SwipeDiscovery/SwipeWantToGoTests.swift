@@ -58,6 +58,23 @@ final class SwipeWantToGoTests: XCTestCase {
         XCTAssertEqual(server.items.keys.sorted(), ["a"])
     }
 
+    /// デモの架空の店は端末の「行きたい」に入るが、サーバーには送らない。
+    @MainActor
+    func testLocalOnlyEntriesAreNeverSent() async throws {
+        let server = MockWantToGoRemote()
+        let store = SwipeWantToGoStore(fileURL: SwipeFixtures.temporaryURL("want_to_go.json"), remote: server,
+                                       syncsAutomatically: false)
+        try store.add(SwipeFixtures.candidate("demo"), localOnly: true)
+        try store.add(SwipeFixtures.candidate("real"))
+        await store.sync()
+        XCTAssertEqual(server.items.keys.sorted(), ["real"])
+        XCTAssertTrue(store.contains("demo"))
+        try store.remove(shopID: "demo")
+        await store.sync()
+        XCTAssertTrue(server.removedKeys.isEmpty)
+        XCTAssertFalse(store.contains("demo"))
+    }
+
     @MainActor
     func testVisitedShopsAreRemoved() throws {
         let store = SwipeWantToGoStore(fileURL: SwipeFixtures.temporaryURL("want_to_go.json"))
@@ -65,5 +82,23 @@ final class SwipeWantToGoTests: XCTestCase {
         try store.add(SwipeFixtures.candidate("b"))
         store.removeVisited { $0 == "a" }
         XCTAssertEqual(store.entries.map(\.id), ["b"])
+    }
+
+    /// 既存の保存画面：「行きたい」タブはいいねと別で、レビューのあるお店はいいね・行ったの方を使う。
+    func testSavedScreenShowsWantToGoSeparatelyFromLikes() {
+        let wanted = SwipeWantToGoEntry(candidate: SwipeFixtures.candidate("x"), addedAt: Date(timeIntervalSince1970: 5))
+            .savedRestaurant
+        XCTAssertFalse(wanted.isLiked)
+        let library = PersonalLibrary.restaurants(saved: [], reviews: [], wantToGo: [wanted])
+        XCTAssertEqual(library.map(\.id), [wanted.id])
+
+        let ids: Set<String> = [wanted.id]
+        let wantToGoTab = SavedCollectionQuery.results(library, collection: .wantToGo, search: "", sort: .newest,
+                                                       ratings: [:], wantToGo: ids)
+        XCTAssertEqual(wantToGoTab.map(\.id), [wanted.id])
+        let likedTab = SavedCollectionQuery.results(library, collection: .liked, search: "", sort: .newest,
+                                                    ratings: [:], wantToGo: ids)
+        XCTAssertTrue(likedTab.isEmpty)
+        XCTAssertEqual(SavedCollection.allCases.map(\.title), ["いいね", "行きたい", "行った"])
     }
 }

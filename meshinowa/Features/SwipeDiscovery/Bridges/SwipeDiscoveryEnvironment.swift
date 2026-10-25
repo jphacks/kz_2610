@@ -11,12 +11,8 @@ struct SwipeDiscoveryDependencies {
     let location: SwipeLocationProviding
     let mapItems: SwipeMapItemRegistry
     let placePhotos: SwipePlacePhotoCache
-    /// 「行きたい」の一覧（デモでは nil）。
+    /// 「行きたい」の一覧。
     let wantToGo: SwipeWantToGoStore?
-
-    func directionsURL(for candidate: SwipeCandidate) -> URL? {
-        SwipeGoogleMapsBridge.walkingDirectionsURL(for: candidate, mapItems: mapItems)
-    }
 
     /// サーバー接続時は友達の実データ、未接続は Friend Lens のデモ（友達タブと同じ切り替え）。
     static func make(friends: FriendStore, reviews: LocalReviewStore) -> SwipeDiscoveryDependencies {
@@ -25,10 +21,9 @@ struct SwipeDiscoveryDependencies {
         let provider = FriendDatasetReviewProvider(isDemo: isDemo, mapItems: mapItems) {
             isDemo ? DemoRecommendations.dataset : friends.dataset
         }
-        let wantToGo: SwipeWantToGoStore? = isDemo ? nil : SwipeWantToGoStore.shared
-        if let wantToGo, wantToGo.remote == nil { wantToGo.remote = CloudflareWantToGoRemote.makeDefault() }
-        let savedShops: SavedShopsBridge = wantToGo.map { WantToGoShopsBridge(wantToGo: $0, reviews: reviews) }
-            ?? DemoSavedShopsBridge()
+        // デモの架空の店も端末の「行きたい」に入れる（サーバーには送らない）。
+        let wantToGo = SwipeDiscoveryEntry.wantToGoStore
+        let savedShops: SavedShopsBridge = WantToGoShopsBridge(wantToGo: wantToGo, reviews: reviews, localOnly: isDemo)
         // デモ（架空の店）と実データの判断記録は混ぜない。
         let store = SwipeDecisionStore(fileURL: SwipeDecisionStore.defaultURL(
             fileName: isDemo ? "swipe_decisions_demo.json" : "swipe_decisions.json"))

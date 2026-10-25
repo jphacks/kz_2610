@@ -63,12 +63,10 @@ struct SwipeDiscoveryView: View {
             }
         }
         .sheet(item: $mapCandidate) { candidate in
-            SwipeLargeMapSheet(candidate: candidate, distanceMeters: viewModel.distance(to: candidate),
-                               directionsURL: viewModel.dependencies.directionsURL(for: candidate))
+            SwipeLargeMapSheet(candidate: candidate, distanceMeters: viewModel.distance(to: candidate))
         }
         .sheet(item: $detailCandidate) { candidate in
             SwipeCandidateDetailSheet(candidate: candidate, distanceMeters: viewModel.distance(to: candidate),
-                                      directionsURL: viewModel.dependencies.directionsURL(for: candidate),
                                       placePhotos: viewModel.dependencies.placePhotos)
                 .environmentObject(photoLoader)
         }
@@ -142,7 +140,7 @@ struct SwipeDiscoveryView: View {
             }
         case .finished:
             stateView(symbol: "checkmark.seal", title: "この近くの友達のおすすめは全部見ました",
-                      message: "気になったお店は「\(viewModel.savedShops.wantToGoTitle)」に入っています。") {
+                      message: "右にスワイプしたお店は「\(viewModel.savedShops.wantToGoTitle)」に入っています。") {
                 if viewModel.canExpandRadius {
                     primaryButton("範囲を広げる") { Task { await viewModel.expandRadius() } }
                 }

@@ -72,11 +72,23 @@ final class SwipeWantToGoStore: ObservableObject {
     }
 
     /// 右スワイプ確定時。端末への書き込みに失敗したら throw する（サーバーの失敗では throw しない）。
-    func add(_ candidate: SwipeCandidate, at date: Date = .now) throws {
+    /// - Parameter localOnly: true なら端末だけに置き、サーバーには送らない（デモの架空の店）。
+    func add(_ candidate: SwipeCandidate, at date: Date = .now, localOnly: Bool = false) throws {
         guard !contains(candidate.id) else { return }
-        let entry = SwipeWantToGoEntry(candidate: candidate, addedAt: date)
+        let entry = SwipeWantToGoEntry(candidate: candidate, addedAt: date, isLocalOnly: localOnly)
         // 外したばかりの店をまた入れる時は、サーバーへの削除を取りやめる。
         let removals = pendingRemovals.filter { $0.id != candidate.id }
+        try persist(entries: [entry] + entries, pendingRemovals: removals)
+        scheduleSync()
+    }
+
+    /// 地図のお店カードなど、スワイプ以外から追加する時。
+    func add(entry newEntry: SwipeWantToGoEntry) throws {
+        guard !contains(newEntry.id) else { return }
+        var entry = newEntry
+        entry.isSynced = false
+        entry.remoteRestaurantID = nil
+        let removals = pendingRemovals.filter { $0.id != entry.id }
         try persist(entries: [entry] + entries, pendingRemovals: removals)
         scheduleSync()
     }
@@ -85,7 +97,7 @@ final class SwipeWantToGoStore: ObservableObject {
         guard let entry = entries.first(where: { $0.id == shopID }) else { return }
         var removals = pendingRemovals.filter { $0.id != shopID }
         // 同期の途中（サーバーへの追加が終わる前）に外した時も、サーバー側から消す（削除は何度送っても同じ結果）。
-        if entry.isSynced || entry.remoteRestaurantID != nil || isSyncing { removals.append(entry) }
+        if entry.sendsToServer, entry.isSynced || entry.remoteRestaurantID != nil || isSyncing { removals.append(entry) }
         try persist(entries: entries.filter { $0.id != shopID }, pendingRemovals: removals)
         scheduleSync()
     }
@@ -117,7 +129,7 @@ final class SwipeWantToGoStore: ObservableObject {
                 // 待っている間に同じ店がまた追加されていても、削除の記録だけを消す。
                 try? persist(entries: entries, pendingRemovals: pendingRemovals.filter { $0.id != removal.id })
             }
-            for entry in entries where !entry.isSynced {
+            for entry in entries where !entry.isSynced && entry.sendsToServer {
                 let remoteID = try await remote.add(entry)
                 guard let index = entries.firstIndex(where: { $0.id == entry.id }) else { continue }
                 var updated = entries

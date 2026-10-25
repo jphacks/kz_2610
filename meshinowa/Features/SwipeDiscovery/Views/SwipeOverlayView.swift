@@ -9,12 +9,12 @@ struct SwipeOverlayView: View {
         ZStack {
             color.opacity(opacity)
             VStack(spacing: 12) {
-                Image(systemName: kind == .interested ? "heart.fill" : "hurricane")
+                Image(systemName: kind == .interested ? "flag.fill" : "hurricane")
                     .font(.system(size: 40, weight: .bold))
                     .foregroundStyle(color)
                     .frame(width: 92, height: 92)
                     .background(.white, in: Circle())
-                Text(kind == .interested ? "気になる！" : "イマイチ…")
+                Text(kind == .interested ? "行きたい！" : "イマイチ…")
                     .font(SwipeTheme.heading(30, relativeTo: .largeTitle))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)

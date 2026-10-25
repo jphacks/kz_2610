@@ -14,8 +14,10 @@ struct SwipeWantToGoEntry: Identifiable, Codable, Hashable {
     var remoteRestaurantID: String?
     /// サーバーに追加済みなら true。
     var isSynced: Bool
+    /// 端末だけに置き、サーバーには送らない（デモの架空の店）。以前のファイルにはないので省略可。
+    var isLocalOnly: Bool?
 
-    init(candidate: SwipeCandidate, addedAt: Date) {
+    init(candidate: SwipeCandidate, addedAt: Date, isLocalOnly: Bool = false) {
         id = candidate.id
         name = candidate.name
         genre = candidate.genre
@@ -25,10 +27,11 @@ struct SwipeWantToGoEntry: Identifiable, Codable, Hashable {
         self.addedAt = addedAt
         remoteRestaurantID = nil
         isSynced = false
+        self.isLocalOnly = isLocalOnly ? true : nil
     }
 
     init(id: String, name: String, genre: String?, address: String?, latitude: Double, longitude: Double,
-         addedAt: Date, remoteRestaurantID: String?, isSynced: Bool) {
+         addedAt: Date, remoteRestaurantID: String?, isSynced: Bool, isLocalOnly: Bool? = nil) {
         self.id = id
         self.name = name
         self.genre = genre
@@ -38,7 +41,10 @@ struct SwipeWantToGoEntry: Identifiable, Codable, Hashable {
         self.addedAt = addedAt
         self.remoteRestaurantID = remoteRestaurantID
         self.isSynced = isSynced
+        self.isLocalOnly = isLocalOnly
     }
+
+    var sendsToServer: Bool { isLocalOnly != true }
 }
 
 /// want_to_go.json の中身。サーバーへの削除が終わっていない店は pendingRemovals に残す。

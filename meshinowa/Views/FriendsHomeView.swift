@@ -171,52 +171,8 @@ struct FriendsHomeView: View {
 
     private var feed: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
+            // フィードはお店スワイプ専用。友達の記録のタイムラインは出さない。
             SwipeDiscoveryEntry.feedBanner()
-            HStack {
-                Text(dataset.isDemo ? "架空の友達の記録" : "友達の記録")
-                    .font(MeshinowaFont.text(13, relativeTo: .caption))
-                    .foregroundStyle(MeshinowaTheme.secondaryText)
-                Spacer()
-            }
-            .padding(.vertical, 12)
-            if dataset.latestReviews.isEmpty {
-                Text("友達の記録はまだありません。友達がお店を評価すると、ここに新しい順で並びます。")
-                    .font(MeshinowaFont.text(14))
-                    .foregroundStyle(MeshinowaTheme.bodyText)
-            }
-            ForEach(dataset.latestReviews) { review in
-                let restaurant = dataset.restaurant(review.restaurantID)
-                let name = dataset.friendName(review.friendID)
-                NavigationLink {
-                    FriendMapScreen(isDemo: dataset.isDemo, initialSelection: review.restaurantID)
-                } label: {
-                    HStack(alignment: .top, spacing: 12) {
-                        FriendAvatar(name: name, size: 40)
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text("\(name)が評価")
-                                    .font(MeshinowaFont.text(14, weight: .bold))
-                                Spacer()
-                                Text(review.rating, format: .number.precision(.fractionLength(1)))
-                                    .font(MeshinowaFont.number(17, relativeTo: .body))
-                                    .foregroundStyle(MeshinowaTheme.green)
-                            }
-                            Text(restaurant?.name ?? "")
-                                .font(MeshinowaFont.heading(16))
-                            if !review.comment.isEmpty {
-                                Text("「\(review.comment)」")
-                                    .font(MeshinowaFont.text(14))
-                                    .foregroundStyle(MeshinowaTheme.bodyText)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 14)
-                    .overlay(alignment: .bottom) { Rectangle().fill(MeshinowaTheme.hairline).frame(height: 1) }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-            }
         }
         .padding(.horizontal, 20)
     }

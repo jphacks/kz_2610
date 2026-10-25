@@ -2,7 +2,7 @@ import GooglePlacesSwift
 import MapKit
 import SwiftUI
 
-/// 既存アプリの方針（地図・経路・店舗写真は Google Maps / Places）に合わせるためのアダプタ。
+/// 既存アプリの方針（地図・店舗写真は Google Maps / Places）に合わせるためのアダプタ。
 /// 既存の GoogleMapCanvas・RestaurantPhotoStore・GooglePlacesService は読むだけで、手を入れない。
 enum SwipeGoogleMapsBridge {
     @MainActor static var isMapConfigured: Bool { GooglePlacesService.isMapConfigured }
@@ -17,19 +17,6 @@ enum SwipeGoogleMapsBridge {
             return SwipePlacePhoto(image: loaded.image, credits: credits(for: loaded),
                                    shortCredit: shortCredit(for: loaded))
         }
-    }
-
-    /// Google Maps の徒歩経路（既存の「経路」ボタンと同じ開き方）。
-    @MainActor
-    static func walkingDirectionsURL(for candidate: SwipeCandidate, mapItems: SwipeMapItemRegistry) -> URL? {
-        var components = URLComponents(string: "https://www.google.com/maps/dir/")!
-        components.queryItems = [URLQueryItem(name: "api", value: "1"),
-                                 URLQueryItem(name: "destination", value: "\(candidate.latitude),\(candidate.longitude)"),
-                                 URLQueryItem(name: "travelmode", value: "walking")]
-        if let id = mapItems.item(for: candidate).googleDetails?.placeID {
-            components.queryItems?.append(URLQueryItem(name: "destination_place_id", value: id))
-        }
-        return components.url
     }
 
     private static func credits(for photo: LoadedRestaurantPhoto) -> AttributedString {

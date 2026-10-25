@@ -78,7 +78,7 @@ enum SwipeGestureEvaluator {
         return .cancel
     }
 
-    /// 右＝気になる、左＝イマイチ。しきい値に届かなければ nil。
+    /// 右＝行きたい、左＝イマイチ。しきい値に届かなければ nil。
     static func commitKind(translation: CGSize, predictedEndTranslation: CGSize, cardWidth: CGFloat) -> SwipeDecisionKind? {
         guard cardWidth > 0 else { return nil }
         let x = translation.width, predicted = predictedEndTranslation.width

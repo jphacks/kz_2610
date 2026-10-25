@@ -113,7 +113,7 @@ final class SwipeDeckViewModel: ObservableObject {
         }
     }
 
-    /// 期限切れのイマイチと、行きたい等から外れた「気になる」の記録を消す。
+    /// 期限切れのイマイチと、「行きたい」等から外れた右スワイプの記録を消す。
     private func reconcile() async {
         let stored = await dependencies.decisionStore.load()
         let result = SwipeDecisionReconciler.reconcile(stored, now: now(), isExcluded: savedShops.isExcluded)
@@ -150,7 +150,7 @@ final class SwipeDeckViewModel: ObservableObject {
 
     // MARK: - 判断
 
-    /// 最前面のカードを確定する。右（気になる）は先に「行きたい」へ保存し、失敗したら何も記録しない。
+    /// 最前面のカードを確定する。右（行きたい）は先に「行きたい」の一覧へ保存し、失敗したら何も記録しない。
     /// - Returns: 確定できたら true。false ならカードを元の位置に戻す。
     @discardableResult
     func decide(_ kind: SwipeDecisionKind) async -> Bool {
@@ -185,7 +185,7 @@ final class SwipeDeckViewModel: ObservableObject {
         return true
     }
 
-    /// 直前の1件を取り消してカードを戻す。「気になる」なら「行きたい」からも外す。ガイドの状態は戻さない。
+    /// 直前の1件を取り消してカードを戻す。右スワイプなら「行きたい」の一覧からも外す。ガイドの状態は戻さない。
     func undo() async {
         guard let last = deck.lastDecision, !isProcessing else { return }
         isProcessing = true
@@ -208,7 +208,7 @@ final class SwipeDeckViewModel: ObservableObject {
         phase = .ready
     }
 
-    /// 一覧から「気になる」と「イマイチ」を入れ替える（F-16）。
+    /// 一覧から「行きたい」と「イマイチ」を入れ替える（F-16）。
     func change(_ decision: SwipeDecision, to kind: SwipeDecisionKind) async {
         guard decision.kind != kind, !isProcessing else { return }
         isProcessing = true
@@ -237,7 +237,7 @@ final class SwipeDeckViewModel: ObservableObject {
         decisions.append(updated)
     }
 
-    /// 記録を削除する。削除した店は再び候補に出る。「気になる」なら「行きたい」からも外す。
+    /// 記録を削除する。削除した店は再び候補に出る。右スワイプなら「行きたい」の一覧からも外す。
     func delete(_ decision: SwipeDecision) async {
         guard !isProcessing else { return }
         isProcessing = true

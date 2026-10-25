@@ -1,12 +1,12 @@
 import Foundation
 
 enum SwipeDecisionKind: String, Codable, CaseIterable {
-    case interested      // 気になる
+    case interested      // 行きたい
     case notInterested   // イマイチ
 
     var title: String {
         switch self {
-        case .interested: return "気になる"
+        case .interested: return "行きたい"
         case .notInterested: return "イマイチ"
         }
     }

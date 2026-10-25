@@ -1,4 +1,5 @@
 import Foundation
+import MapKit
 
 /// 新機能から既存の「行きたい・行った・自分のレビュー」を使う窓口。
 ///
@@ -37,10 +38,13 @@ enum SwipeSavedShopsError: LocalizedError {
 final class WantToGoShopsBridge: SavedShopsBridge {
     private let wantToGo: SwipeWantToGoStore
     private let reviews: LocalReviewStore
+    /// デモの架空の店は端末の「行きたい」にだけ入れ、サーバーには送らない。
+    private let localOnly: Bool
 
-    init(wantToGo: SwipeWantToGoStore, reviews: LocalReviewStore) {
+    init(wantToGo: SwipeWantToGoStore, reviews: LocalReviewStore, localOnly: Bool = false) {
         self.wantToGo = wantToGo
         self.reviews = reviews
+        self.localOnly = localOnly
     }
 
     let wantToGoTitle = "行きたい"
@@ -58,7 +62,7 @@ final class WantToGoShopsBridge: SavedShopsBridge {
     }
 
     func addToWantToGo(_ candidate: SwipeCandidate) throws {
-        try wantToGo.add(candidate)
+        try wantToGo.add(candidate, localOnly: localOnly)
     }
 
     func removeFromWantToGo(shopID: String) throws {
@@ -70,26 +74,29 @@ final class WantToGoShopsBridge: SavedShopsBridge {
     }
 }
 
-/// 架空のデモ用。デモの店は既存の保存一覧に入れず（既存のデモ方針）、新機能専用のキーにだけ覚える。
-@MainActor
-final class DemoSavedShopsBridge: SavedShopsBridge {
-    static let storageKey = "swipeDiscovery.demoWantToGo"
-    private let defaults: UserDefaults
-
-    init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
+extension SwipeWantToGoEntry {
+    /// 既存の地図検索のお店（MKMapItem）から作る。店舗IDは既存の保存・レビューと同じ体系。
+    init(item: MKMapItem, addedAt: Date = .now) {
+        let coordinate = item.placemark.coordinate
+        self.init(id: SavedRestaurant.identifier(for: item), name: item.name ?? "飲食店",
+                  genre: item.pointOfInterestCategory?.rawValue, address: item.placemark.title,
+                  latitude: coordinate.latitude, longitude: coordinate.longitude,
+                  addedAt: addedAt, remoteRestaurantID: nil, isSynced: false)
     }
 
-    let wantToGoTitle = "デモの気になる"
-    let savedNotice = "デモのお店なので、保存一覧には入りません"
-
-    private var ids: Set<String> {
-        get { Set(defaults.stringArray(forKey: Self.storageKey) ?? []) }
-        set { defaults.set(Array(newValue).sorted(), forKey: Self.storageKey) }
+    static func shopID(for item: MKMapItem) -> String {
+        SavedRestaurant.identifier(for: item)
     }
 
-    func prepare() async {}
-    func isExcluded(shopID: String) -> Bool { ids.contains(shopID) }
-    func addToWantToGo(_ candidate: SwipeCandidate) throws { ids.insert(candidate.id) }
-    func removeFromWantToGo(shopID: String) throws { ids.remove(shopID) }
+    /// 既存の保存画面に並べるための形（いいねは付けない）。店舗IDは既存と同じ店名＋座標の体系。
+    var savedRestaurant: SavedRestaurant {
+        let coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let placemark = MKPlacemark(coordinate: coordinate, addressDictionary: ["Street": address ?? ""])
+        let item = MKMapItem(placemark: placemark)
+        item.name = name
+        if let genre, genre.hasPrefix("MKPOICategory") {
+            item.pointOfInterestCategory = MKPointOfInterestCategory(rawValue: genre)
+        }
+        return SavedRestaurant(item: item, savedAt: addedAt, isLiked: false)
+    }
 }

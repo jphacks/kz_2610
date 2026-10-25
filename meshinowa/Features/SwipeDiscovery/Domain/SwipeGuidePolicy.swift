@@ -51,7 +51,7 @@ enum SwipeGuidePolicy {
     /// 「スワイプの使い方を見る」（F-23）で初期値に戻す。「戻す」では呼ばない。
     static func reset() -> SwipeGuideState { .initial }
 
-    /// 左（イマイチ）・右（気になる）の矢印の濃さ。
+    /// 左（イマイチ）・右（行きたい）の矢印の濃さ。
     /// - Parameter dragX: ドラッグ中の横移動量。0 ならドラッグしていない。
     static func arrowOpacities(mode: SwipeGuideMode, dragX: CGFloat) -> (left: Double, right: Double) {
         let base: Double

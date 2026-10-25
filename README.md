@@ -3,7 +3,7 @@
 おいしい店は、友達が知っている。
 
 友達のおすすめを地図から探す、iPhone向けアプリです。
-iOS 17以上・SwiftUI・MapKit・Supabaseを使って、少しずつ開発します。
+iOS 17以上・SwiftUI・MapKit・Cloudflare Workers / D1 / R2を使って、少しずつ開発します。
 
 ## 開発環境
 
@@ -83,11 +83,13 @@ Friend Lensは「友達全員／お気に入りの友達／選択した友達」
 キャンセル時は変更を適用しません。対象0人や未評価のお店には0点を付けません。
 デモのお気に入りは固定の3人で、Lensの選択はデモ画面を開いている間だけ保持します。
 
-## Supabaseの準備
+## Cloudflareバックエンド
 
-DB定義・権限ルール・写真バケット・ローカルのDBテストと、Swift SDKの接続設定を追加しました。
-手順と検証範囲は [supabase/README.md](supabase/README.md) を参照してください。
-クラウドDBへの適用と認証・同期は、接続先への管理アクセスを確認してから進めます。
+Workersの認証付きAPI、D1のDB定義・権限制御、非公開R2の写真保存、SwiftのURLSession接続口を用意しています。
+Supabase SDKと旧DB実装は撤去しました。ログイン画面・端末内データのクラウド同期は未接続です。
+ローカル検証、本番設定、API仕様は [cloudflare/README.md](cloudflare/README.md) を参照してください。
+既存クラウドデータがある場合の切り替え方針は [cloudflare/MIGRATION.md](cloudflare/MIGRATION.md) に記載しています。
+この変更では既存クラウドのデータ移送・削除や本番デプロイは行っていません。
 
 ## 公開リポジトリでの開発
 

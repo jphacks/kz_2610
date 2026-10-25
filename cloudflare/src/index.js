@@ -128,6 +128,14 @@ async function route(request, env) {
     if (!result.success) fail(429, "rate_limited");
   }
   if (path === "/health" && method === "GET") return json({ status: "ok" });
+  // Development recovery is unavailable on deployed hosts, even if a local config was copied.
+  if (path === "/v1/auth/local-state" && method === "GET") {
+    if (env.LOCAL_DEVELOPMENT !== "true" || !["localhost","127.0.0.1","[::1]"].includes(url.hostname)) fail(404,"not_found");
+    await run("insert into maintenance_state(id,payload) values(2,?) on conflict(id) do nothing",crypto.randomUUID());
+    const state = await one("select payload from maintenance_state where id=2");
+    const users = await one("select count(*) as count from users");
+    return json({instance_id:state.payload,is_empty:users.count===0});
+  }
   if (path === "/v1/auth/guest" && method === "POST") {
     // Hackathon build: the session token is the only credential, so guests keep
     // the same account while the app keeps it in the Keychain.

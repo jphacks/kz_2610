@@ -590,3 +590,19 @@ test("orphan sweep retains referenced and recent objects and advances its cursor
   assert.deepEqual(removed,[`backup/${B}/${filename}`,"orphan.jpg"]);
   assert.equal(await sql("select payload from maintenance_state where id=1").first("payload"),"next-page");
 });
+
+
+test("development recovery state is stable and inaccessible on deployed hosts",async () => {
+  const request = (host) => new Request(`http://${host}/v1/auth/local-state`);
+  assert.equal((await worker.fetch(request("localhost:8787"),env)).status,404);
+  const localEnv = {...env, LOCAL_DEVELOPMENT:"true"};
+  assert.equal((await worker.fetch(request("api.example.test"),localEnv)).status,404);
+  const first = await (await worker.fetch(request("localhost:8787"),localEnv)).json();
+  const second = await (await worker.fetch(request("localhost:8787"),localEnv)).json();
+  assert.equal(first.instance_id,second.instance_id);
+  assert.equal(first.is_empty,false);
+  await sql("delete from users").run();
+  const empty = await (await worker.fetch(request("localhost:8787"),localEnv)).json();
+  assert.equal(empty.instance_id,first.instance_id);
+  assert.equal(empty.is_empty,true);
+});

@@ -344,7 +344,7 @@ private struct FriendConnectionsSection: View {
             HStack(spacing: 12) {
                 FriendAvatar(name: store.me?.displayName ?? "ゲスト", size: 48, symbol: store.me?.avatarSymbol)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(store.me?.displayName ?? "接続中…")
+                    Text(store.me?.displayName ?? store.connectionLabel)
                         .font(MeshinowaFont.heading(18))
                     Text(store.me.map { "ID: \($0.handle)" } ?? "")
                         .font(MeshinowaFont.number(15, relativeTo: .body))

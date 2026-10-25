@@ -13,12 +13,12 @@ final class FriendStoreTests: XCTestCase {
         super.tearDown()
     }
 
-    private func store() -> FriendStore {
+    private func store(url: String = "https://api.example.test", environmentStore: UserDefaults = .standard) -> FriendStore {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [BackendURLProtocol.self]
-        let backend = CloudflareBackend(configuration: BackendConfiguration(url: URL(string: "https://api.example.test")!),
+        let backend = CloudflareBackend(configuration: BackendConfiguration(url: URL(string: url)!),
                                         session: URLSession(configuration: config))
-        return FriendStore(backend: backend, credentials: credentials)
+        return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore)
     }
 
     func testWithoutBackendStaysUnavailable() async {
@@ -178,6 +178,45 @@ final class FriendStoreTests: XCTestCase {
         await store.start(sharing: [])
         XCTAssertEqual(guestCalls, 0)
         XCTAssertNil(credentials.load())
+    }
+
+    func testLocalDatabaseRecoveryRequiresEmptyDatabaseOrChangedInstance() async throws {
+        let origin = "http://localhost:8787"
+        let cases: [(Bool,String?,Int)] = [(true,nil,1),(false,"old-instance",1),(false,"current-instance",0),(false,nil,0)]
+        for (empty,previous,expectedCreations) in cases {
+            let domain = "meshinowa-tests-" + UUID().uuidString
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+            defer { defaults.removePersistentDomain(forName: domain) }
+            if let previous { defaults.set(previous,forKey: "backend.instance." + origin) }
+            XCTAssertTrue(credentials.save(token))
+            let replacement = String(repeating: "d", count: 64)
+            var creations = 0
+            BackendURLProtocol.handler = { [token] request in
+                let path = request.url?.path
+                if path == "/v1/auth/local-state" {
+                    return (200, Data("{\"instance_id\":\"current-instance\",\"is_empty\":\(empty ? "true" : "false")}".utf8))
+                }
+                if path == "/v1/auth/guest" {
+                    creations += 1
+                    return (201, Data("{\"access_token\":\"\(replacement)\",\"expires_at\":1,\"user_id\":\"00000000-0000-0000-0000-000000000001\"}".utf8))
+                }
+                if request.value(forHTTPHeaderField: "Authorization") == "Bearer " + token { return (401, Data("{}".utf8)) }
+                if path == "/v1/me" { return (200, Data("{\"id\":\"me\",\"display_name\":\"ゲスト\",\"handle\":\"abc2345\"}".utf8)) }
+                return (200, Data("[]".utf8))
+            }
+            let store = store(url: origin, environmentStore: defaults)
+            await store.refresh()
+            XCTAssertEqual(creations,expectedCreations)
+            XCTAssertEqual(credentials.load(),expectedCreations == 1 ? replacement : token)
+            if expectedCreations == 1 {
+                XCTAssertEqual(store.status,.ready)
+                XCTAssertEqual(store.me?.handle,"abc2345")
+                XCTAssertEqual(defaults.string(forKey:"backend.instance." + origin),"current-instance")
+            } else {
+                guard case .failed = store.status else { return XCTFail("Expected explicit authentication failure") }
+                XCTAssertNotEqual(store.connectionLabel,"接続を確認しています")
+            }
+        }
     }
 
 }

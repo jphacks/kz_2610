@@ -75,6 +75,13 @@ final class FriendStore: ObservableObject {
     @Published private(set) var preferences: Preferences?
     @Published private(set) var blockedProfiles: [BlockedProfile] = []
     private var tokenTask: Task<String, Error>?
+    private var localRecoveryTask: Task<String, Error>?
+    private let environmentStore: UserDefaults
+    private var recordedLocalEnvironment = false
+    private struct LocalEnvironment: Decodable {
+        let instanceId: String
+        let isEmpty: Bool
+    }
     var suspendsReviewSync = false
     var currentCredential: String? { token ?? credentials.load() }
     private var identityGeneration = 0
@@ -87,9 +94,11 @@ final class FriendStore: ObservableObject {
     private var token: String?
 
     init(backend: CloudflareBackend? = try? CloudflareBackend.makeClient(),
-         credentials: any GuestCredentials = GuestCredentialStore()) {
+         credentials: any GuestCredentials = GuestCredentialStore(),
+         environmentStore: UserDefaults = .standard) {
         self.backend = backend
         self.credentials = credentials
+        self.environmentStore = environmentStore
         status = backend == nil ? .unavailable : .connecting
     }
 
@@ -174,7 +183,7 @@ final class FriendStore: ObservableObject {
             else { for review in reviews { try await upload(review) } }
             await refresh()
         } catch {
-            status = .failed("サーバーに接続できませんでした。通信状況を確認して、もう一度お試しください。")
+            status = .failed(connectionMessage(for: error))
         }
     }
 
@@ -192,10 +201,11 @@ final class FriendStore: ObservableObject {
             guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
             (self.me, self.friends, self.requests, self.friendReviews) = values
             status = .ready
+            await rememberLocalEnvironment()
             await flushReviews()
         } catch {
             guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
-            status = .failed("友達の情報を読み込めませんでした。下に引っ張って再読み込みしてください。")
+            status = .failed(connectionMessage(for: error))
         }
     }
 
@@ -294,9 +304,14 @@ final class FriendStore: ObservableObject {
         if let token { return token }
         if let task = tokenTask { return try await task.value }
         if let saved = credentials.load() { token = saved; return saved }
-        guard let backend else { throw CloudflareBackend.BackendError.invalidSession }
+        return try await createGuestToken()
+    }
+
+    private func createGuestToken() async throws -> String {
+        guard !needsLocalReset, let backend else { throw CloudflareBackend.BackendError.invalidSession }
+        if let task = tokenTask { return try await task.value }
         let task = Task { @MainActor in
-            let guest = try await backend.signInAsGuest(displayName: "ゲスト")
+            let guest = try await backend.signInAsGuest(displayName: environmentStore.string(forKey: "profile.name") ?? "ゲスト")
             guard credentials.save(guest.accessToken) else {
                 try? await backend.signOut(accessToken: guest.accessToken)
                 throw CocoaError(.fileWriteNoPermission)
@@ -310,13 +325,66 @@ final class FriendStore: ObservableObject {
         return value
     }
 
-    // An expired credential never silently creates a different identity.
+    /// A deployed account is never replaced on a 401. Development DB resets must be proven first.
     func call<T: Decodable>(_ path: String, method: String = "GET", query: [URLQueryItem] = [],
                             json: [String: Any]? = nil) async throws -> T {
         guard let backend else { throw CloudflareBackend.BackendError.invalidSession }
         let body = try json.map { try JSONSerialization.data(withJSONObject: $0) }
-        return try await backend.request(path, method: method, query: query,
-                                         accessToken: try await accessToken(), body: body)
+        let credential = try await accessToken()
+        do {
+            return try await backend.request(path, method: method, query: query, accessToken: credential, body: body)
+        } catch CloudflareBackend.BackendError.http(401) {
+            let replacement = try await recoverLocalGuest(rejected: credential)
+            return try await backend.request(path, method: method, query: query, accessToken: replacement, body: body)
+        }
+    }
+
+    private var environmentKey: String { "backend.instance." + (backend?.configuration.url.absoluteString ?? "") }
+
+    private func recoverLocalGuest(rejected: String) async throws -> String {
+        guard !needsLocalReset, let backend, backend.configuration.isLoopback else { throw CloudflareBackend.BackendError.http(401) }
+        if let task = localRecoveryTask { return try await task.value }
+        if let token, token != rejected { return token }
+        let task = Task { @MainActor in
+            let state: LocalEnvironment = try await backend.request("/auth/local-state")
+            let previous = environmentStore.string(forKey: environmentKey)
+            guard state.isEmpty || (previous != nil && previous != state.instanceId) else {
+                throw CloudflareBackend.BackendError.http(401)
+            }
+            try libraryStore?.enqueueAllForSharing()
+            let replacement = try await createGuestToken()
+            environmentStore.set(state.instanceId, forKey: environmentKey)
+            recordedLocalEnvironment = true
+            me = nil; friends = []; requests = []; friendReviews = []
+            return replacement
+        }
+        localRecoveryTask = task
+        defer { localRecoveryTask = nil }
+        return try await task.value
+    }
+
+    private func rememberLocalEnvironment() async {
+        guard !recordedLocalEnvironment, let backend, backend.configuration.isLoopback else { return }
+        if let state: LocalEnvironment = try? await backend.request("/auth/local-state") {
+            environmentStore.set(state.instanceId, forKey: environmentKey)
+            recordedLocalEnvironment = true
+        }
+    }
+
+    private func connectionMessage(for error: Error) -> String {
+        if case CloudflareBackend.BackendError.http(401) = error {
+            return "認証情報を確認できませんでした。設定の引き継ぎコードで復旧してください。端末内の記録は保持しています。"
+        }
+        return "サーバーに接続できませんでした。通信状況を確認して再読み込みしてください。"
+    }
+
+    var connectionLabel: String {
+        switch status {
+        case .unavailable: return "この端末のプロフィール"
+        case .connecting: return "接続を確認しています"
+        case .ready: return "接続済み"
+        case .failed: return "サーバーに接続できませんでした"
+        }
     }
 
     func paged<T: Decodable>(_ path: String) async throws -> [T] {
@@ -331,7 +399,11 @@ final class FriendStore: ObservableObject {
 
     func transferData(_ path: String, method: String = "GET", data: Data? = nil) async throws -> Data {
         guard let backend else { throw CloudflareBackend.BackendError.invalidSession }
-        return try await backend.data(path, method: method, accessToken: try await accessToken(), body: data, contentType: "image/jpeg")
+        let credential = try await accessToken()
+        do { return try await backend.data(path, method: method, accessToken: credential, body: data, contentType: "image/jpeg") }
+        catch CloudflareBackend.BackendError.http(401) {
+            return try await backend.data(path, method: method, accessToken: try await recoverLocalGuest(rejected: credential), body: data, contentType: "image/jpeg")
+        }
     }
 
     func updateProfile(name: String, bio: String, symbol: String) async throws {

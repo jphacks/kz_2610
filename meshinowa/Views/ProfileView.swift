@@ -30,7 +30,7 @@ struct ProfileView: View {
                             if let me = friends.me {
                                 Text("ID: \(me.handle)").font(MeshinowaFont.text(13)).textSelection(.enabled)
                             } else {
-                                Text(friends.isAvailable ? "接続を確認しています" : "この端末のプロフィール")
+                                Text(friends.connectionLabel)
                                     .font(MeshinowaFont.text(13)).foregroundStyle(MeshinowaTheme.secondaryText)
                             }
                         }
@@ -48,6 +48,13 @@ struct ProfileView: View {
                     }
                 }
                 .padding(20).paperCard()
+                if case .failed(let message) = friends.status {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(message).font(MeshinowaFont.text(14))
+                        Button("再読み込み") { Task { await friends.refresh() } }
+                            .buttonStyle(PaperButtonStyle(kind: .secondary))
+                    }.padding(16).paperCard()
+                }
                 HStack(spacing: 0) {
                     statistic("行った", count: reviews.reviews.count)
                     divider

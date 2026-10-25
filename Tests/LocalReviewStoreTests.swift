@@ -184,4 +184,15 @@ final class LocalReviewStoreTests: XCTestCase {
         XCTAssertEqual(store.reviews.first?.photoFileNames, [name])
     }
 
+    @MainActor func testDatabaseResetRequeuesAcknowledgedReviewsWithoutLosingLocalData() async throws {
+        let store = LocalReviewStore(fileURL: try url())
+        try store.save(item:item(),rating:4.5,comment:"端末に残すレビュー")
+        try store.acknowledge(try XCTUnwrap(store.pending.first))
+        XCTAssertTrue(store.pending.isEmpty)
+        try store.enqueueAllForSharing()
+        XCTAssertEqual(store.pending.count,1)
+        XCTAssertEqual(store.pending.first?.review?.comment,"端末に残すレビュー")
+        XCTAssertEqual(store.reviews.first?.rating,4.5)
+    }
+
 }

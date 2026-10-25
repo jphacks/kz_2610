@@ -3,6 +3,10 @@ import Foundation
 struct BackendConfiguration {
     let url: URL
 
+    var isLoopback: Bool {
+        ["localhost", "127.0.0.1", "::1", "[::1]"].contains(url.host?.lowercased() ?? "")
+    }
+
     enum ConfigurationError: LocalizedError {
         case invalidURL
         var errorDescription: String? { "Cloudflare APIのURLが正しくありません。" }

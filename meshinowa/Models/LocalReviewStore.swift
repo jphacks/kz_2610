@@ -187,6 +187,12 @@ final class LocalReviewStore: ObservableObject {
         if loadError != nil { throw ReviewError.unreadableData }
     }
 
+    func enqueueAllForSharing() throws {
+        let existing = Set(reviews.map(\.id))
+        let deletions = pending.filter { $0.review == nil && !existing.contains($0.restaurant.id) }
+        try write(reviews, pending: deletions + reviews.map { ReviewSyncOperation(restaurant: $0.restaurant, review: $0) })
+    }
+
     func acknowledge(_ operation: ReviewSyncOperation) throws {
         try write(reviews, pending: pending.filter { $0.id != operation.id })
     }

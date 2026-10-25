@@ -145,6 +145,10 @@ struct MapHomeView: View {
         .onChange(of: carouselPosition) { _, slot in
             if let slot, slot.id != selectedID { selectedID = slot.id }
         }
+        .task(id: selectedID) {
+            guard let index = carouselItems.firstIndex(where: { $0.id == selectedID }) else { return }
+            await RestaurantPhotoStore.shared.prepareCarousel(items: carouselItems.map(\.item), selectedIndex: index)
+        }
         // スワイプが止まってから、端の周にいれば真ん中の周の同じカードへ見た目を変えずに戻す。
         .task(id: carouselPosition) {
             guard let slot = carouselPosition, slot.lap != 1 else { return }

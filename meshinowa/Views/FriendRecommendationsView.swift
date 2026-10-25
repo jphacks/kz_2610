@@ -215,11 +215,8 @@ private struct FriendRestaurantCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            FoodGenreMark(genre: restaurant.mapItem.foodGenre, size: 64)
-                .frame(maxWidth: .infinity)
-                .background(MeshinowaTheme.photo)
-                .frame(height: 130)
-                .overlay(alignment: .bottomLeading) {
+            RestaurantPhotoView(item: restaurant.mapItem, showsGoogleAttribution: false, imageHeight: 130)
+                .overlay(alignment: .topLeading) {
                     if let review = summary.reviews.first {
                         let name = dataset.friendName(review.friendID)
                         HStack(spacing: 8) {

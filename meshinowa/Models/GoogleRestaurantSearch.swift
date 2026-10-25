@@ -62,9 +62,6 @@ enum GoogleRestaurantSearch {
 
     static func search(term: String, region: MKCoordinateRegion, genre: RestaurantGenre,
                        nearby: Bool) async throws -> [MKMapItem] {
-        if PresentationDemo.isEnabled {
-            return PresentationDemo.search(term: term, region: region, genre: genre, nearby: nearby)
-        }
         guard GooglePlacesService.isConfigured else { throw URLError(.userAuthenticationRequired) }
         let response = try await PlacesClient.shared.responseForSearchByText(
             with: request(term: term, region: region, genre: genre, nearby: nearby)).get()

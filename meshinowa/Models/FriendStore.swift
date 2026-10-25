@@ -54,13 +54,21 @@ final class FriendStore: ObservableObject {
     @Published private(set) var friendReviews: [RemoteReview] = []
 
     @Published private var presentationData: FriendDataset?
+    private var initialPresentationData: FriendDataset?
+    private var isResolvingPresentation = false
+    private var didResolvePresentation = false
+    private let presentationLoader: () async throws -> PresentationDemo.Resolution
     private let backend: CloudflareBackend?
     private let credentials: GuestCredentialStore
     private var token: String?
 
     init(backend: CloudflareBackend? = try? CloudflareBackend.makeClient(),
-         credentials: GuestCredentialStore = GuestCredentialStore(), presentation: FriendDataset? = nil) {
+         credentials: GuestCredentialStore = GuestCredentialStore(), presentation: FriendDataset? = nil,
+         presentationLoader: (() async throws -> PresentationDemo.Resolution)? = nil) {
         self.presentationData = presentation
+        self.initialPresentationData = presentation
+        self.didResolvePresentation = presentation?.restaurants.isEmpty == false
+        self.presentationLoader = presentationLoader ?? { try await PresentationDemo.resolveStores() }
         self.backend = presentation == nil ? backend : nil
         self.credentials = credentials
         status = presentation != nil ? .ready : (backend == nil ? .unavailable : .connecting)
@@ -74,11 +82,11 @@ final class FriendStore: ObservableObject {
             Friend(id: $0.id, displayName: $0.name, handle: $0.id.replacingOccurrences(of: "-", with: "_"),
                    isFavorite: data.favoriteFriendIDs.contains($0.id) ? 1 : 0)
         }
-        status = .ready
+        status = data.restaurants.isEmpty ? .connecting : .ready
     }
 
     func resetPresentation() {
-        guard isPresentation, let data = PresentationDemo.dataset else { return }
+        guard isPresentation, let data = initialPresentationData else { return }
         loadPresentation(data)
     }
 
@@ -115,6 +123,7 @@ final class FriendStore: ObservableObject {
 
     /// 起動時に呼ぶ。初回はゲストアカウントを作り、端末内のレビューを友達に共有する。
     func start(sharing reviews: [LocalReview]) async {
+        if isPresentation { await refresh(); return }
         guard backend != nil else { return }
         do {
             _ = try await accessToken()
@@ -126,7 +135,25 @@ final class FriendStore: ObservableObject {
         }
     }
 
-    func refresh() async {
+    func refresh(force: Bool = false) async {
+        if isPresentation {
+            guard !isResolvingPresentation, force || !didResolvePresentation else { return }
+            isResolvingPresentation = true
+            status = .connecting
+            defer { isResolvingPresentation = false }
+            do {
+                let result = try await presentationLoader()
+                initialPresentationData = result.dataset
+                loadPresentation(result.dataset)
+                didResolvePresentation = true
+                if !result.missingNames.isEmpty {
+                    status = .failed("一部の店舗情報をGoogleから取得できませんでした。下に引いて再読み込みできます。")
+                }
+            } catch {
+                status = .failed("店舗情報をGoogleから取得できませんでした。通信と設定を確認し、下に引いて再読み込みしてください。")
+            }
+            return
+        }
         guard backend != nil else { return }
         do {
             async let me: Profile = call("/me")

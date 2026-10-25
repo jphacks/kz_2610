@@ -146,8 +146,8 @@ struct MapHomeView: View {
             }
         }
         .task(id: isActive) {
-            guard isActive else { return }
-            if searchesAllPlaces && results.isEmpty && searchedRegion == nil && (GooglePlacesService.isConfigured || PresentationDemo.isEnabled) {
+            guard isActive, ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+            if searchesAllPlaces && results.isEmpty && searchedRegion == nil && GooglePlacesService.isConfigured {
                 beginSearch(nearby: true)
             }
             while !Task.isCancelled {

@@ -35,11 +35,7 @@ struct RestaurantPhotoView: View {
         VStack(alignment: .leading, spacing: 5) {
             GeometryReader { proxy in
                 Group {
-                    if PresentationDemo.isEnabled {
-                        FoodGenreMark(genre: item.foodGenre, size: expanded ? 88 : 52)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(MeshinowaTheme.photo)
-                    } else if let photo {
+                    if let photo {
                         Image(uiImage: photo).resizable().scaledToFill()
                     } else {
                         PhotoPlaceholder(symbol: MapHomeView.symbol(for: item))

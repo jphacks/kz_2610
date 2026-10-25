@@ -82,7 +82,6 @@ struct SavedRestaurant: Codable, Identifiable {
         let placemark = MKPlacemark(coordinate: coordinate, addressDictionary: ["Street": address])
         let item = MKMapItem(placemark: placemark)
         item.name = name
-        item.searchedFoodGenre = PresentationDemo.foodGenreHint(for: id)
         item.phoneNumber = phoneNumber
         item.pointOfInterestCategory = category.map(MKPointOfInterestCategory.init(rawValue:))
         if let googlePlaceID { item.googleDetails = GoogleRestaurantDetails(placeID: googlePlaceID) }

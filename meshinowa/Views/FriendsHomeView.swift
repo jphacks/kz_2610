@@ -40,9 +40,9 @@ struct FriendsHomeView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .refreshable { await store.refresh() }
+        .refreshable { await store.refresh(force: true) }
         .task(id: isActive) {
-            guard isActive else { return }
+            guard isActive, ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
             while !Task.isCancelled {
                 await store.refresh()
                 try? await Task.sleep(for: .seconds(10))

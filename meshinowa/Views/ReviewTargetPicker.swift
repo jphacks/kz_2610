@@ -123,7 +123,7 @@ struct ReviewTargetPicker: View {
     private func search() {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !term.isEmpty, !isSearching else { return }
-        guard GooglePlacesService.isConfigured || PresentationDemo.isEnabled else {
+        guard GooglePlacesService.isConfigured else {
             searchMessage = "店名で探すには、Google Places の設定が必要です。"
             return
         }

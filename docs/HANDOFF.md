@@ -90,9 +90,11 @@ Google の種類名には、実在を確かめていないもの（例：`yakini
 
 ## 金沢工大・発表用ブランチ（2026-10-25）
 
-- `codex/kit-presentation-demo` をmainの5ff216bから作成。発表用のデータ・操作手順は [PRESENTATION_DEMO.md](PRESENTATION_DEMO.md)。
-- `meshinowa-Presentation` Scheme / `Presentation` ビルド構成 / `PRESENTATION_DEMO` フラグを追加。別Bundle IDの「meshinowa デモ」として通常版と共存する。
-- 実在の店舗6軒と架空の友達6人・友達レビュー12件。初回に自分のレビュー2件・いいね3件も作成する。
-- 発表版はCloudflareを使わない。検索は固定候補から返し、地図の初期位置は扇が丘キャンパス周辺。写真の代わりに器の形を使う。画面上部に発表デモの表示と初期化を用意。
-- 通常のDebug/Releaseは発表データをコンパイルしない。通常版のデータ・リモートmainは変更しない。
-- 発表版テスト：64件、通常版：60件。各1件スキップ、失敗0。通常Debugのバイナリに架空の友達データがないことも確認。iPhone 17 Proへ発表版をインストールして地図とフィードの表示を確認。
+- `codex/kit-presentation-demo`。起動方法は [PRESENTATION_DEMO.md](PRESENTATION_DEMO.md)。
+- 最新方針：モックは友達・星・コメントだけ。店舗検索・住所・座標・写真は通常版と同じGoogle実データを使う。自分の記録は自動生成しない。
+- `meshinowa-Presentation` Scheme / `Presentation` 構成で、別Bundle IDの「meshinowa デモ」として起動する。
+- 起動時にGoogleから周辺の対象5店を照合し、取得したPlace IDを含む店舗オブジェクトに友達のモック評価を付ける。固定店舗検索・固定座標・写真の差し替えは撤去。
+- 友達6人・最大12件のレビュー。未取得の店は仮データで補わず非表示。失敗の案内と、友達画面を下に引いて再読み込みする導線を用意。
+- 「友達を戻す」は友達データだけを初期化。自分のレビュー・いいねは保持する。以前の版の自分用サンプルだけは移行時に削除する。
+- 発表用の友達ストアはCloudflareに接続しない。通常のDebug/Releaseでは発表データをコンパイルしない。
+- 修正後の発表版テスト：66件、通常版：60件。各1件スキップ、失敗0。iPhone 17 ProでGoogle実データの検索結果と友達のモック評価が同じ地図に表示されることを確認。

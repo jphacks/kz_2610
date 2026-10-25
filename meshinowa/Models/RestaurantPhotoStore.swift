@@ -111,7 +111,6 @@ final class RestaurantPhotoStore: ObservableObject {
     }
 
     private static func fetch(_ item: MKMapItem) async throws -> LoadedRestaurantPhoto? {
-        if PresentationDemo.isEnabled { return nil }
         guard GooglePlacesService.isConfigured else { return nil }
         let place: Place
         if let id = item.googleDetails?.placeID {

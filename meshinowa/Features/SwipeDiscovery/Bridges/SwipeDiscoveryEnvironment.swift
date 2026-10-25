@@ -17,6 +17,7 @@ struct SwipeDiscoveryDependencies {
 
     /// 友達タブと同じく、サーバーから取得した友達の実データだけを使う（アプリにデモデータはない）。
     static func make(friends: FriendStore, reviews: LocalReviewStore, location: LocationStore) -> SwipeDiscoveryDependencies {
+        removeLegacyDemoData()
         let mapItems = SwipeMapItemRegistry()
         let provider = FriendDatasetReviewProvider(isDemo: false, mapItems: mapItems) { friends.dataset }
         let wantToGo = SwipeDiscoveryEntry.wantToGoStore
@@ -27,6 +28,14 @@ struct SwipeDiscoveryDependencies {
             guideStore: SwipeGuideStateStore(), location: AppLocationBridge(store: location), mapItems: mapItems,
             placePhotos: SwipePlacePhotoCache(fetcher: SwipeGoogleMapsBridge.placePhotoFetcher(mapItems: mapItems)),
             wantToGo: wantToGo)
+    }
+}
+
+extension SwipeDiscoveryDependencies {
+    /// 以前のデモ（架空の店）の判断記録と保存先を消す。アプリからデモがなくなったので使わない。
+    static func removeLegacyDemoData(defaults: UserDefaults = .standard) {
+        try? FileManager.default.removeItem(at: SwipeDecisionStore.defaultURL(fileName: "swipe_decisions_demo.json"))
+        defaults.removeObject(forKey: "swipeDiscovery.demoWantToGo")
     }
 }
 

@@ -56,9 +56,14 @@ final class SwipeWantToGoStore: ObservableObject {
         }
         do {
             let file = try JSONDecoder().decode(SwipeWantToGoFile.self, from: Data(contentsOf: fileURL))
-            entries = SwipeWantToGoMerge.sorted(file.entries)
-            pendingRemovals = file.pendingRemovals
+            // 以前のデモ（架空の店、端末だけの記録）は、アプリからデモがなくなったので消す。
+            let kept = file.entries.filter { $0.sendsToServer }
+            entries = SwipeWantToGoMerge.sorted(kept)
+            pendingRemovals = file.pendingRemovals.filter { $0.sendsToServer }
             canWrite = true
+            if kept.count != file.entries.count {
+                try? persist(entries: kept, pendingRemovals: pendingRemovals)
+            }
         } catch {
             // 壊れたファイルは退避し、空から始める（既存の保存ファイルには触れない）。
             let broken = fileURL.appendingPathExtension("broken")

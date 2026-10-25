@@ -75,6 +75,19 @@ final class SwipeWantToGoTests: XCTestCase {
         XCTAssertFalse(store.contains("demo"))
     }
 
+    /// 以前のデモで入った架空の店（端末だけの記録）は、読み込み時に消える。
+    @MainActor
+    func testLegacyDemoEntriesAreRemovedOnLoad() throws {
+        let url = SwipeFixtures.temporaryURL("want_to_go.json")
+        let store = SwipeWantToGoStore(fileURL: url, syncsAutomatically: false)
+        try store.add(SwipeFixtures.candidate("demo"), localOnly: true)
+        try store.add(SwipeFixtures.candidate("real"))
+        let reopened = SwipeWantToGoStore(fileURL: url, syncsAutomatically: false)
+        XCTAssertEqual(reopened.entries.map(\.id), ["real"])
+        let again = SwipeWantToGoStore(fileURL: url, syncsAutomatically: false)
+        XCTAssertEqual(again.entries.map(\.id), ["real"])
+    }
+
     @MainActor
     func testVisitedShopsAreRemoved() throws {
         let store = SwipeWantToGoStore(fileURL: SwipeFixtures.temporaryURL("want_to_go.json"))

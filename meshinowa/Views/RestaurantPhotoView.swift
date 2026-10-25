@@ -8,9 +8,12 @@ struct RestaurantPhotoView: View {
     var isActive = true
     var expanded = false
     var showsGoogleAttribution = true
-    @State private var photo: UIImage?
-    @State private var metadata: Photo?
-    @State private var placeAttributions: AttributedString?
+    @State private var loaded: LoadedRestaurantPhoto?
+
+    private var current: LoadedRestaurantPhoto? { loaded ?? RestaurantPhotoStore.shared.cachedPhoto(for: item) }
+    private var photo: UIImage? { current?.image }
+    private var metadata: Photo? { current?.metadata }
+    private var placeAttributions: AttributedString? { current?.placeAttributions }
     @State private var failed = false
     @State private var loading = false
     @State private var retry = 0
@@ -72,33 +75,14 @@ struct RestaurantPhotoView: View {
         .foregroundStyle(MeshinowaTheme.secondaryText)
         .frame(maxWidth: .infinity, alignment: .leading)
         .task(id: "\(identity)|\(isActive)|\(retry)") {
-            guard isActive, photo == nil, GooglePlacesService.isConfigured else { return }
+            guard isActive, loaded == nil, GooglePlacesService.isConfigured else { return }
             loading = true
             failed = false
             defer { loading = false }
             do {
-                let place: Place
-                if let id = item.googleDetails?.placeID {
-                    place = try await PlacesClient.shared.fetchPlace(with: FetchPlaceRequest(
-                        placeID: id, placeProperties: [.placeID, .photos])).get()
-                } else {
-                    let query = GooglePlaceQuery(item: item)
-                    guard query.isValid else { return }
-                    let response = try await PlacesClient.shared.responseForSearchByText(with: query.request).get()
-                    guard let match = response.places?.first,
-                          CLLocation(latitude: match.location.latitude, longitude: match.location.longitude)
-                            .distance(from: CLLocation(latitude: query.latitude, longitude: query.longitude)) < 300 else { return }
-                    place = match
-                    if let id = match.placeID { item.googleDetails = GoogleRestaurantDetails(placeID: id) }
-                }
+                let result = try await RestaurantPhotoStore.shared.photo(for: item)
                 try Task.checkCancellation()
-                guard let first = place.photos?.first else { return }
-                let image = try await PlacesClient.shared.fetchPhoto(with: FetchPhotoRequest(
-                    photo: first, maxSize: CGSize(width: 1000, height: 700))).get()
-                try Task.checkCancellation()
-                metadata = first
-                placeAttributions = place.attributions
-                photo = image
+                loaded = result
             } catch is CancellationError {
                 // Disappeared/recycled cards must not show a late response from another store.
             } catch {

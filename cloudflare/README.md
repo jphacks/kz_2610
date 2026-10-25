@@ -22,7 +22,7 @@ npm run dev --prefix cloudflare
 
 iOS側は`Config/Cloudflare.example.xcconfig`を`Config/Cloudflare.xcconfig.local`にコピーし、
 `CLOUDFLARE_API_URL`にAPIのoriginを設定します。未設定なら端末内モードです。
-シミュレータ用HTTPはlocalhost・loopbackだけ許可します。実機はHTTPSの開発用APIを使用します。
+HTTPはlocalhost・loopback、またはDebugビルドの`.local`ホストだけ許可します。実機用の同一Wi-Fi中継は末尾の手順を参照してください。公開ホストにはHTTPSを使用します。
 
 ## iOSの店舗カード
 
@@ -188,3 +188,24 @@ R2残存オブジェクトはアカウント削除と同時に閲覧不可とな
 `GET /v1/auth/local-state`は`LOCAL_DEVELOPMENT=true`かつlocalhost/loopbackホストの場合だけ利用できます。永続的なDB識別子と、ユーザーが0件かどうかを返します。公開ホストでは404です。
 iOSは401を受けたとき、このDBが空、または端末が記録した開発DBの識別子と異なることを確認できた場合だけゲスト接続を作り直します。端末の保存・写真・レビューは削除せず、レビューを共有待ちへ戻します。
 同じDBでセッションだけが無効になった場合や、本番サーバーの401ではアカウントを勝手に作り直しません。再認証・引き継ぎが必要なことを表示します。
+
+
+## 同じWi-Fiの実機から接続する開発ビルド
+
+MacとiPhoneを同じWi-Fiへ接続し、まず通常の`npm run dev`でWranglerをlocalhost:8787に起動します。
+HTTPを使う開発ネットワークでの通信に同意している場合、アプリAPIだけを転送する中継を起動します。
+
+```sh
+python3 cloudflare/dev-device-proxy.py --bind <MacのWi-FiのIPv4アドレス>
+```
+
+`Config/Cloudflare.xcconfig.local`には次のSDK条件付き設定を追加できます。Macのホスト名は`scutil --get LocalHostName`で確認します。
+
+```xcconfig
+CLOUDFLARE_API_URL[sdk=iphoneos*][config=Debug] = http:/$()/YOUR-MAC.local:8788
+```
+
+この設定はシミュレータ用のlocalhost設定に影響しません。`.local`宛のHTTP接続はDebugビルドだけが受け付けます。
+iPhoneでローカルネットワークへのアクセスを許可してください。Macとサーバー・中継の起動が必要です。
+中継は`/health`と`/v1/`だけを扱い、Wrangler Local Explorerや管理APIをLANへ出しません。リクエスト本文や認証情報はログに記録しません。
+このHTTP中継は認証情報とアプリのデータを暗号化しません。許可された開発ネットワークに限って使用してください。公開ホストの接続にはHTTPSを使用します。

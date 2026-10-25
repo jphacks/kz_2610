@@ -342,7 +342,7 @@ final class FriendStore: ObservableObject {
     private var environmentKey: String { "backend.instance." + (backend?.configuration.url.absoluteString ?? "") }
 
     private func recoverLocalGuest(rejected: String) async throws -> String {
-        guard !needsLocalReset, let backend, backend.configuration.isLoopback else { throw CloudflareBackend.BackendError.http(401) }
+        guard !needsLocalReset, let backend, backend.configuration.isDevelopmentHost else { throw CloudflareBackend.BackendError.http(401) }
         if let task = localRecoveryTask { return try await task.value }
         if let token, token != rejected { return token }
         let task = Task { @MainActor in
@@ -364,7 +364,7 @@ final class FriendStore: ObservableObject {
     }
 
     private func rememberLocalEnvironment() async {
-        guard !recordedLocalEnvironment, let backend, backend.configuration.isLoopback else { return }
+        guard !recordedLocalEnvironment, let backend, backend.configuration.isDevelopmentHost else { return }
         if let state: LocalEnvironment = try? await backend.request("/auth/local-state") {
             environmentStore.set(state.instanceId, forKey: environmentKey)
             recordedLocalEnvironment = true

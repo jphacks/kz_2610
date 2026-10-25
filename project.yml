@@ -41,6 +41,7 @@ targets:
         GooglePlacesAPIKey: $(GOOGLE_PLACES_IOS_API_KEY)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: 開発用Macのサーバーに接続して、プロフィールと友達の記録を表示します。
         NSLocationWhenInUseUsageDescription: 現在地の近くのお店を探し、保存したお店を距離順に並べるために使用します。
         UILaunchScreen: {}
         UIApplicationSceneManifest:

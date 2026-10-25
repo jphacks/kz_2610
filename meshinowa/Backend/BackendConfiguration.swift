@@ -7,6 +7,16 @@ struct BackendConfiguration {
         ["localhost", "127.0.0.1", "::1", "[::1]"].contains(url.host?.lowercased() ?? "")
     }
 
+    /// HTTP over Bonjour is restricted to developer builds on the local network.
+    var isDevelopmentHost: Bool {
+        if isLoopback { return true }
+        #if DEBUG
+        return url.host?.lowercased().hasSuffix(".local") == true
+        #else
+        return false
+        #endif
+    }
+
     enum ConfigurationError: LocalizedError {
         case invalidURL
         var errorDescription: String? { "Cloudflare APIのURLが正しくありません。" }
@@ -20,7 +30,7 @@ struct BackendConfiguration {
               url.user == nil, url.password == nil, url.query == nil, url.fragment == nil,
               url.path.isEmpty || url.path == "/", !raw.contains("REPLACE_ME"),
               !raw.contains("$("), !raw.contains(where: { $0.isWhitespace }),
-              url.scheme == "https" || (url.scheme == "http" && ["localhost", "127.0.0.1", "::1", "[::1]"].contains(host)) else {
+              url.scheme == "https" || (url.scheme == "http" && BackendConfiguration(url: url).isDevelopmentHost) else {
             throw ConfigurationError.invalidURL
         }
         return BackendConfiguration(url: url)

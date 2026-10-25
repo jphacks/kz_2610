@@ -41,6 +41,7 @@ targets:
         GooglePlacesAPIKey: $(GOOGLE_PLACES_IOS_API_KEY)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        NSLocationWhenInUseUsageDescription: 現在地の近くのお店を探し、保存したお店を距離順に並べるために使用します。
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -70,6 +71,17 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app.tests
         GENERATE_INFOPLIST_FILE: YES
+  meshinowaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: meshinowa
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app.uitests
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   meshinowa:
     build:
@@ -80,3 +92,4 @@ schemes:
     test:
       targets:
         - meshinowaTests
+        - meshinowaUITests

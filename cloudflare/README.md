@@ -26,7 +26,7 @@ iOS側は`Config/Cloudflare.example.xcconfig`を`Config/Cloudflare.xcconfig.loca
 
 ## iOSの店舗カード
 
-写真はiOSアプリのGoogle公式Places UI Kitで表示します。
+写真はGoogle Places公式SDKで取得し、iOSアプリ独自の画像枠と必須クレジットで表示します。
 [設定手順](../docs/GOOGLE_PLACES.md)を参照してください。Cloudflareには写真検索・写真プロキシAPIを設けていません。
 
 ## 認証（ゲスト）
@@ -38,8 +38,8 @@ iOS側は`Config/Cloudflare.example.xcconfig`を`Config/Cloudflare.xcconfig.loca
    IDは紛らわしい文字を除いた英小文字・数字7文字で、友達がIDで見つけられるよう`allow_id_search`を有効にする。
 3. 以後`Authorization: Bearer <access_token>`を送る。`DELETE /v1/auth/session`でそのセッションを失効する。
 
-トークンがゲストアカウントの唯一の鍵です。iOSはKeychain（この端末のみ）に保存し、失うと同じアカウントには戻れません。
-端末間の引き継ぎ・アカウント削除画面はありません。
+通常の認証にはセッショントークンを使用します。iOSはKeychain（この端末のみ）に保存し、失った場合は事前に発行した引き継ぎコードで復旧します。
+設定から引き継ぎコードを発行・再発行し、別端末へ引き継げます。コードはサーバーにSHA-256のみを保存します。アカウント削除画面も実装しています。
 D1にはセッショントークンのSHA-256のみを保存します。
 ゲスト作成には今までの認証POSTと同じCloudflare Rate Limitingを使用します（IP・拠点ごとに20回/分、概算）。
 
@@ -60,7 +60,7 @@ SQLやテーブル名を指定できる汎用APIはありません。書き込�
 
 関係の競合はD1の単一書き込み処理とトリガーで制約します。
 D1のread replicationは有効化しない構成です。有効化する際は、失効・ブロック直後の認可が古い状態を参照しないよう再設計してください。
-配列の応答は最大1000件、Lensの指定IDは最大100件です。1000件を超える同期を行う場合はページングが必要です。
+配列の応答は最大1000件、Lensの指定IDは最大100件です。一覧は`limit`（1〜1000、既定1000）と`offset`（0以上、既定0）に対応します。iOSは1000件ずつ全ページを取得します。
 地図の経度範囲はmin≤maxで、日付変更線をまたぐ範囲は二分して取得します。
 
 ## API
@@ -114,7 +114,7 @@ R2の公開URL・r2.dev・公開カスタムドメインは有効にしません
 
 D1とR2を跨ぐ原子的なトランザクションはありません。レビュー削除時には写真メタデータがcascadeで消え、
 残存R2オブジェクトは誰にも閲覧されません。所有者は枠が消えた後もobject APIで残存ファイルを削除できます。
-アップロードと削除が競合した場合やR2削除が失敗した場合も同様です。定期的な孤立オブジェクトの掃除は今後の運用項目です。
+アップロードと削除が競合した場合やR2削除が失敗した場合も同様です。1時間ごとのscheduledハンドラーで100件ずつ走査し、24時間以上経過してメタデータから参照されないオブジェクトを削除します。走査cursorはD1に保存し、大きなバケットでも次回に続けます。
 
 ## 本番設定とデプロイ
 
@@ -160,3 +160,24 @@ iOS側はURLProtocolを使い、設定・送信先・認証ヘッダー・エラ
 - [D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)
 - [R2 Workers API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/)
 - [Workers Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+
+
+## プロフィール・バックアップ・引き継ぎAPI（migration 0004）
+
+| メソッド・パス | 用途 |
+| --- | --- |
+| `PATCH /v1/me` | `display_name, handle`と任意の`bio`（160文字）, `avatar_symbol`（アプリの8種類） |
+| `DELETE /v1/me` | 本人のアカウントをcascade削除し、セッション・引き継ぎコード・バックアップを失効 |
+| `POST /v1/me/recovery-key` | 新しい64桁のコードを返す。再発行で以前のコードは無効 |
+| `POST /v1/auth/recover` | 認証不要。`recovery_key`で同じアカウントのセッションを発行。認証POSTの頻度制限を適用 |
+| `GET /v1/library` | 本人専用の`version, snapshot`。未作成はversion=0、snapshot=null |
+| `PUT /v1/library` | `version, snapshot`。version一致時だけ更新し、競合は409。schema=1、saved/reviews配列。メタデータ最大1.5MB、超過は413 |
+| `GET, PUT /v1/library/photos/:uuid.jpg` | 本人専用のJPEGバックアップ（各5MiBまで） |
+
+通常のレビュー共有では写真・来店日を送信しません。バックアップボタンを押した場合だけ、保存・レビュー・写真・来店日を本人専用の領域に保存します。
+バックアップは常時自動同期ではありません。復元前に全写真を取得・検証し、ローカル変更の失敗時は元の記録に戻します。
+他ユーザーや友達からバックアップを読めるAPIはありません。引き継ぎコードを持つ人は同じ本人として認証されるため、コードを第三者へ共有しないでください。
+R2残存オブジェクトはアカウント削除と同時に閲覧不可となり、定期処理で物理削除します。
+
+`POST /v1/restaurants`は任意の`google_place_id`も受け付け、同じPlace IDなら既存の店舗を返します。旧external_keyは保持します。
+新APIを利用する接続先にはmigration 0004とWorker更新の両方を適用してください。

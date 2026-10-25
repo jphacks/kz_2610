@@ -39,9 +39,12 @@
 		6EF334B703ABC4F9BF0BFD13 /* PersonalLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96749259896F81BC86350905 /* PersonalLibrary.swift */; };
 		71DA4D9E7B07F1D6DFB223E6 /* CloudflareBackendTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0F377C555C3A4F96579E60 /* CloudflareBackendTests.swift */; };
 		75FF29171F0F2823EF02793E /* FriendStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB1CE340448C7F8D00C242F /* FriendStore.swift */; };
+		7B7C9F62A40225F4D9C069AE /* LibraryTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F6C661D0A503FC0ED3D8AB /* LibraryTransfer.swift */; };
 		7D00D8D1A3CF7E9739B59FC3 /* RestaurantPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25A8D1A4D948DAFE5D8262FA /* RestaurantPreview.swift */; };
 		7D7F7998CC9D0324980A3FF0 /* RestaurantGenre.swift in Sources */ = {isa = PBXBuildFile; fileRef = 235D1DB613FC1A073C296D45 /* RestaurantGenre.swift */; };
+		7E7F60851162FCA5A3D49073 /* ProfileFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C56FB3F10AF6F56095D863C0 /* ProfileFlowTests.swift */; };
 		814451534E28D95CB7A5EC6B /* GoogleRestaurantSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9454CCCCD38E848D88D8DCF /* GoogleRestaurantSearch.swift */; };
+		82A83CEFC9AD6FC4FA8F4E7D /* LibraryTransferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78E529F80167F82DA5EF88C8 /* LibraryTransferTests.swift */; };
 		84B9A7DDF3C220847FEBC561 /* SavedCollectionQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5039353589BD0FB31682 /* SavedCollectionQuery.swift */; };
 		8F113A281AA8994362E4A796 /* MapHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78547210CCC61EAD05DD939F /* MapHomeView.swift */; };
 		8F126F9A7342A046592EE19C /* DemoRecommendations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6439EEA5C1C2C5A1CDE9852 /* DemoRecommendations.swift */; };
@@ -63,6 +66,7 @@
 		B3D7078C882BDDB35573DE21 /* FriendDataset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C9E7CAD2CE8688C5AAFECC /* FriendDataset.swift */; };
 		B8DD8A6D3B9217D93768D324 /* GooglePlaceQueryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2A0A31C7D001987E1AD8D5 /* GooglePlaceQueryTests.swift */; };
 		BDEEA1CFB400BD303835701C /* RestaurantCollectionControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C6882B0A977012C2EFD90E3 /* RestaurantCollectionControls.swift */; };
+		C4B0F1CFA0447E800105299B /* LocationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78601EC8F1CCFDA4AC096D94 /* LocationStore.swift */; };
 		C5E8C6D45EB3A1B5636F1482 /* MPLUSRounded1c-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */; };
 		C7361C3EAC017CE62D901732 /* GooglePlaceQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C53E94E627DFB9E8C875D6A /* GooglePlaceQuery.swift */; };
 		CD470AF0A99161FAD90A41F2 /* ZenMaruGothic-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */; };
@@ -71,12 +75,20 @@
 		D5D635CC9B76A1AC4857C947 /* ReviewPhotoCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DD81C89669B77080A9DC6FC /* ReviewPhotoCodec.swift */; };
 		D7DB55147F9173803C823407 /* MPLUSRounded1c-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 66EF4AF3CC92EDAB17294136 /* MPLUSRounded1c-Bold.ttf */; };
 		E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC586D38E56B95D55CF0F629 /* RatingStamp.swift */; };
+		E54E84408C235C456147DE10 /* AccountSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5354EC0D3E1BF9632E61386 /* AccountSettingsView.swift */; };
 		E8658718CE6B5A35030063C9 /* PaperButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E0C2D0227B0ECA57AB21F4 /* PaperButtonStyle.swift */; };
 		EE5DE494558883EA03123F4F /* MeshinowaFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */; };
 		FF52D1EE63E7D8D22F4EBDAF /* LocalReviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0CC997E863934F3A2CD935 /* LocalReviewStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		C45A573E18B1BCFCC232F73F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7CBE3CC3610A9A2C7D7F4CBB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 52B1D1DA44C3E424EE7DBDDD;
+			remoteInfo = meshinowa;
+		};
 		FB05180E5496BF049AC637F1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7CBE3CC3610A9A2C7D7F4CBB /* Project object */;
@@ -88,9 +100,11 @@
 
 /* Begin PBXFileReference section */
 		0183910F122A18A5FFB7B628 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
+		07F6C661D0A503FC0ED3D8AB /* LibraryTransfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTransfer.swift; sourceTree = "<group>"; };
 		0B2A0A31C7D001987E1AD8D5 /* GooglePlaceQueryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GooglePlaceQueryTests.swift; sourceTree = "<group>"; };
 		0C81B7B273326BB543505ADB /* MPLUSRounded1c-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-ExtraBold.ttf"; sourceTree = "<group>"; };
 		1B0F377C555C3A4F96579E60 /* CloudflareBackendTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudflareBackendTests.swift; sourceTree = "<group>"; };
+		1CC3BB0C163F4E4694661931 /* meshinowaUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = meshinowaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1CE607D3E62F1BAAAB10D26B /* GuestCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuestCredentialStore.swift; sourceTree = "<group>"; };
 		1CEAD0451C63C40694CBAB84 /* FriendLens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendLens.swift; sourceTree = "<group>"; };
 		235D1DB613FC1A073C296D45 /* RestaurantGenre.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantGenre.swift; sourceTree = "<group>"; };
@@ -120,6 +134,8 @@
 		723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "MPLUSRounded1c-OFL.txt"; sourceTree = "<group>"; };
 		77790088FF35C81509B62FA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		78547210CCC61EAD05DD939F /* MapHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapHomeView.swift; sourceTree = "<group>"; };
+		78601EC8F1CCFDA4AC096D94 /* LocationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationStore.swift; sourceTree = "<group>"; };
+		78E529F80167F82DA5EF88C8 /* LibraryTransferTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTransferTests.swift; sourceTree = "<group>"; };
 		7BFD5039353589BD0FB31682 /* SavedCollectionQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedCollectionQuery.swift; sourceTree = "<group>"; };
 		7F71437264182AC9635493EE /* RestaurantGenrePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantGenrePicker.swift; sourceTree = "<group>"; };
 		814F4A29C7CB515BA282140E /* SavedRestaurantStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRestaurantStoreTests.swift; sourceTree = "<group>"; };
@@ -141,6 +157,8 @@
 		AC586D38E56B95D55CF0F629 /* RatingStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingStamp.swift; sourceTree = "<group>"; };
 		B6ACCCCC66DD63E97793E31C /* LocalReviewStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalReviewStoreTests.swift; sourceTree = "<group>"; };
 		B85D860393D45FFD47145E55 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		C5354EC0D3E1BF9632E61386 /* AccountSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountSettingsView.swift; sourceTree = "<group>"; };
+		C56FB3F10AF6F56095D863C0 /* ProfileFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileFlowTests.swift; sourceTree = "<group>"; };
 		C997E9C24246F021E6BCFACB /* RestaurantPhotoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPhotoStore.swift; sourceTree = "<group>"; };
 		CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperCard.swift; sourceTree = "<group>"; };
 		CC0CC997E863934F3A2CD935 /* LocalReviewStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalReviewStore.swift; sourceTree = "<group>"; };
@@ -181,6 +199,14 @@
 			path = Backend;
 			sourceTree = "<group>";
 		};
+		26FBF6B2A86C40BB3D93D7D7 /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				C56FB3F10AF6F56095D863C0 /* ProfileFlowTests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
 		295B97F155C187C0BB325A47 /* mplusrounded1c */ = {
 			isa = PBXGroup;
 			children = (
@@ -197,6 +223,7 @@
 			children = (
 				5560E05FAC17103CF456F811 /* meshinowa.app */,
 				D8CCA1BE30D8500DDA40C3AC /* meshinowaTests.xctest */,
+				1CC3BB0C163F4E4694661931 /* meshinowaUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -235,7 +262,9 @@
 				2C53E94E627DFB9E8C875D6A /* GooglePlaceQuery.swift */,
 				CC683D467302840E195E8465 /* GooglePlacesConfiguration.swift */,
 				E9454CCCCD38E848D88D8DCF /* GoogleRestaurantSearch.swift */,
+				07F6C661D0A503FC0ED3D8AB /* LibraryTransfer.swift */,
 				CC0CC997E863934F3A2CD935 /* LocalReviewStore.swift */,
+				78601EC8F1CCFDA4AC096D94 /* LocationStore.swift */,
 				96749259896F81BC86350905 /* PersonalLibrary.swift */,
 				235D1DB613FC1A073C296D45 /* RestaurantGenre.swift */,
 				C997E9C24246F021E6BCFACB /* RestaurantPhotoStore.swift */,
@@ -254,6 +283,7 @@
 				CC2F91096F1B9187D9404B14 /* Config */,
 				C86424BEC27D39008532A9B4 /* meshinowa */,
 				FF7B237D58460F4C8767387E /* Tests */,
+				26FBF6B2A86C40BB3D93D7D7 /* UITests */,
 				4A3C27817D30C95DF4739D71 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -284,6 +314,7 @@
 		D5EE1A628518B74651808996 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				C5354EC0D3E1BF9632E61386 /* AccountSettingsView.swift */,
 				38D91CA3ABB6FB77DF596BDB /* DemoRecommendationsView.swift */,
 				26CB4D6AD16F17CF03D7FC2A /* FriendLensPicker.swift */,
 				61E95A7DC1FF0B8E365727EA /* FriendsHomeView.swift */,
@@ -333,6 +364,7 @@
 				0B2A0A31C7D001987E1AD8D5 /* GooglePlaceQueryTests.swift */,
 				8775E0D2B4F5F645040C5037 /* GooglePlacesConfigurationTests.swift */,
 				2AD6BD7A0704BF5D1296EF4A /* GoogleRestaurantSearchTests.swift */,
+				78E529F80167F82DA5EF88C8 /* LibraryTransferTests.swift */,
 				B6ACCCCC66DD63E97793E31C /* LocalReviewStoreTests.swift */,
 				F737A0BE945FA884ED98BAA2 /* PersonalLibraryTests.swift */,
 				981EE49B9C6084A8A446750C /* RestaurantGenreTests.swift */,
@@ -345,6 +377,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		484E656937F328563BCCC5D9 /* meshinowaUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D2D62AB4DD0BD95036B7F66B /* Build configuration list for PBXNativeTarget "meshinowaUITests" */;
+			buildPhases = (
+				A92F6354F086365E6A04DBE2 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				666785D2A9349F42253A10CE /* PBXTargetDependency */,
+			);
+			name = meshinowaUITests;
+			packageProductDependencies = (
+			);
+			productName = meshinowaUITests;
+			productReference = 1CC3BB0C163F4E4694661931 /* meshinowaUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		52B1D1DA44C3E424EE7DBDDD /* meshinowa */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 8EE7D97C786DD155613C6A0B /* Build configuration list for PBXNativeTarget "meshinowa" */;
@@ -393,6 +443,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					484E656937F328563BCCC5D9 = {
+						TestTargetID = 52B1D1DA44C3E424EE7DBDDD;
+					};
 				};
 			};
 			buildConfigurationList = BAEC22AEA8C63170E20C1587 /* Build configuration list for PBXProject "meshinowa" */;
@@ -415,6 +468,7 @@
 			targets = (
 				52B1D1DA44C3E424EE7DBDDD /* meshinowa */,
 				FA66FF4D3AE838A2DA11AE5E /* meshinowaTests */,
+				484E656937F328563BCCC5D9 /* meshinowaUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -452,6 +506,7 @@
 				B8DD8A6D3B9217D93768D324 /* GooglePlaceQueryTests.swift in Sources */,
 				9788929DEAFCB21D7624D6BA /* GooglePlacesConfigurationTests.swift in Sources */,
 				1100715A94E49D2356FD0C0E /* GoogleRestaurantSearchTests.swift in Sources */,
+				82A83CEFC9AD6FC4FA8F4E7D /* LibraryTransferTests.swift in Sources */,
 				14D65948F42B952666E17633 /* LocalReviewStoreTests.swift in Sources */,
 				AD66B39032A83EB63D516C98 /* PersonalLibraryTests.swift in Sources */,
 				D146A4AB7356AAB2EB2E5888 /* RestaurantGenreTests.swift in Sources */,
@@ -460,10 +515,19 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A92F6354F086365E6A04DBE2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7E7F60851162FCA5A3D49073 /* ProfileFlowTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ABE02502181BADA1B83E2426 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E54E84408C235C456147DE10 /* AccountSettingsView.swift in Sources */,
 				352E67108C463FB8E9C32797 /* BackendConfiguration.swift in Sources */,
 				29F1C8CBC93B5643B19D6DAE /* CloudflareBackend.swift in Sources */,
 				8F126F9A7342A046592EE19C /* DemoRecommendations.swift in Sources */,
@@ -478,7 +542,9 @@
 				417AA8000B181B06F226F67D /* GooglePlacesConfiguration.swift in Sources */,
 				814451534E28D95CB7A5EC6B /* GoogleRestaurantSearch.swift in Sources */,
 				29B357361102400716D7023C /* GuestCredentialStore.swift in Sources */,
+				7B7C9F62A40225F4D9C069AE /* LibraryTransfer.swift in Sources */,
 				FF52D1EE63E7D8D22F4EBDAF /* LocalReviewStore.swift in Sources */,
+				C4B0F1CFA0447E800105299B /* LocationStore.swift in Sources */,
 				ABDAB0097FF6B01D87A5D81E /* MainTabView.swift in Sources */,
 				8F113A281AA8994362E4A796 /* MapHomeView.swift in Sources */,
 				1683D6227A849E444D075ED3 /* MeshinowaApp.swift in Sources */,
@@ -512,6 +578,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		666785D2A9349F42253A10CE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 52B1D1DA44C3E424EE7DBDDD /* meshinowa */;
+			targetProxy = C45A573E18B1BCFCC232F73F /* PBXContainerItemProxy */;
+		};
 		C555549793D450E345190D75 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 52B1D1DA44C3E424EE7DBDDD /* meshinowa */;
@@ -520,6 +591,23 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		28F5E6B50B2063529E016CEB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = meshinowa;
+			};
+			name = Debug;
+		};
 		33F35BEC7B6EC3463E8F9565 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -599,6 +687,23 @@
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
+		};
+		9B0DFC8D1A3DE9BA3F69A388 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = meshinowa;
+			};
+			name = Release;
 		};
 		A01ADB9523B0DB8DBCD25B13 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -739,6 +844,15 @@
 			buildConfigurations = (
 				6FE42CE45D024E4251937813 /* Debug */,
 				DC4D8CB655C983297D95ED5F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D2D62AB4DD0BD95036B7F66B /* Build configuration list for PBXNativeTarget "meshinowaUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28F5E6B50B2063529E016CEB /* Debug */,
+				9B0DFC8D1A3DE9BA3F69A388 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

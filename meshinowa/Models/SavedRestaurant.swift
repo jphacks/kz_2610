@@ -70,6 +70,16 @@ struct SavedRestaurant: Codable, Identifiable {
 
     /// iOS 17でも再検索した店を照合できるよう、店名と約10m単位の座標を使う。
     static func identifier(for item: MKMapItem) -> String {
+        if let placeID = item.googleDetails?.placeID { return "google:" + placeID }
+        return legacyIdentifier(for: item)
+    }
+
+    func matches(_ item: MKMapItem) -> Bool {
+        if let left = googlePlaceID, let right = item.googleDetails?.placeID { return left == right }
+        return id == Self.identifier(for: item) || Self.legacyIdentifier(for: mapItem) == Self.legacyIdentifier(for: item)
+    }
+
+    static func legacyIdentifier(for item: MKMapItem) -> String {
         let name = (item.name ?? "飲食店")
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .folding(options: [.caseInsensitive, .widthInsensitive], locale: Locale(identifier: "ja_JP"))

@@ -9,12 +9,16 @@ final class FriendStore: ObservableObject {
         let id: String
         let displayName: String
         let handle: String
+        var bio: String?
+        var avatarSymbol: String?
     }
 
     struct Friend: Decodable, Identifiable {
         let id: String
         let displayName: String
         let handle: String
+        let bio: String?
+        let avatarSymbol: String?
         let isFavorite: Int
     }
 
@@ -37,12 +41,24 @@ final class FriendStore: ObservableObject {
         let comment: String
         let dish: String
         let updatedAt: String
+        let googlePlaceId: String?
         let externalKey: String
         let name: String
         let category: String?
         let address: String
         let latitude: Double
         let longitude: Double
+    }
+
+    struct Preferences: Decodable {
+        var allowIdSearch: Int
+        var showVisitDate: Int
+        var includeInFriendAvg: Int
+    }
+    struct BlockedProfile: Decodable, Identifiable {
+        let blockedId: String
+        let displayName: String?
+        var id: String { blockedId }
     }
 
     enum Status: Equatable { case unavailable, connecting, ready, failed(String) }
@@ -53,12 +69,25 @@ final class FriendStore: ObservableObject {
     @Published private(set) var requests: [Request] = []
     @Published private(set) var friendReviews: [RemoteReview] = []
 
+    @Published private(set) var needsLocalReset = UserDefaults.standard.bool(forKey: "account.needsLocalReset")
+    @Published var actionError: String?
+    @Published private(set) var syncError: String?
+    @Published private(set) var preferences: Preferences?
+    @Published private(set) var blockedProfiles: [BlockedProfile] = []
+    private var tokenTask: Task<String, Error>?
+    var suspendsReviewSync = false
+    var currentCredential: String? { token ?? credentials.load() }
+    private var identityGeneration = 0
+    private var refreshSequence = 0
+    private var flushing = false
+    private var libraryStore: LocalReviewStore?
+
     private let backend: CloudflareBackend?
-    private let credentials: GuestCredentialStore
+    private let credentials: any GuestCredentials
     private var token: String?
 
     init(backend: CloudflareBackend? = try? CloudflareBackend.makeClient(),
-         credentials: GuestCredentialStore = GuestCredentialStore()) {
+         credentials: any GuestCredentials = GuestCredentialStore()) {
         self.backend = backend
         self.credentials = credentials
         status = backend == nil ? .unavailable : .connecting
@@ -76,10 +105,10 @@ final class FriendStore: ObservableObject {
             restaurants[review.externalKey] = FriendRestaurant(
                 id: review.externalKey, name: review.name, genre: category.restaurantCategory,
                 coordinate: CLLocationCoordinate2D(latitude: review.latitude, longitude: review.longitude),
-                address: review.address, category: review.category)
+                address: review.address, category: review.category, googlePlaceID: review.googlePlaceId)
         }
         return FriendDataset(
-            friends: friends.map { FriendProfile(id: $0.id, name: $0.displayName) },
+            friends: friends.map { FriendProfile(id: $0.id, name: $0.displayName, bio: $0.bio ?? "", avatarSymbol: $0.avatarSymbol ?? "person.fill") },
             favoriteFriendIDs: Set(friends.filter { $0.isFavorite != 0 }.map(\.id)),
             restaurants: restaurants.values.sorted { $0.name < $1.name },
             reviews: friendReviews.map {
@@ -90,8 +119,49 @@ final class FriendStore: ObservableObject {
     }
 
     /// 地図検索のお店に付いた友達の評価。照合キーは保存・レビューと同じ店名＋座標。
-    func summary(for item: MKMapItem) -> FriendRatingSummary {
-        FriendRatingSummary(restaurantID: SavedRestaurant.identifier(for: item), reviews: dataset.reviews)
+    func summary(for item: MKMapItem, friendIDs: Set<String>? = nil) -> FriendRatingSummary {
+        let matching = Set(friendReviews.filter {
+            if let left = $0.googlePlaceId, let right = item.googleDetails?.placeID { return left == right }
+            return $0.externalKey == SavedRestaurant.identifier(for: item)
+                || $0.externalKey == SavedRestaurant.legacyIdentifier(for: item)
+                || SavedRestaurant.legacyIdentifier(for: mapItem($0)) == SavedRestaurant.legacyIdentifier(for: item)
+        }.map(\.externalKey))
+        let key = SavedRestaurant.identifier(for: item)
+        let matched = dataset.reviews.filter { matching.contains($0.restaurantID) }.map {
+            FriendReview(id: $0.id, friendID: $0.friendID, restaurantID: key, rating: $0.rating,
+                         comment: $0.comment, updatedAt: $0.updatedAt, dish: $0.dish)
+        }
+        return FriendRatingSummary(restaurantID: key, reviews: matched, friendIDs: friendIDs)
+    }
+
+    private func mapItem(_ review: RemoteReview) -> MKMapItem {
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: review.latitude, longitude: review.longitude)))
+        item.name = review.name
+        return item
+    }
+
+    func connect(to reviews: LocalReviewStore) { libraryStore = reviews }
+
+    func pauseReviewSync() async {
+        suspendsReviewSync = true
+        while flushing { try? await Task.sleep(for: .milliseconds(50)) }
+    }
+
+    func flushReviews() async {
+        guard isAvailable, !suspendsReviewSync, let libraryStore, !flushing else { return }
+        flushing = true
+        defer { flushing = false }
+        while !suspendsReviewSync, let operation = libraryStore.pending.first {
+            do {
+                if let review = operation.review { try await upload(review) }
+                else { try await removeReview(for: operation.restaurant) }
+                try libraryStore.acknowledge(operation)
+                syncError = nil
+            } catch {
+                syncError = "友達への共有を待っています。通信が戻ると再試行します。"
+                return
+            }
+        }
     }
 
     /// 起動時に呼ぶ。初回はゲストアカウントを作り、端末内のレビューを友達に共有する。
@@ -100,7 +170,8 @@ final class FriendStore: ObservableObject {
         do {
             _ = try await accessToken()
             await refresh()
-            for review in reviews { try? await upload(review) }
+            if libraryStore != nil { await flushReviews() }
+            else { for review in reviews { try await upload(review) } }
             await refresh()
         } catch {
             status = .failed("サーバーに接続できませんでした。通信状況を確認して、もう一度お試しください。")
@@ -108,15 +179,22 @@ final class FriendStore: ObservableObject {
     }
 
     func refresh() async {
-        guard backend != nil else { return }
+        guard backend != nil, !suspendsReviewSync else { return }
+        let generation = identityGeneration
+        refreshSequence += 1
+        let sequence = refreshSequence
         do {
             async let me: Profile = call("/me")
-            async let friends: [Friend] = call("/friends")
-            async let requests: [Request] = call("/requests")
-            async let reviews: [RemoteReview] = call("/friend-reviews")
-            (self.me, self.friends, self.requests, self.friendReviews) = try await (me, friends, requests, reviews)
+            async let friends: [Friend] = paged("/friends")
+            async let requests: [Request] = paged("/requests")
+            async let reviews: [RemoteReview] = paged("/friend-reviews")
+            let values = try await (me, friends, requests, reviews)
+            guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
+            (self.me, self.friends, self.requests, self.friendReviews) = values
             status = .ready
+            await flushReviews()
         } catch {
+            guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
             status = .failed("友達の情報を読み込めませんでした。下に引っ張って再読み込みしてください。")
         }
     }
@@ -160,12 +238,12 @@ final class FriendStore: ObservableObject {
 
     func rename(_ displayName: String) async -> Bool {
         let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let me, (1...40).contains(name.count) else { return false }
+        guard let me, (1...40).contains(name.count) else { actionError = "表示名は1〜40文字で入力してください。"; return false }
         do {
             let _: [String: Bool] = try await call("/me", method: "PATCH", json: ["display_name": name, "handle": me.handle])
             await refresh()
             return true
-        } catch { return false }
+        } catch { actionError = "名前を変更できませんでした。もう一度お試しください。"; return false }
     }
 
     /// 評価・ひとこと・おすすめ料理だけを共有する。写真と来店日は端末内に残す。
@@ -182,7 +260,7 @@ final class FriendStore: ObservableObject {
         guard backend != nil else { return }
         let restaurantID = try await restaurantID(for: restaurant)
         struct Mine: Decodable { let id: String; let restaurantId: String }
-        let mine: [Mine] = try await call("/me/reviews")
+        let mine: [Mine] = try await paged("/me/reviews")
         for review in mine where review.restaurantId == restaurantID {
             let _: [String: Bool] = try await call("/reviews/\(review.id)", method: "DELETE")
         }
@@ -195,6 +273,7 @@ final class FriendStore: ObservableObject {
             "latitude": restaurant.latitude, "longitude": restaurant.longitude,
             "address": String(restaurant.address.prefix(500))
         ]
+        if let placeID = restaurant.googlePlaceID { body["google_place_id"] = placeID }
         if let category = restaurant.category { body["category"] = String(category.prefix(100)) }
         let created: Created = try await call("/restaurants", method: "POST", json: body)
         return created.id
@@ -204,35 +283,132 @@ final class FriendStore: ObservableObject {
         do {
             let _: [String: Bool] = try await call(path, method: method, json: json)
         } catch {
-            status = .failed("変更できませんでした。もう一度お試しください。")
+            actionError = "変更できませんでした。もう一度お試しください。"
+            return
         }
         await refresh()
     }
 
     private func accessToken() async throws -> String {
+        guard !needsLocalReset else { throw CloudflareBackend.BackendError.invalidSession }
         if let token { return token }
+        if let task = tokenTask { return try await task.value }
         if let saved = credentials.load() { token = saved; return saved }
         guard let backend else { throw CloudflareBackend.BackendError.invalidSession }
-        let guest = try await backend.signInAsGuest(displayName: "ゲスト")
-        _ = credentials.save(guest.accessToken)
-        token = guest.accessToken
-        return guest.accessToken
+        let task = Task { @MainActor in
+            let guest = try await backend.signInAsGuest(displayName: "ゲスト")
+            guard credentials.save(guest.accessToken) else {
+                try? await backend.signOut(accessToken: guest.accessToken)
+                throw CocoaError(.fileWriteNoPermission)
+            }
+            return guest.accessToken
+        }
+        tokenTask = task
+        defer { tokenTask = nil }
+        let value = try await task.value
+        token = value
+        return value
     }
 
-    private func call<T: Decodable>(_ path: String, method: String = "GET", query: [URLQueryItem] = [],
-                                    json: [String: Any]? = nil) async throws -> T {
+    // An expired credential never silently creates a different identity.
+    func call<T: Decodable>(_ path: String, method: String = "GET", query: [URLQueryItem] = [],
+                            json: [String: Any]? = nil) async throws -> T {
         guard let backend else { throw CloudflareBackend.BackendError.invalidSession }
         let body = try json.map { try JSONSerialization.data(withJSONObject: $0) }
-        do {
-            return try await backend.request(path, method: method, query: query,
-                                             accessToken: try await accessToken(), body: body)
-        } catch CloudflareBackend.BackendError.http(401) {
-            // セッションが無効になったゲストは作り直す。以前の友達とのつながりは引き継げない。
-            credentials.delete()
-            token = nil
-            return try await backend.request(path, method: method, query: query,
-                                             accessToken: try await accessToken(), body: body)
+        return try await backend.request(path, method: method, query: query,
+                                         accessToken: try await accessToken(), body: body)
+    }
+
+    func paged<T: Decodable>(_ path: String) async throws -> [T] {
+        var results: [T] = []
+        while true {
+            let page: [T] = try await call(path, query: [URLQueryItem(name: "limit", value: "1000"),
+                                                       URLQueryItem(name: "offset", value: String(results.count))])
+            results += page
+            if page.count < 1000 { return results }
         }
+    }
+
+    func transferData(_ path: String, method: String = "GET", data: Data? = nil) async throws -> Data {
+        guard let backend else { throw CloudflareBackend.BackendError.invalidSession }
+        return try await backend.data(path, method: method, accessToken: try await accessToken(), body: data, contentType: "image/jpeg")
+    }
+
+    func updateProfile(name: String, bio: String, symbol: String) async throws {
+        guard let me else { throw CloudflareBackend.BackendError.invalidSession }
+        let _: [String: Bool] = try await call("/me", method: "PATCH", json: ["display_name": name, "handle": me.handle,
+                                                                                 "bio": bio, "avatar_symbol": symbol])
+        await refresh()
+    }
+
+    func loadSettings() async {
+        do {
+            async let prefs: Preferences = call("/preferences")
+            async let blocks: [BlockedProfile] = paged("/blocks")
+            (preferences, blockedProfiles) = try await (prefs, blocks)
+        } catch { actionError = "設定を読み込めませんでした。もう一度お試しください。" }
+    }
+
+    func updatePreferences(allowSearch: Bool, includeInAverage: Bool) async throws {
+        let _: [String: Bool] = try await call("/preferences", method: "PUT", json: ["allow_id_search": allowSearch,
+                       "show_visit_date": false, "include_in_friend_avg": includeInAverage])
+        await loadSettings()
+    }
+
+    func block(_ id: String) async {
+        await perform("/blocks/\(id)", method: "PUT")
+        await loadSettings()
+    }
+
+    func unblock(_ id: String) async {
+        await perform("/blocks/\(id)", method: "DELETE")
+        await loadSettings()
+    }
+
+    func makeRecoveryKey() async throws -> String {
+        struct Key: Decodable { let recoveryKey: String }
+        let result: Key = try await call("/me/recovery-key", method: "POST", json: [:])
+        return result.recoveryKey
+    }
+
+    func recover(using key: String) async throws {
+        guard let backend else { throw CloudflareBackend.BackendError.invalidSession }
+        let clean = key.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard clean.count == 64, clean.allSatisfy({ "0123456789abcdef".contains($0) }) else { throw CloudflareBackend.BackendError.invalidSession }
+        // Await initial account creation before replacing its credential.
+        if let task = tokenTask { _ = try await task.value }
+        let session: CloudflareBackend.GuestSession = try await backend.request("/auth/recover", method: "POST",
+                                         body: JSONEncoder().encode(["recovery_key":clean]))
+        guard credentials.save(session.accessToken) else { throw CocoaError(.fileWriteNoPermission) }
+        identityGeneration += 1
+        token = session.accessToken
+        me = nil; friends = []; requests = []; friendReviews = []
+        // The caller restores the remote library before allowing any local uploads.
+    }
+
+    func restoreCredential(_ value: String?) throws {
+        if let value {
+            guard credentials.save(value) else { throw CocoaError(.fileWriteNoPermission) }
+        } else { credentials.delete() }
+        identityGeneration += 1
+        token = value
+    }
+
+    func deleteAccount() async throws {
+        let _: [String: Bool] = try await call("/me", method: "DELETE")
+        needsLocalReset = true
+        UserDefaults.standard.set(true, forKey: "account.needsLocalReset")
+        identityGeneration += 1
+        credentials.delete(); token = nil; me = nil; friends = []; requests = []; friendReviews = []
+        preferences = nil; blockedProfiles = []; status = .unavailable
+    }
+
+    func finishLocalReset() {
+        for key in ["profile.name", "profile.bio", "profile.symbol", "account.needsLocalReset"] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        needsLocalReset = false
+        suspendsReviewSync = false
     }
 
     private static func date(_ value: String) -> Date {

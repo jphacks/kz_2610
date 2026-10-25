@@ -112,4 +112,76 @@ final class LocalReviewStoreTests: XCTestCase {
         XCTAssertNil(properties[kCGImagePropertyGPSDictionary as String])
         XCTAssertFalse(ReviewPhotoCodec.isSafeFilename("../other.jpg"))
     }
+    @MainActor func testOutboxPersistsDeletesAndDoesNotAcknowledgeANewerEdit() async throws {
+        let file = try url()
+        let store = LocalReviewStore(fileURL: file)
+        let shop = item()
+        try store.save(item: shop, rating: 4, comment: "first")
+        let inFlight = try XCTUnwrap(store.pending.first)
+        try store.save(item: shop, rating: 5, comment: "second")
+        XCTAssertEqual(store.pending.count, 1)
+        try store.acknowledge(inFlight)
+        XCTAssertEqual(store.pending.first?.review?.comment, "second")
+        try store.delete(id: try XCTUnwrap(store.reviews.first?.id))
+        let reloaded = LocalReviewStore(fileURL: file)
+        XCTAssertTrue(reloaded.reviews.isEmpty)
+        XCTAssertEqual(reloaded.pending.count, 1)
+        XCTAssertNil(reloaded.pending.first?.review)
+        try reloaded.acknowledge(try XCTUnwrap(reloaded.pending.first))
+        XCTAssertTrue(LocalReviewStore(fileURL: file).pending.isEmpty)
+    }
+
+    @MainActor func testLegacyReviewsMigrateIntoDurableOutbox() async throws {
+        let file = try url()
+        let review = LocalReview(restaurant: SavedRestaurant(item: item()), rating: 4, comment: "old", createdAt: .now, updatedAt: .now)
+        try JSONEncoder().encode([review]).write(to: file)
+        let store = LocalReviewStore(fileURL: file)
+        XCTAssertEqual(store.pending.count, 1)
+        XCTAssertEqual(store.reviews.first?.comment, "old")
+        try store.acknowledge(try XCTUnwrap(store.pending.first))
+        XCTAssertTrue(LocalReviewStore(fileURL: file).pending.isEmpty)
+    }
+
+    @MainActor func testFailedRestoreKeepsDocumentAndOriginalPhoto() async throws {
+        let file = try url()
+        let store = LocalReviewStore(fileURL: file)
+        try store.save(item: item(), rating: 4, comment: "original", newPhotos: [photo()])
+        let original = try XCTUnwrap(store.reviews.first)
+        let name = try XCTUnwrap(original.photoFileNames.first)
+        let originalPhoto = try Data(contentsOf: XCTUnwrap(store.photoURL(name)))
+        let document = try Data(contentsOf: file)
+        XCTAssertThrowsError(try store.replace(with: [original], photos: [name: Data("broken".utf8)]))
+        XCTAssertEqual(try Data(contentsOf: file), document)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(store.photoURL(name))), originalPhoto)
+    }
+
+    @MainActor func testProviderIDSurvivesNameAndCoordinateChanges() async throws {
+        let store = LocalReviewStore(fileURL: try url())
+        let shop = item()
+        shop.googleDetails = GoogleRestaurantDetails(placeID: "stable-place")
+        try store.save(item: shop, rating: 4, comment: "original")
+        shop.name = "renamed"
+        XCTAssertEqual(store.review(for: shop)?.comment, "original")
+        try store.save(item: shop, rating: 5, comment: "edited")
+        XCTAssertEqual(store.reviews.count, 1)
+        XCTAssertEqual(store.reviews.first?.rating, 5)
+    }
+
+    @MainActor func testRestoreStagesFreshPhotosAndSupportsRollback() async throws {
+        let file = try url()
+        let store = LocalReviewStore(fileURL: file)
+        try store.save(item: item(), rating: 4, comment: "original", newPhotos: [photo()])
+        let original = try XCTUnwrap(store.reviews.first)
+        let checkpoint = try store.checkpoint()
+        let name = try XCTUnwrap(original.photoFileNames.first)
+        let bytes = try Data(contentsOf: XCTUnwrap(store.photoURL(name)))
+        try store.replace(with: [original], photos: [name: bytes])
+        let fresh = try XCTUnwrap(store.reviews.first?.photoFileNames.first)
+        XCTAssertNotEqual(name, fresh)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.photoURL(name)).path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: try XCTUnwrap(store.photoURL(fresh)).path))
+        try store.restoreCheckpoint(checkpoint)
+        XCTAssertEqual(store.reviews.first?.photoFileNames, [name])
+    }
+
 }

@@ -6,6 +6,7 @@ import SwiftUI
 struct MapHomeView: View {
     var showsSavedShortcut = true
     @EnvironmentObject private var saved: SavedRestaurantStore
+    @EnvironmentObject private var location: LocationStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @Environment(\.floatingTabBarSpace) private var tabBarSpace
 
@@ -171,6 +172,12 @@ struct MapHomeView: View {
             try? await Task.sleep(for: .seconds(4))
             if !Task.isCancelled { notice = nil }
         }
+        .onChange(of: location.location) { _, value in
+            guard let value else { return }
+            camera = .region(MKCoordinateRegion(center: value.coordinate, latitudinalMeters: 2000, longitudinalMeters: 2000))
+            searchedRegion = nil
+        }
+        .onChange(of: location.error) { _, value in if let value { notice = value } }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showsResults) {
             SearchResultsView(results: visibleResults, filterDescription: genre.title) { result in
@@ -199,7 +206,14 @@ struct MapHomeView: View {
     /// 地図の上に浮かぶ検索欄と、そこから垂れ下がるジャンルののれん。
     private var searchHeader: some View {
         VStack(spacing: 3) {
-            searchField
+            HStack(spacing: 8) {
+                searchField
+                Button { location.request() } label: {
+                    Image(systemName: "location.fill").frame(width: 44, height: 44)
+                }.buttonStyle(.plain).foregroundStyle(MeshinowaTheme.green)
+                    .background(MeshinowaTheme.card, in: Circle())
+                    .disabled(location.isRequesting).accessibilityLabel("現在地の周辺を探す")
+            }
             NorenTabs(items: RestaurantGenre.allCases, selection: $genre)
                 .disabled(isSearching)
         }
@@ -455,4 +469,6 @@ private struct CarouselSlot: Hashable {
         .preferredColorScheme(.light)
         .environmentObject(SavedRestaurantStore())
         .environmentObject(LocalReviewStore())
+        .environmentObject(LocationStore())
+        .environmentObject(FriendStore(backend: nil))
 }

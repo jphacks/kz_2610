@@ -3,6 +3,8 @@ import SwiftUI
 
 struct SavedRestaurantsView: View {
     @EnvironmentObject private var saved: SavedRestaurantStore
+    @EnvironmentObject private var friends: FriendStore
+    @EnvironmentObject private var location: LocationStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @Environment(\.dismiss) private var dismiss
     var onFindRestaurants: (() -> Void)? = nil
@@ -24,6 +26,12 @@ struct SavedRestaurantsView: View {
 
     private var visibleRestaurants: [SavedRestaurant] {
         SavedCollectionQuery.results(library, collection: collection, search: query, sort: sort, ratings: ratings,
+                                     friendRatings: Dictionary(uniqueKeysWithValues: library.compactMap { entry in
+                                         friends.summary(for: entry.mapItem).average.map { (entry.id, $0) }
+                                     }),
+                                     distances: Dictionary(uniqueKeysWithValues: library.compactMap { entry in
+                                         location.location.map { (entry.id, $0.distance(from: CLLocation(latitude: entry.latitude, longitude: entry.longitude))) }
+                                     }),
                                      unreviewedOnly: collection == .liked && unreviewedOnly)
     }
 
@@ -56,8 +64,12 @@ struct SavedRestaurantsView: View {
                             .accessibilityAddTraits(unreviewedOnly ? .isSelected : [])
                         }
                         ForEach(SavedSort.allCases) { option in
-                            Button(option.title) { sort = option }
+                            Button(option.title) {
+                                sort = option
+                                if option == .distance { location.request() }
+                            }
                                 .buttonStyle(PillButtonStyle(isOn: sort == option))
+                                .disabled(option == .friendRating && !friends.isAvailable)
                                 .accessibilityAddTraits(sort == option ? .isSelected : [])
                         }
                     }
@@ -65,6 +77,10 @@ struct SavedRestaurantsView: View {
                 }
                 .padding(.top, 14)
 
+                if sort == .distance, location.location == nil {
+                    Text(location.error ?? "現在地を取得すると距離順で表示します。")
+                        .font(MeshinowaFont.text(13)).padding(.horizontal,20).padding(.top,8)
+                }
                 HStack(spacing: 10) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 15, weight: .semibold))

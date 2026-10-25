@@ -64,7 +64,7 @@ struct DemoRecommendationsView: View {
             if dataset.isDemo {
                 DemoRestaurantDetail(restaurant: restaurant, summary: summary(for: restaurant), lensTitle: lens.mode.title)
             } else {
-                RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends)
+                RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends, friendIDs: includedIDs)
             }
         }
         .sheet(isPresented: $showsLens) {

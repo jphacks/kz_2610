@@ -33,6 +33,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>現在地の近くのお店を探し、保存したお店を距離順に並べるために使用します。</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>ZenMaruGothic-Medium.ttf</string>

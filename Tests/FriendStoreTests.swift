@@ -4,7 +4,7 @@ import XCTest
 
 @MainActor
 final class FriendStoreTests: XCTestCase {
-    private let credentials = GuestCredentialStore(service: "jp.meshinowa.app.tests.\(UUID().uuidString)")
+    private let credentials = MemoryGuestCredentials()
     private let token = String(repeating: "c", count: 64)
 
     override func tearDown() {
@@ -74,6 +74,118 @@ final class FriendStoreTests: XCTestCase {
         let summary = store.summary(for: item)
         XCTAssertEqual(summary.count, 1)
         XCTAssertEqual(summary.average, 4.5)
+        XCTAssertNil(store.summary(for: item, friendIDs: []).average)
+        XCTAssertEqual(store.summary(for: item, friendIDs: ["f1"]).count, 1)
         XCTAssertEqual(store.ratingText(for: item), "友達1人の評価 4.5")
     }
+    func testFailedSharingRemainsQueuedAndRetriesAfterRelaunch() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let file = folder.appendingPathComponent("reviews.json")
+        let local = LocalReviewStore(fileURL: file)
+        let shop = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 35, longitude: 139)))
+        shop.name = "架空の同期食堂"
+        try local.save(item: shop, rating: 4.5, comment: "queued")
+        XCTAssertTrue(credentials.save(token))
+        var failUpload = true
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/restaurants": return (201, Data("{\"id\":\"shop\"}".utf8))
+            case "/v1/reviews": return failUpload ? (503, Data("{}".utf8)) : (200, Data("{\"id\":\"review\"}".utf8))
+            default: return (404, Data("{}".utf8))
+            }
+        }
+        let first = store()
+        first.connect(to: local)
+        await first.flushReviews()
+        XCTAssertNotNil(first.syncError)
+        XCTAssertEqual(local.pending.count, 1)
+        let reloaded = LocalReviewStore(fileURL: file)
+        let second = store()
+        second.connect(to: reloaded)
+        failUpload = false
+        await second.flushReviews()
+        XCTAssertTrue(reloaded.pending.isEmpty)
+        XCTAssertNil(second.syncError)
+    }
+
+    func testExpiredSessionNeverSilentlyCreatesNewIdentity() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var guestCalls = 0
+        BackendURLProtocol.handler = { request in
+            if request.url?.path == "/v1/auth/guest" { guestCalls += 1 }
+            return (401, Data("{}".utf8))
+        }
+        let store = store()
+        await store.refresh()
+        XCTAssertEqual(guestCalls, 0)
+        XCTAssertEqual(credentials.load(), token)
+        guard case .failed = store.status else { return XCTFail("Expected explicit failure") }
+    }
+
+    func testConcurrentCallsShareGuestCreation() async throws {
+        var guestCalls = 0
+        BackendURLProtocol.handler = { [token] request in
+            if request.url?.path == "/v1/auth/guest" {
+                guestCalls += 1
+                return (201, Data("{\"access_token\":\"\(token)\",\"expires_at\":1,\"user_id\":\"00000000-0000-0000-0000-000000000001\"}".utf8))
+            }
+            return (200, Data("{\"id\":\"me\",\"display_name\":\"ゲスト\",\"handle\":\"abc2345\"}".utf8))
+        }
+        let store = store()
+        async let a: FriendStore.Profile = store.call("/me")
+        async let b: FriendStore.Profile = store.call("/me")
+        async let c: FriendStore.Profile = store.call("/me")
+        _ = try await (a,b,c)
+        XCTAssertEqual(guestCalls, 1)
+    }
+
+    func testCredentialWriteFailureDoesNotExposeAnUnpersistedAccount() async throws {
+        credentials.rejectsWrites = true
+        var revokeCalls = 0
+        BackendURLProtocol.handler = { [token] request in
+            if request.url?.path == "/v1/auth/guest" {
+                return (201, Data("{\"access_token\":\"\(token)\",\"expires_at\":1,\"user_id\":\"00000000-0000-0000-0000-000000000001\"}".utf8))
+            }
+            if request.url?.path == "/v1/auth/session" { revokeCalls += 1; return (200, Data("{}".utf8)) }
+            XCTFail("Must not use the unpersisted session")
+            return (500, Data("{}".utf8))
+        }
+        let store = store()
+        await store.start(sharing: [])
+        XCTAssertNil(store.me)
+        XCTAssertNil(credentials.load())
+        XCTAssertEqual(revokeCalls, 1)
+    }
+
+    func testDeletedAccountCannotUploadOldDataBeforeLocalResetCompletes() async throws {
+        let oldFlag = UserDefaults.standard.object(forKey: "account.needsLocalReset")
+        defer {
+            if let oldFlag { UserDefaults.standard.set(oldFlag, forKey: "account.needsLocalReset") }
+            else { UserDefaults.standard.removeObject(forKey: "account.needsLocalReset") }
+        }
+        UserDefaults.standard.removeObject(forKey: "account.needsLocalReset")
+        XCTAssertTrue(credentials.save(token))
+        var guestCalls = 0
+        BackendURLProtocol.handler = { request in
+            if request.url?.path == "/v1/auth/guest" { guestCalls += 1 }
+            return (200, Data("{\"ok\":true}".utf8))
+        }
+        let store = store()
+        try await store.deleteAccount()
+        XCTAssertTrue(store.needsLocalReset)
+        await store.start(sharing: [])
+        XCTAssertEqual(guestCalls, 0)
+        XCTAssertNil(credentials.load())
+    }
+
+}
+
+final class MemoryGuestCredentials: GuestCredentials {
+    var token: String?
+    var rejectsWrites = false
+    func load() -> String? { token }
+    func save(_ value: String) -> Bool { guard !rejectsWrites else { return false }; token = value; return true }
+    func delete() { token = nil }
 }

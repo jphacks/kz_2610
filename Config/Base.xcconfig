@@ -1,4 +1,3 @@
-// Publishable key only. No server secret or service_role key belongs in an app.
-SUPABASE_URL =
-SUPABASE_PUBLISHABLE_KEY =
-#include? "Supabase.xcconfig.local"
+// API origin only. Never embed Cloudflare management credentials in the app.
+CLOUDFLARE_API_URL =
+#include? "Cloudflare.xcconfig.local"

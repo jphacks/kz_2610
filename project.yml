@@ -7,10 +7,6 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-packages:
-  Supabase:
-    url: https://github.com/supabase/supabase-swift
-    exactVersion: 2.55.4
 targets:
   meshinowa:
     type: application
@@ -18,9 +14,6 @@ targets:
     configFiles:
       Debug: Config/Base.xcconfig
       Release: Config/Base.xcconfig
-    dependencies:
-      - package: Supabase
-        product: Supabase
     sources:
       - path: meshinowa
     info:
@@ -32,8 +25,7 @@ targets:
         CFBundleDevelopmentRegion: ja
         CFBundleLocalizations:
           - ja
-        SupabaseURL: $(SUPABASE_URL)
-        SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
+        CloudflareAPIURL: $(CLOUDFLARE_API_URL)
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false

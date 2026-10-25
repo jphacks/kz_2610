@@ -1,0 +1,23 @@
+{
+  "name": "meshinowa-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.local.jsonc",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check src/index.js && node --check src/auth.js",
+    "db:local": "wrangler d1 migrations apply DB --local --config wrangler.local.jsonc",
+    "deploy:check": "wrangler deploy --dry-run --config wrangler.local.jsonc"
+  },
+  "dependencies": {
+    "jose": "6.2.13"
+  },
+  "devDependencies": {
+    "wrangler": "4.152.0",
+    "miniflare": "4.20260730.0"
+  },
+  "overrides": {
+    "undici": "7.30.1",
+    "sharp": "0.35.5"
+  }
+}

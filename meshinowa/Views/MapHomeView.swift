@@ -180,7 +180,9 @@ struct MapHomeView: View {
             selectedID = nil
             searchedRegion = nil
             adoptsNextCamera = false
-            notice = visibleResults.isEmpty && !results.isEmpty ? "このジャンルのお店は見つかっていません" : nil
+            notice = nil
+            // 前のジャンルの結果だけでは判断せず、今の表示エリアで選んだジャンルを探し直す。
+            beginSearch(nearby: true)
         }
         .onChange(of: visibleResults.map(\.id)) { _, _ in
             carouselItems = Self.nearestChain(visibleResults)
@@ -434,7 +436,7 @@ struct MapHomeView: View {
         .buttonStyle(.plain)
         // 検索中も薄くせず、そのまま進み具合を見せる。
         .allowsHitTesting(!isSearching)
-        .accessibilityLabel(isSearching ? "検索中" : "このエリアの\(genre.searchTerm)を検索")
+        .accessibilityLabel(isSearching ? "検索中" : "このエリアの\(genre.searchTerm(for: query))を検索")
     }
 
     @ViewBuilder private var bottomCard: some View {
@@ -545,7 +547,7 @@ struct MapHomeView: View {
 
     private func beginSearch(nearby: Bool = false) {
         guard searchesAllPlaces else { isSearchFocused = false; return }
-        let term = nearby ? genre.searchTerm : query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let term = genre.searchTerm(for: query)
         guard !isSearching, !term.isEmpty else { return }
         isSearchFocused = false
         isSearching = true

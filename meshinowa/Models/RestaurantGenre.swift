@@ -60,6 +60,14 @@ enum RestaurantGenre: String, CaseIterable, Identifiable, NorenTabItem {
         }
     }
 
+    /// 入力した言葉を残し、選んだジャンルを検索条件に加える。
+    func searchTerm(for query: String) -> String {
+        let keyword = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !keyword.isEmpty else { return searchTerm }
+        guard self != .all, keyword != searchTerm else { return keyword }
+        return "\(keyword) \(searchTerm)"
+    }
+
     /// 地図のカテゴリで大まかに絞る範囲。カフェとパン以外は飲食店として探す。
     var categories: [MKPointOfInterestCategory] {
         switch self {

@@ -47,4 +47,14 @@ final class RestaurantGenreTests: XCTestCase {
         XCTAssertTrue(RestaurantGenre.yakiniku.matches(place))
         XCTAssertEqual(place.foodGenre, .yakiniku)
     }
+
+    func testSearchTermUsesGenreWhenKeywordIsEmpty() {
+        XCTAssertEqual(RestaurantGenre.sushi.searchTerm(for: " \n "), "寿司")
+        XCTAssertEqual(RestaurantGenre.all.searchTerm(for: ""), "飲食店")
+    }
+
+    func testSearchTermKeepsKeywordWithoutDuplicatingGenre() {
+        XCTAssertEqual(RestaurantGenre.noodle.searchTerm(for: " ラーメン "), "ラーメン")
+        XCTAssertEqual(RestaurantGenre.all.searchTerm(for: " ラーメン "), "ラーメン")
+    }
 }

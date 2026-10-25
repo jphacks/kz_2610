@@ -8,6 +8,7 @@ struct RestaurantPhotoView: View {
     var isActive = true
     var expanded = false
     var showsGoogleAttribution = true
+    var imageHeight: CGFloat? = nil
     @ObservedObject private var store = RestaurantPhotoStore.shared
     @State private var loaded: LoadedRestaurantPhoto?
 
@@ -46,7 +47,7 @@ struct RestaurantPhotoView: View {
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .clipped()
             }
-            .frame(height: expanded ? 230 : 140)
+            .frame(height: imageHeight ?? (expanded ? 230 : 140))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .accessibilityLabel(photo == nil ? "店舗写真なし" : "店舗写真")
 

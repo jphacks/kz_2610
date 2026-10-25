@@ -34,6 +34,10 @@ struct RestaurantPreview: View {
             }
 
             HStack(alignment: .top, spacing: 12) {
+                RestaurantPhotoView(item: item, isActive: loadsPhoto, showsGoogleAttribution: false,
+                                    imageHeight: 100)
+                    .frame(width: 100)
+
                 VStack(alignment: .leading, spacing: 8) {
                     detailLine(symbol: MapHomeView.symbol(for: item), text: item.restaurantCategory)
                     detailLine(symbol: "person.2", text: "友達の評価は準備中")
@@ -41,10 +45,9 @@ struct RestaurantPreview: View {
                                text: item.placemark.title.map { $0.withoutPostalCode.replacingOccurrences(of: "\n", with: " ") }
                                    ?? "住所の情報がありません")
                 }
+                .contentShape(Rectangle())
+                .onTapGesture { showsDetails = true }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { showsDetails = true }
-            RestaurantPhotoView(item: item, isActive: loadsPhoto, showsGoogleAttribution: false)
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(.horizontal, 16)

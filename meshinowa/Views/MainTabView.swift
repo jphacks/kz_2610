@@ -94,7 +94,6 @@ extension View {
 private struct FloatingTabBar: View {
     @Binding var selection: MainTabView.Tab
     var onReview: () -> Void
-    @Namespace private var lantern
 
     var body: some View {
         HStack(spacing: 0) {
@@ -115,17 +114,13 @@ private struct FloatingTabBar: View {
     private func item(_ tab: MainTabView.Tab, title: String, symbol: String) -> some View {
         let isActive = selection == tab
         return Button {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) { selection = tab }
+            selection = tab
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 21, weight: isActive ? .semibold : .regular))
                 .foregroundStyle(isActive ? MeshinowaTheme.green : MeshinowaTheme.ink)
                 .frame(width: 30, height: 36)
-                .background {
-                    if isActive {
-                        LanternLight().matchedGeometryEffect(id: "lantern", in: lantern)
-                    }
-                }
+                .background { LanternLight(isLit: isActive) }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
         }
@@ -150,14 +145,30 @@ private struct FloatingTabBar: View {
 }
 
 /// 選んだタブの後ろにともる、提灯の形の灯り。上下に緑の口金を付ける。
+/// タブを押すと、その場で提灯がふくらんで灯り、一瞬強く光ってから落ち着く。前のタブの灯りは静かに消える。
 private struct LanternLight: View {
+    let isLit: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 灯った直後だけ強く光らせる。
+    @State private var flare = false
+
     var body: some View {
         RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .fill(RadialGradient(colors: [Color(red: 1, green: 0.906, blue: 0.69), MeshinowaTheme.lanternLight],
-                                 center: .init(x: 0.5, y: 0.45), startRadius: 0, endRadius: 20))
-            .shadow(color: MeshinowaTheme.lanternGlow.opacity(0.45), radius: 6)
+            .fill(RadialGradient(colors: [Color(red: 1, green: flare ? 0.95 : 0.906, blue: flare ? 0.78 : 0.69),
+                                          MeshinowaTheme.lanternLight],
+                                 center: .init(x: 0.5, y: 0.45), startRadius: 0, endRadius: flare ? 26 : 20))
+            .shadow(color: MeshinowaTheme.lanternGlow.opacity(flare ? 0.9 : 0.45), radius: flare ? 14 : 6)
             .overlay(alignment: .top) { cap.offset(y: -1.5) }
             .overlay(alignment: .bottom) { cap.offset(y: 1.5) }
+            // 提灯を広げるように、縦にふくらませて出す。
+            .scaleEffect(x: 1, y: isLit || reduceMotion ? 1 : 0.55)
+            .opacity(isLit ? 1 : 0)
+            .animation(isLit ? .spring(response: 0.32, dampingFraction: 0.62) : .easeOut(duration: 0.15), value: isLit)
+            .onChange(of: isLit) { _, lit in
+                guard lit, !reduceMotion else { return }
+                flare = true
+                withAnimation(.easeOut(duration: 0.6).delay(0.12)) { flare = false }
+            }
             .accessibilityHidden(true)
     }
 

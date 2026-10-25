@@ -21,6 +21,9 @@ struct ReviewEditor: View {
     @State private var newPhotos: [Data] = []
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isLoadingPhotos = false
+    @State private var showsSeal = false
+    /// 開いたときに新しい記録だったか。保存後に見出しが「編集」に変わらないよう、最初の値を持ち続ける。
+    @State private var startedAsNew: Bool
 
     init(item: MKMapItem, existing: LocalReview?, initialRating: Double? = nil) {
         self.item = item
@@ -32,85 +35,91 @@ struct ReviewEditor: View {
         _recordsVisitDate = State(initialValue: existing?.visitedOn != nil)
         _visitedOn = State(initialValue: existing?.visitedOn ?? .now)
         _retainedPhotoNames = State(initialValue: existing?.photoFileNames ?? [])
+        _startedAsNew = State(initialValue: existing == nil)
+    }
+
+    private var canSave: Bool {
+        !isSaving && !isLoadingPhotos && rating >= 1 && comment.count <= 300 && dish.count <= 100
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    Text(item.name ?? "飲食店")
-                        .font(MeshinowaFont.text(20, weight: .black, relativeTo: .title2))
-                    StarRatingInput(rating: $rating)
-                } header: { Text("星の評価（必須）") }
-                Section {
-                    TextEditor(text: $comment)
-                        .frame(minHeight: 120)
-                        .accessibilityLabel("ひとこと、任意、300文字まで")
-                    Text("\(comment.count) / 300文字")
-                        .foregroundStyle(comment.count > 300 ? .red : MeshinowaTheme.secondaryText)
-                } header: { Text("ひとこと（任意）") }
-                Section("追加の記録（すべて任意）") {
-                    TextField("おすすめ料理（100文字まで）", text: $dish)
-                    Toggle("また行きたい", isOn: $wantAgain)
-                    Toggle("来店日を記録する", isOn: $recordsVisitDate)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    ReviewShopHeader(item: item)
+
+                    VStack(spacing: 4) {
+                        Text("どうだった？")
+                            .font(MeshinowaFont.heading(16))
+                            .foregroundStyle(MeshinowaTheme.bodyText)
+                        BigStarRating(rating: $rating)
+                    }
+                    .padding(.vertical, 6)
+
+                    // また行きたい・来店日は、押すだけの札にする。
+                    HStack(spacing: 8) {
+                        chip("また行きたい", symbol: wantAgain ? "heart.fill" : "heart",
+                             isOn: wantAgain, tint: MeshinowaTheme.like, soft: MeshinowaTheme.likeSoft,
+                             ink: MeshinowaTheme.likeInk) { wantAgain.toggle() }
+                        chip(recordsVisitDate ? visitedOn.formatted(.dateTime.month().day()) + "に行った" : "来店日を記録",
+                             symbol: "calendar", isOn: recordsVisitDate, tint: MeshinowaTheme.green,
+                             soft: MeshinowaTheme.mint, ink: MeshinowaTheme.mintInk) { recordsVisitDate.toggle() }
+                    }
                     if recordsVisitDate {
                         DatePicker("来店日", selection: $visitedOn, in: ...Date.now, displayedComponents: .date)
+                            .font(MeshinowaFont.text(14))
                     }
-                }
-                Section("写真（任意、5枚まで）") {
-                    photoAttachments
-                    if retainedPhotoNames.count + newPhotos.count < 5 {
-                        PhotosPicker(selection: $pickerItems, maxSelectionCount: 5 - retainedPhotoNames.count - newPhotos.count,
-                                     matching: .images, photoLibrary: .shared()) {
-                            Label("写真を選ぶ", systemImage: "photo.on.rectangle.angled")
-                        }
-                        .disabled(isLoadingPhotos)
+
+                    inputCard(title: "ひとこと", trailing: "\(comment.count) / 300",
+                              trailingColor: comment.count > 300 ? .red : MeshinowaTheme.secondaryText) {
+                        TextField("どこがよかった？　友達に伝えるつもりで", text: $comment, axis: .vertical)
+                            .lineLimit(4...8)
+                            .font(MeshinowaFont.text(15))
+                            .accessibilityLabel("ひとこと、任意、300文字まで")
                     }
-                    if isLoadingPhotos { ProgressView("写真を読み込み中") }
-                    Text("写真の位置情報などのメタデータは保存しません。")
+
+                    inputCard(title: "おすすめ料理", trailing: dish.count > 100 ? "\(dish.count) / 100" : nil,
+                              trailingColor: .red) {
+                        TextField("例：デミグラスのオムライス", text: $dish)
+                            .font(MeshinowaFont.text(15))
+                    }
+
+                    photoRow
+
+                    Label(friends.isAvailable
+                          ? "星・ひとこと・おすすめ料理は友達に共有されます。写真と来店日はこの端末だけ。"
+                          : "この端末だけに保存されます。写真の位置情報などは保存しません。",
+                          systemImage: friends.isAvailable ? "person.2" : "iphone")
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
-                }
-                Section {
-                    Text(friends.isAvailable
-                         ? "評価・ひとこと・おすすめ料理は友達に共有されます。写真と来店日はこの端末だけに保存します。位置情報は自動では付きません。"
-                         : "サーバーに接続していないため、この端末だけに保存されます。位置情報は自動では付きません。")
-                        .font(MeshinowaFont.text(12, relativeTo: .caption))
-                }
-                if existing != nil {
-                    Section {
+                        .foregroundStyle(MeshinowaTheme.secondaryText)
+
+                    if existing != nil && !startedAsNew {
                         Button("レビューを削除", role: .destructive) { confirmsDelete = true }
+                            .font(MeshinowaFont.text(14, weight: .bold))
+                            .frame(minHeight: 44)
                     }
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
             }
-            .font(MeshinowaFont.text(15))
-            .scrollContentBackground(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .background(MeshinowaTheme.paper)
+            .foregroundStyle(MeshinowaTheme.ink)
             .disabled(isSaving)
             .safeAreaInset(edge: .bottom) {
-                Button {
-                    isSaving = true
-                    Task { @MainActor in
-                        await Task.yield()
-                        do {
-                            try reviews.save(item: item, rating: rating, comment: comment, dish: dish, wantAgain: wantAgain,
-                                             visitedOn: recordsVisitDate ? visitedOn : nil,
-                                             retainedPhotoNames: retainedPhotoNames, newPhotos: newPhotos)
-                            retainedPhotoNames = reviews.review(for: item)?.photoFileNames ?? []
-                            newPhotos = []
-                            dismiss()
-                        } catch { self.error = error.localizedDescription }
-                        isSaving = false
-                    }
-                } label: {
-                    if isSaving { ProgressView().tint(MeshinowaTheme.card) }
-                    else { Text(existing == nil ? "投稿する" : "更新する") }
+                Button(action: save) {
+                    if isSaving && !showsSeal { ProgressView().tint(MeshinowaTheme.card) }
+                    else { Text(startedAsNew ? "記録する" : "更新する") }
                 }
                 .buttonStyle(PaperButtonStyle())
-                .disabled(isSaving || isLoadingPhotos || rating == 0 || comment.count > 300 || dish.count > 100)
-                .padding(20)
-                .background(MeshinowaTheme.paper)
+                .disabled(!canSave)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(MeshinowaTheme.paper.overlay(alignment: .top) {
+                    Rectangle().fill(MeshinowaTheme.hairline).frame(height: 1)
+                })
             }
-            .navigationTitle(existing == nil ? "評価する" : "レビューを編集")
+            .navigationTitle(startedAsNew ? "評価する" : "レビューを編集")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -149,50 +158,112 @@ struct ReviewEditor: View {
                 Button("閉じる", role: .cancel) {}
             } message: { Text(error ?? "") }
         }
+        .ratingSealOnSave(rating: rating, isPresented: $showsSeal) { dismiss() }
+        .presentationBackground(MeshinowaTheme.paper)
     }
 
-    @ViewBuilder private var photoAttachments: some View {
-        ForEach(retainedPhotoNames, id: \.self) { name in
-            HStack {
-                ReviewPhotoThumbnail(url: reviews.photoURL(name))
-                Spacer()
-                Button("写真を外す", role: .destructive) { retainedPhotoNames.removeAll { $0 == name } }
+    private func save() {
+        isSaving = true
+        Task { @MainActor in
+            await Task.yield()
+            do {
+                try reviews.save(item: item, rating: rating, comment: comment, dish: dish, wantAgain: wantAgain,
+                                 visitedOn: recordsVisitDate ? visitedOn : nil,
+                                 retainedPhotoNames: retainedPhotoNames, newPhotos: newPhotos)
+                retainedPhotoNames = reviews.review(for: item)?.photoFileNames ?? []
+                newPhotos = []
+                // 記録できたら判子を押してから閉じる。
+                showsSeal = true
+            } catch {
+                self.error = error.localizedDescription
+                isSaving = false
             }
         }
-        ForEach(newPhotos.indices, id: \.self) { index in
+    }
+
+    private func chip(_ title: String, symbol: String, isOn: Bool, tint: Color, soft: Color, ink: Color,
+                      action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: symbol)
+                .font(MeshinowaFont.text(14, weight: isOn ? .bold : .medium))
+                .foregroundStyle(isOn ? ink : MeshinowaTheme.ink)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 40)
+                .background(Capsule().fill(isOn ? soft : MeshinowaTheme.card))
+                .overlay(Capsule().strokeBorder(isOn ? tint : MeshinowaTheme.outline, lineWidth: isOn ? 2 : 1))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+
+    private func inputCard<Field: View>(title: String, trailing: String?, trailingColor: Color,
+                                        @ViewBuilder field: () -> Field) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
             HStack {
-                if let image = UIImage(data: newPhotos[index]) {
-                    Image(uiImage: image).resizable().scaledToFit().frame(height: 80)
+                Text(title).font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
+                Spacer()
+                if let trailing {
+                    Text(trailing).font(MeshinowaFont.text(12, relativeTo: .caption)).foregroundStyle(trailingColor)
                 }
-                Spacer()
-                Button("写真を外す", role: .destructive) { newPhotos.remove(at: index) }
             }
+            field()
         }
+        .padding(12)
+        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(MeshinowaTheme.hairline))
     }
-}
 
-struct StarRatingInput: View {
-    @Binding var rating: Double
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 4) {
-                ForEach(1...5, id: \.self) { value in
-                    Button { rating = Double(value) } label: {
-                        Image(systemName: rating >= Double(value) ? "star.fill" : (rating >= Double(value) - 0.5 ? "star.leadinghalf.filled" : "star"))
-                            .font(.title2)
-                            .foregroundStyle(MeshinowaTheme.accent)
-                            .frame(minWidth: 44, minHeight: 44)
+    /// 写真は正方形で横に並べ、最後に「＋写真」の枠を置く。
+    private var photoRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(retainedPhotoNames, id: \.self) { name in
+                    photoTile(image: reviews.photoURL(name).flatMap { UIImage(contentsOfFile: $0.path) }) {
+                        retainedPhotoNames.removeAll { $0 == name }
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(value)点にする")
+                }
+                ForEach(newPhotos.indices, id: \.self) { index in
+                    photoTile(image: UIImage(data: newPhotos[index])) { newPhotos.remove(at: index) }
+                }
+                if retainedPhotoNames.count + newPhotos.count < 5 {
+                    PhotosPicker(selection: $pickerItems, maxSelectionCount: 5 - retainedPhotoNames.count - newPhotos.count,
+                                 matching: .images, photoLibrary: .shared()) {
+                        VStack(spacing: 2) {
+                            if isLoadingPhotos { ProgressView() } else {
+                                Image(systemName: "plus").font(.system(size: 20, weight: .semibold))
+                            }
+                            Text("写真").font(MeshinowaFont.text(11, relativeTo: .caption2))
+                        }
+                        .foregroundStyle(MeshinowaTheme.secondaryText)
+                        .frame(width: 72, height: 72)
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(MeshinowaTheme.outline, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
+                    }
+                    .disabled(isLoadingPhotos)
+                    .accessibilityLabel("写真を選ぶ、あと\(5 - retainedPhotoNames.count - newPhotos.count)枚")
                 }
             }
-            Text(rating == 0 ? "評価を選んでください" : "あなたの評価：" + rating.formatted(.number.precision(.fractionLength(1))))
-                .font(MeshinowaFont.text(17, weight: .black, relativeTo: .headline))
-            Stepper("0.5刻みで変更", value: $rating, in: 1...5, step: 0.5)
-                .disabled(rating == 0)
-                .accessibilityValue(rating.formatted())
+        }
+    }
+
+    private func photoTile(image: UIImage?, onRemove: @escaping () -> Void) -> some View {
+        Group {
+            if let image { Image(uiImage: image).resizable().scaledToFill() }
+            else { MeshinowaTheme.photo }
+        }
+        .frame(width: 72, height: 72)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(alignment: .topTrailing) {
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, .black.opacity(0.55))
+                    .frame(width: 32, height: 32)
+            }
+            .accessibilityLabel("写真を外す")
         }
     }
 }

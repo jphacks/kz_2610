@@ -56,11 +56,11 @@ struct ProfileView: View {
                     }.padding(16).paperCard()
                 }
                 HStack(spacing: 0) {
-                    statistic("行った", count: reviews.reviews.count)
+                    statistic("行った", count: reviews.reviews.count) { Image(systemName: "star.fill").foregroundStyle(MeshinowaTheme.accent) }
                     divider
-                    statistic("いいね", count: saved.restaurants.filter(\.isLiked).count)
+                    statistic("いいね", count: saved.restaurants.filter(\.isLiked).count) { Image(systemName: "heart.fill").foregroundStyle(MeshinowaTheme.like) }
                     divider
-                    statistic("友達", count: friends.friends.count)
+                    statistic("友達", count: friends.friends.count) { Image(systemName: "person.2.fill").foregroundStyle(MeshinowaTheme.green) }
                 }.padding(.vertical, 16).paperCard()
 
                 if friends.isAvailable && !reviews.pending.isEmpty {
@@ -70,6 +70,8 @@ struct ProfileView: View {
                         Button("今すぐ再試行") { Task { await friends.flushReviews() } }
                     }.font(MeshinowaFont.text(14)).padding(16).paperCard()
                 }
+                genreShelf
+
                 VStack(spacing: 0) {
                     NavigationLink { MyReviewsView(onFindRestaurants: onFindRestaurants) } label: {
                         linkRow("自分のレビュー一覧", symbol: "text.bubble")
@@ -110,12 +112,51 @@ struct ProfileView: View {
         .sheet(isPresented: $editsProfile) { ProfileEditorView() }
     }
 
-    private var divider: some View { Rectangle().fill(MeshinowaTheme.hairline).frame(width: 1, height: 40) }
-    private func statistic(_ title: String, count: Int) -> some View {
+    private var divider: some View {
+        Rectangle().fill(MeshinowaTheme.hairline).frame(width: 1, height: 40)
+    }
+
+    /// レビューしたお店を、ジャンルの器の形で数える。まだ行っていないジャンルは薄く出し、集める楽しさを作る。
+    private var genreShelf: some View {
+        let counts = Dictionary(grouping: reviews.reviews, by: { $0.restaurant.foodGenre }).mapValues(\.count)
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("よく行くジャンル")
+                .font(MeshinowaFont.heading(20, relativeTo: .title2))
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(FoodGenre.allCases.filter { $0 != .other }) { genre in
+                        let count = counts[genre] ?? 0
+                        VStack(spacing: 3) {
+                            FoodGenreMark(genre: genre, tone: count > 0 ? .mine : .faint, size: 38)
+                            Text("\(count)")
+                                .font(MeshinowaFont.number(15, relativeTo: .caption))
+                                .foregroundStyle(count > 0 ? MeshinowaTheme.ink : MeshinowaTheme.secondaryText)
+                            Text(genre.title)
+                                .font(MeshinowaFont.text(11, relativeTo: .caption2))
+                                .foregroundStyle(MeshinowaTheme.bodyText)
+                        }
+                        .frame(minWidth: 44)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(genre.title)、\(count)件")
+                    }
+                }
+            }
+        }
+    }
+
+    private func statistic<Mark: View>(_ title: String, count: Int, @ViewBuilder mark: () -> Mark) -> some View {
         VStack(spacing: 2) {
             Text("\(count)").font(MeshinowaFont.number(26))
-            Text(title).font(MeshinowaFont.text(13)).foregroundStyle(MeshinowaTheme.secondaryText)
-        }.frame(maxWidth: .infinity).accessibilityElement(children: .combine)
+            HStack(spacing: 4) {
+                mark().font(.system(size: 11)).accessibilityHidden(true)
+                Text(title)
+            }
+            .font(MeshinowaFont.text(13, relativeTo: .caption))
+            .foregroundStyle(MeshinowaTheme.secondaryText)
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title)、\(count)件")
     }
     private func linkRow(_ title: String, symbol: String) -> some View {
         HStack(spacing: 12) {
@@ -246,11 +287,14 @@ private struct LocalReviewRow: View {
     var body: some View {
         Button(action: onEdit) {
             VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .center, spacing: 12) {
+                    FoodGenreMark(genre: review.restaurant.foodGenre, tone: .reviewed, size: 30)
+                        .frame(width: 46, height: 46)
+                        .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                     Text(review.restaurant.name)
                         .font(MeshinowaFont.heading(17))
                     Spacer(minLength: 8)
-                    SoftTag(text: "自分 " + review.rating.formatted(.number.precision(.fractionLength(1))), tone: .mustard)
+                    MyRatingTag(rating: review.rating)
                 }
                 if !review.comment.isEmpty {
                     Text(review.comment)

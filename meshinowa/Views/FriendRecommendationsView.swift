@@ -1,9 +1,9 @@
 import MapKit
 import SwiftUI
 
-/// 友達のおすすめマップ。架空のデモと、サーバーから届いた友達の実データの両方を表示する。
-struct DemoRecommendationsView: View {
-    var dataset: FriendDataset = DemoRecommendations.dataset
+/// サーバーから届いた友達の評価を表示するおすすめマップ。
+struct FriendRecommendationsView: View {
+    var dataset: FriendDataset
     var initialSelection: String? = nil
 
     @State private var camera: GoogleMapPosition = .region(MKCoordinateRegion(
@@ -54,18 +54,14 @@ struct DemoRecommendationsView: View {
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             // 実データはお店の場所が決まっていないので、全部が入るように地図を合わせる。
-            if !dataset.isDemo && !dataset.restaurants.isEmpty { camera = .fit(dataset.restaurants.map(\.coordinate)) }
-            if selectedID == nil { selectedID = initialSelection ?? (dataset.isDemo ? "diner" : rated.first?.id) }
+            if !dataset.restaurants.isEmpty { camera = .fit(dataset.restaurants.map(\.coordinate)) }
+            if selectedID == nil { selectedID = initialSelection ?? rated.first?.id }
         }
         .onChange(of: visible.map(\.id)) { _, ids in
             if let id = selectedID, !ids.contains(id) { selectedID = rated.first?.id }
         }
         .sheet(item: $detail) { restaurant in
-            if dataset.isDemo {
-                DemoRestaurantDetail(restaurant: restaurant, summary: summary(for: restaurant), lensTitle: lens.mode.title)
-            } else {
-                RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends, friendIDs: includedIDs)
-            }
+            RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends, friendIDs: includedIDs)
         }
         .sheet(isPresented: $showsLens) {
             FriendLensPicker(lens: $lens, dataset: dataset)
@@ -81,17 +77,16 @@ struct DemoRecommendationsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("友達のおすすめマップ")
                         .font(MeshinowaFont.heading(18))
-                    Text(dataset.isDemo ? "DEMO · 店舗・友達・レビューはすべて架空です"
-                         : "友達\(dataset.friends.count)人の評価から")
+                    Text("友達\(dataset.friends.count)人の評価から")
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.secondaryText)
                 }
                 Spacer(minLength: 0)
             }
             HStack(spacing: 0) {
-                Label(dataset.isDemo ? "東京駅周辺" : "友達が行った店", systemImage: "mappin.and.ellipse")
+                Label("友達が行った店", systemImage: "mappin.and.ellipse")
                     .frame(maxWidth: .infinity)
-                    .accessibilityLabel(dataset.isDemo ? "エリア、東京駅周辺" : "友達が行ったお店")
+                    .accessibilityLabel("友達が行ったお店")
                 Rectangle().fill(MeshinowaTheme.outline).frame(width: 1, height: 26)
                 Button { showsLens = true } label: {
                     HStack(spacing: 8) {
@@ -180,7 +175,7 @@ struct DemoRecommendationsView: View {
 
             if let selected {
                 Button { detail = selected } label: {
-                    DemoRestaurantCard(restaurant: selected, summary: summary(for: selected), dataset: dataset)
+                    FriendRestaurantCard(restaurant: selected, summary: summary(for: selected), dataset: dataset)
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 14)
@@ -188,7 +183,7 @@ struct DemoRecommendationsView: View {
                 .transition(.opacity)
             } else {
                 Text(rated.isEmpty
-                     ? (dataset.isDemo || !dataset.reviews.isEmpty
+                     ? (!dataset.reviews.isEmpty
                         ? "この条件での評価はまだありません。友達や絞り込みを変えてみてください。"
                         : "友達の評価はまだありません。友達がお店を評価すると、ここに並びます。")
                      : "ピンをタップすると、友達のおすすめが見られます。")
@@ -213,15 +208,16 @@ struct DemoRecommendationsView: View {
 }
 
 /// 地図の下に出る、写真を大きく見せるカード。
-private struct DemoRestaurantCard: View {
+private struct FriendRestaurantCard: View {
     let restaurant: FriendRestaurant
     let summary: FriendRatingSummary
     let dataset: FriendDataset
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            PhotoPlaceholder(symbol: DemoRecommendations.symbol(for: restaurant),
-                             tint: DemoRecommendations.photoTint(for: restaurant))
+            FoodGenreMark(genre: restaurant.mapItem.foodGenre, size: 64)
+                .frame(maxWidth: .infinity)
+                .background(MeshinowaTheme.photo)
                 .frame(height: 130)
                 .overlay(alignment: .bottomLeading) {
                     if let review = summary.reviews.first {
@@ -264,151 +260,5 @@ private struct DemoRestaurantCard: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityHint("お店の詳細を開きます")
-    }
-}
-
-struct DemoNotice: View {
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "info.circle")
-                .accessibilityHidden(true)
-            Text("DEMO · 店舗・友達・レビューはすべて架空です。実際の店舗情報や保存一覧には反映されません。")
-                .font(MeshinowaFont.text(13, relativeTo: .caption))
-        }
-        .foregroundStyle(MeshinowaTheme.bodyText)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
-struct DemoRestaurantDetail: View {
-    private enum Section: Hashable { case voices, info }
-
-    let restaurant: FriendRestaurant
-    let summary: FriendRatingSummary
-    let lensTitle: String
-    @Environment(\.dismiss) private var dismiss
-    @State private var section: Section = .voices
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .buttonStyle(CircleIconButtonStyle())
-                        .accessibilityLabel("閉じる")
-                    Spacer()
-                }
-                Text(restaurant.name)
-                    .font(MeshinowaFont.heading(28, relativeTo: .title))
-                    .accessibilityAddTraits(.isHeader)
-                VStack(alignment: .leading, spacing: 12) {
-                    InfoRow(symbol: "mappin.and.ellipse", text: DemoRecommendations.area(for: restaurant))
-                    InfoRow(symbol: "fork.knife", text: restaurant.genre)
-                    HStack(spacing: 12) {
-                        FriendAvatarStack(names: summary.reviews.map { DemoRecommendations.friendName($0.friendID) })
-                        if let average = summary.average {
-                            Text(average, format: .number.precision(.fractionLength(1)))
-                                .font(MeshinowaFont.number(18, relativeTo: .body))
-                                .foregroundStyle(MeshinowaTheme.green)
-                            Text("友達\(summary.count)人の評価（\(lensTitle)）")
-                                .font(MeshinowaFont.text(14))
-                                .foregroundStyle(MeshinowaTheme.bodyText)
-                        } else {
-                            Text("このLensでの評価はまだありません")
-                                .font(MeshinowaFont.text(14))
-                                .foregroundStyle(MeshinowaTheme.bodyText)
-                        }
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-                HStack(spacing: 6) {
-                    PhotoPlaceholder(symbol: DemoRecommendations.symbol(for: restaurant),
-                                     tint: DemoRecommendations.photoTint(for: restaurant), cornerRadius: 12)
-                    VStack(spacing: 6) {
-                        PhotoPlaceholder(symbol: "cup.and.saucer", tint: MeshinowaTheme.field, cornerRadius: 12)
-                        PhotoPlaceholder(symbol: "photo", tint: MeshinowaTheme.field, cornerRadius: 12)
-                    }
-                    .frame(width: 110)
-                }
-                .frame(height: 180)
-
-                UnderlineTabs(items: [
-                    .init(value: Section.voices, title: "友達の声", badge: "\(summary.count)"),
-                    .init(value: Section.info, title: "情報")
-                ], selection: $section)
-
-                if section == .voices {
-                    if summary.reviews.isEmpty {
-                        Text("このLensでの評価はまだありません。")
-                            .font(MeshinowaFont.text(14))
-                            .foregroundStyle(MeshinowaTheme.bodyText)
-                    }
-                    ForEach(summary.reviews) { review in
-                        DemoReviewRow(review: review)
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: 14) {
-                        InfoRow(symbol: "clock", text: "営業時間は架空のため表示していません")
-                        DemoNotice()
-                    }
-                }
-            }
-            .padding(20)
-        }
-        .background(MeshinowaTheme.paper)
-        .foregroundStyle(MeshinowaTheme.ink)
-        .presentationDragIndicator(.visible)
-    }
-}
-
-private struct DemoReviewRow: View {
-    let review: FriendReview
-
-    var body: some View {
-        let name = DemoRecommendations.friendName(review.friendID)
-        HStack(alignment: .top, spacing: 12) {
-            FriendAvatar(name: name, size: 36)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(name).font(MeshinowaFont.text(14, weight: .bold))
-                    Spacer()
-                    Text(review.rating, format: .number.precision(.fractionLength(1)))
-                        .font(MeshinowaFont.number(16, relativeTo: .body))
-                        .foregroundStyle(MeshinowaTheme.green)
-                }
-                Text(review.comment)
-                    .font(MeshinowaFont.text(15))
-                    .foregroundStyle(MeshinowaTheme.bodyText)
-            }
-        }
-        .padding(.vertical, 10)
-        .overlay(alignment: .bottom) { Rectangle().fill(MeshinowaTheme.hairline).frame(height: 1) }
-        .accessibilityElement(children: .combine)
-    }
-}
-
-extension DemoRecommendations {
-    static func symbol(for restaurant: FriendRestaurant) -> String {
-        switch restaurant.genre {
-        case "カフェ": return "cup.and.saucer"
-        case "ラーメン": return "takeoutbag.and.cup.and.straw"
-        case "ベーカリー": return "birthday.cake"
-        default: return "fork.knife"
-        }
-    }
-
-    static func photoTint(for restaurant: FriendRestaurant) -> Color {
-        switch restaurant.genre {
-        case "カフェ": return Color(red: 0.90, green: 0.86, blue: 0.82)
-        case "ラーメン": return Color(red: 0.94, green: 0.89, blue: 0.78)
-        case "ベーカリー": return Color(red: 0.94, green: 0.89, blue: 0.80)
-        default: return MeshinowaTheme.photo
-        }
-    }
-
-    static func area(for restaurant: FriendRestaurant) -> String {
-        restaurant.coordinate.longitude < 139.7671 ? "千代田区丸の内（架空）" : "中央区八重洲（架空）"
     }
 }

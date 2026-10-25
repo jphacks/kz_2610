@@ -26,6 +26,10 @@ final class FriendStoreTests: XCTestCase {
         await store.start(sharing: [])
         XCTAssertEqual(store.status, .unavailable)
         XCTAssertNil(credentials.load())
+        XCTAssertTrue(store.dataset.friends.isEmpty)
+        XCTAssertTrue(store.dataset.restaurants.isEmpty)
+        XCTAssertTrue(store.dataset.reviews.isEmpty)
+        XCTAssertTrue(store.dataset.ratedRestaurants.isEmpty)
     }
 
     func testStartCreatesGuestOnceAndBuildsFriendDataset() async throws {
@@ -67,7 +71,6 @@ final class FriendStoreTests: XCTestCase {
         XCTAssertTrue(store.outgoingRequests.isEmpty)
 
         let dataset = store.dataset
-        XCTAssertFalse(dataset.isDemo)
         XCTAssertEqual(dataset.favoriteFriendIDs, ["f1"])
         XCTAssertEqual(dataset.restaurants.map(\.genre), ["カフェ"])
         XCTAssertEqual(dataset.friendName("f1"), "はなこ")

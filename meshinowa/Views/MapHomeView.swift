@@ -2,13 +2,18 @@ import GoogleMaps
 import MapKit
 import SwiftUI
 
-/// 現在地や友達データを使わずに試せる、地図ホームの最初の実装。
+/// 一般のお店と友達が評価したお店を一緒に表示し、友達のお店のピンを優先する地図。
 struct MapHomeView: View {
     var showsSavedShortcut = true
+    var isActive = true
+    @EnvironmentObject private var friends: FriendStore
+    @State private var searchesAllPlaces = true
+    @State private var friendResults: [RestaurantSearchResult] = []
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var location: LocationStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @Environment(\.floatingTabBarSpace) private var tabBarSpace
+    @Environment(\.reportsMapSelection) private var reportsMapSelection
 
     private static let initialRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
@@ -46,12 +51,15 @@ struct MapHomeView: View {
     }
 
     private func rank(_ result: RestaurantSearchResult) -> Int {
-        if result.id == selectedID { return 2 }
-        return saved.restaurant(for: result.item) == nil && reviews.review(for: result.item) == nil ? 0 : 1
+        RestaurantSearchResult.displayPriority(
+            isSelected: result.id == selectedID,
+            hasFriendRating: friends.summary(for: result.item).count > 0,
+            hasPersonalRecord: saved.restaurant(for: result.item) != nil || reviews.review(for: result.item) != nil
+        )
     }
 
     /// 地図に立てるピン。画面上で重なるものは優先度の低い方を隠し、拡大すると隠れていたお店が出てくる。
-    /// 優先度は、選んだお店、自分の記録があるお店、検索で上位のお店の順。
+    /// 優先度は、選んだお店、友達の評価があるお店、自分の記録があるお店、検索で上位のお店の順。
     private var shownResults: [RestaurantSearchResult] {
         guard mapSize.width > 0 else { return visibleResults }
         let region = visibleRegion
@@ -84,11 +92,19 @@ struct MapHomeView: View {
     }
 
     private var visibleResults: [RestaurantSearchResult] {
-        results.filter { genre.matches($0.item) }
+        let recommendations = friendResults.filter {
+            query.isEmpty || ($0.item.name ?? "").localizedStandardContains(query)
+                || $0.item.restaurantCategory.localizedStandardContains(query)
+        }
+        let combined = searchesAllPlaces
+            ? RestaurantSearchResult.merging(search: results, recommendations: recommendations)
+            : recommendations
+        return combined.filter { genre.matches($0.item) }
     }
 
     /// 結果がまだないか、検索した範囲から地図が離れたときに再検索を勧める。
     private var suggestsAreaSearch: Bool {
+        guard searchesAllPlaces else { return false }
         guard !isSearching else { return true }
         guard let searchedRegion, !visibleResults.isEmpty else { return true }
         let center = visibleRegion.center, old = searchedRegion.center
@@ -103,11 +119,13 @@ struct MapHomeView: View {
         GoogleMapCanvas(position: camera, pins: pinOrder.map { result in
             let entry = saved.restaurant(for: result.item)
             let review = reviews.review(for: result.item)
+            let friendRating = friends.summary(for: result.item).average
             return GoogleMapPin(id: result.id.uuidString, title: result.item.name ?? "飲食店",
                                 coordinate: result.item.placemark.coordinate,
                                 symbol: Self.symbol(for: result.item),
-                                mark: review.map { .reviewed($0.rating) } ?? (entry?.isLiked == true ? .liked : .none),
-                                showsLikeBadge: review != nil && entry?.isLiked == true)
+                                genre: result.item.foodGenre,
+                                mark: friendRating.map { .reviewed($0) } ?? review.map { .reviewed($0.rating) } ?? (entry?.isLiked == true ? .liked : .none),
+                                showsLikeBadge: (review != nil || friendRating != nil) && entry?.isLiked == true)
         }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),
                         topPadding: headerHeight,
                         bottomPadding: tabBarSpace + (selectedResult == nil ? 0 : cardHeight)) { region, position in
@@ -128,6 +146,36 @@ struct MapHomeView: View {
                     .onChange(of: proxy.size) { _, size in mapSize = size }
             }
         }
+        .task(id: isActive) {
+            guard isActive else { return }
+            if searchesAllPlaces && results.isEmpty && searchedRegion == nil && GooglePlacesService.isConfigured {
+                beginSearch(nearby: true)
+            }
+            while !Task.isCancelled {
+                await friends.refresh()
+                try? await Task.sleep(for: .seconds(10))
+            }
+        }
+        .onChange(of: friendSnapshot, initial: true) { _, _ in
+            let previous = Dictionary(uniqueKeysWithValues: friendResults.map {
+                (SavedRestaurant.identifier(for: $0.item), $0.id)
+            })
+            let wasEmpty = friendResults.isEmpty
+            friendResults = friends.dataset.ratedRestaurants.map {
+                RestaurantSearchResult(id: previous[$0.id] ?? UUID(), item: $0.mapItem)
+            }
+            if !searchesAllPlaces && wasEmpty && !friendResults.isEmpty {
+                camera = .fit(friendResults.map { $0.item.placemark.coordinate })
+            }
+        }
+        .onChange(of: searchesAllPlaces) { _, _ in
+            query = ""
+            selectedID = nil
+            notice = nil
+            if !searchesAllPlaces && !friendResults.isEmpty {
+                camera = .fit(friendResults.map { $0.item.placemark.coordinate })
+            }
+        }
         .onChange(of: genre) { _, _ in
             selectedID = nil
             searchedRegion = nil
@@ -136,8 +184,12 @@ struct MapHomeView: View {
         }
         .onChange(of: visibleResults.map(\.id)) { _, _ in
             carouselItems = Self.nearestChain(visibleResults)
+            if let selectedID, !visibleResults.contains(where: { $0.id == selectedID }) {
+                self.selectedID = nil
+            }
         }
         .onChange(of: selectedID) { _, id in
+            reportsMapSelection?(selectedResult?.item)
             guard let id else { return }
             follow(id)
             // ピンから選んだときは、カードを真ん中の周に合わせる。
@@ -206,6 +258,7 @@ struct MapHomeView: View {
     /// 地図の上に浮かぶ検索欄と、そこから垂れ下がるジャンルののれん。
     private var searchHeader: some View {
         VStack(spacing: 3) {
+            mapScopePicker
             HStack(spacing: 8) {
                 searchField
                 Button { location.request() } label: {
@@ -216,6 +269,14 @@ struct MapHomeView: View {
             }
             NorenTabs(items: RestaurantGenre.allCases, selection: $genre)
                 .disabled(isSearching)
+            if !searchesAllPlaces && visibleResults.isEmpty {
+                Text(friendMapMessage)
+                    .font(MeshinowaFont.text(13))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
+                    .padding(12)
+                    .frame(maxWidth: .infinity)
+                    .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 12))
+            }
         }
         .padding(.horizontal, 12)
         .overlay(alignment: .bottom) {
@@ -230,6 +291,48 @@ struct MapHomeView: View {
         .padding(.bottom, 8)
     }
 
+    /// 独立した小さなチップで、地図の表示範囲を切り替える。
+    private var mapScopePicker: some View {
+        HStack(spacing: 6) {
+            mapScopeButton(title: "すべて", symbol: "map", showsAll: true)
+            mapScopeButton(title: "友達の評価", symbol: "person.2", showsAll: false)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("地図に表示するお店")
+    }
+
+    private func mapScopeButton(title: String, symbol: String, showsAll: Bool) -> some View {
+        let isSelected = searchesAllPlaces == showsAll
+        return Button {
+            withAnimation(.easeInOut(duration: 0.18)) { searchesAllPlaces = showsAll }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: symbol)
+                    .font(.system(size: 11, weight: .semibold))
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(MeshinowaFont.text(12, weight: .bold))
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundStyle(isSelected ? MeshinowaTheme.mintInk : MeshinowaTheme.bodyText)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 7)
+            .background(isSelected ? MeshinowaTheme.mint : MeshinowaTheme.card,
+                        in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10)
+                    .strokeBorder(isSelected ? MeshinowaTheme.green : MeshinowaTheme.hairline, lineWidth: 1)
+            }
+            .shadow(color: MeshinowaTheme.ink.opacity(0.08), radius: 3, y: 1)
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(showsAll ? "すべてのお店、友達の評価を優先" : "友達が評価したお店だけ")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
     /// のれんを掛ける板を兼ねた検索欄。下側はのれんが付くので角を小さくする。
     private var searchField: some View {
         HStack(spacing: 8) {
@@ -237,7 +340,7 @@ struct MapHomeView: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(MeshinowaTheme.green)
                 .accessibilityHidden(true)
-            TextField("お店やジャンルを探す", text: $query)
+            TextField(searchesAllPlaces ? "お店やジャンルを探す" : "友達が評価したお店を絞り込む", text: $query)
                 .font(MeshinowaFont.text(16))
                 .focused($isSearchFocused)
                 .submitLabel(.search)
@@ -425,7 +528,23 @@ struct MapHomeView: View {
         return chain
     }
 
+    /// 評価の変更・削除や友達の解除に合わせて、検索に依存せずピンを更新する。
+    private var friendSnapshot: [String] {
+        friends.dataset.ratedRestaurants.map {
+            "\($0.id)|\($0.name)|\($0.address)|\($0.category ?? "")|\($0.coordinate.latitude)|\($0.coordinate.longitude)"
+        }
+    }
+
+    private var friendMapMessage: String {
+        if !friends.isAvailable { return "友達の評価はまだ利用できません。「すべてのお店」でお店を探せます。" }
+        if case .failed(let message) = friends.status { return message }
+        if friends.status == .connecting { return "友達の評価を読み込んでいます…" }
+        if friends.friends.isEmpty { return "「友達」タブでつながると、友達が評価したお店がこの地図に表示されます。" }
+        return friendResults.isEmpty ? "友達が評価すると、この地図にお店が表示されます。" : "条件に合う友達のお店がありません。"
+    }
+
     private func beginSearch(nearby: Bool = false) {
+        guard searchesAllPlaces else { isSearchFocused = false; return }
         let term = nearby ? genre.searchTerm : query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !isSearching, !term.isEmpty else { return }
         isSearchFocused = false

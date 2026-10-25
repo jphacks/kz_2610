@@ -2,7 +2,7 @@ import Combine
 import Foundation
 import MapKit
 
-/// ゲストアカウントと友達のつながり・評価。Cloudflare未設定なら何も送らず、画面はデモを出す。
+/// ゲストアカウントと友達のつながり・評価。Cloudflare未設定なら何も送らず、友達のデータは空になる。
 @MainActor
 final class FriendStore: ObservableObject {
     struct Profile: Decodable, Equatable {
@@ -123,8 +123,7 @@ final class FriendStore: ObservableObject {
             reviews: friendReviews.map {
                 FriendReview(id: $0.id, friendID: $0.userId, restaurantID: $0.externalKey, rating: $0.rating,
                              comment: $0.comment, updatedAt: Self.date($0.updatedAt), dish: $0.dish)
-            },
-            isDemo: false)
+            })
     }
 
     /// 地図検索のお店に付いた友達の評価。照合キーは保存・レビューと同じ店名＋座標。

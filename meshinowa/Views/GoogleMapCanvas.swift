@@ -19,6 +19,8 @@ struct GoogleMapPin {
     let title: String
     let coordinate: CLLocationCoordinate2D
     var symbol = "fork.knife"
+    /// ピンの器の形を決めるジャンル。
+    var genre: FoodGenre = .other
     var mark: PlacePin.Mark = .none
     var showsLikeBadge = false
     var scoreTag: String?
@@ -115,13 +117,13 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
                 marker.userData = pin.id
                 marker.zIndex = selected ? 1000 : Int32(index)
                 marker.groundAnchor = CGPoint(x: 0.5, y: 1)
-                let signature = "\(pin.symbol)|\(pin.mark)|\(pin.showsLikeBadge)|\(selected)|\(pin.scoreTitle ?? "")|\(pin.scoreTag ?? "")"
+                let signature = "\(pin.genre.rawValue)|\(pin.symbol)|\(pin.mark)|\(pin.showsLikeBadge)|\(selected)|\(pin.scoreTitle ?? "")|\(pin.scoreTag ?? "")"
                 if signatures[pin.id] != signature {
                     let content: AnyView
                     if let title = pin.scoreTitle {
                         content = AnyView(ScorePin(title: title, tag: pin.scoreTag, isSelected: selected))
                     } else {
-                        content = AnyView(PlacePin(symbol: pin.symbol, mark: pin.mark,
+                        content = AnyView(PlacePin(symbol: pin.symbol, genre: pin.genre, mark: pin.mark,
                                                   showsLikeBadge: pin.showsLikeBadge, isSelected: selected))
                     }
                     let renderer = ImageRenderer(content: content.padding(8).environment(\.colorScheme, .light))

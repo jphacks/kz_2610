@@ -29,13 +29,14 @@ struct GoogleMapCanvas: View {
     let position: GoogleMapPosition
     let pins: [GoogleMapPin]
     @Binding var selectedID: String?
+    var topPadding: CGFloat = 0
     var bottomPadding: CGFloat = 0
     var onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
     var body: some View {
         if GooglePlacesService.isMapConfigured {
             GoogleMapRepresentable(position: position, pins: pins, selectedID: $selectedID,
-                                   bottomPadding: bottomPadding, onCameraEnd: onCameraEnd)
+                                   topPadding: topPadding, bottomPadding: bottomPadding, onCameraEnd: onCameraEnd)
         } else {
             ContentUnavailableView("地図を表示できません", systemImage: "map", description: Text("Google Mapsの設定を確認してください。"))
         }
@@ -46,6 +47,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
     let position: GoogleMapPosition
     let pins: [GoogleMapPin]
     @Binding var selectedID: String?
+    let topPadding: CGFloat
     let bottomPadding: CGFloat
     let onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
@@ -69,7 +71,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
     func updateUIView(_ map: GMSMapView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        map.padding = UIEdgeInsets(top: 0, left: 0, bottom: bottomPadding, right: 0)
+        map.padding = UIEdgeInsets(top: topPadding, left: 0, bottom: bottomPadding, right: 0)
         coordinator.updatePins(map)
         guard coordinator.positionID != position.id else { return }
         coordinator.positionID = position.id

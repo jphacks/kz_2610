@@ -7,6 +7,7 @@ struct MapHomeView: View {
     var showsSavedShortcut = true
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
+    @Environment(\.floatingTabBarSpace) private var tabBarSpace
 
     private static let initialRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
@@ -36,6 +37,7 @@ struct MapHomeView: View {
     /// 地図の大きさ。ピンが画面上で重なるかを測るのに使う。
     @State private var mapSize: CGSize = .zero
     @State private var cardHeight: CGFloat = 0
+    @State private var headerHeight: CGFloat = 0
     @FocusState private var isSearchFocused: Bool
 
     private var pinOrder: [RestaurantSearchResult] {
@@ -106,7 +108,8 @@ struct MapHomeView: View {
                                 mark: review.map { .reviewed($0.rating) } ?? (entry?.isLiked == true ? .liked : .none),
                                 showsLikeBadge: review != nil && entry?.isLiked == true)
         }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),
-                        bottomPadding: selectedResult == nil ? 0 : cardHeight) { region, position in
+                        topPadding: headerHeight,
+                        bottomPadding: tabBarSpace + (selectedResult == nil ? 0 : cardHeight)) { region, position in
             visibleRegion = region
             lastCamera = position
             if adoptsNextCamera {
@@ -114,6 +117,9 @@ struct MapHomeView: View {
                 adoptsNextCamera = false
             }
         }
+        // Extend the native map beneath the search panel, status area and floating tabs.
+        // Keep overlays inside the safe area; only the map paints edge to edge.
+        .ignoresSafeArea(.container)
         .background {
             GeometryReader { proxy in
                 Color.clear
@@ -148,9 +154,12 @@ struct MapHomeView: View {
             transaction.disablesAnimations = true
             withTransaction(transaction) { carouselPosition = CarouselSlot(lap: 1, id: slot.id) }
         }
-        // 上のパネルは高さが変わらないので余白として確保する。出たり消えたりするボタンやカードは
-        // 重ねるだけにして、地図の余白が変わって中身がずれないようにする。
-        .safeAreaInset(edge: .top, spacing: 0) { searchHeader }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            searchHeader.background(GeometryReader { proxy in
+                Color.clear.onAppear { headerHeight = proxy.size.height }
+                    .onChange(of: proxy.size.height) { _, height in headerHeight = height }
+            })
+        }
         .overlay(alignment: .bottom) { bottomCard }
         // 知らせは数秒で消し、地図の Legal 表記を隠したままにしない。
         .task(id: notice) {

@@ -30,8 +30,7 @@ struct RestaurantPreview: View {
             }
 
             HStack(alignment: .top, spacing: 12) {
-                PhotoPlaceholder(symbol: MapHomeView.symbol(for: item), cornerRadius: 8)
-                    .frame(width: 84, height: 84)
+                RestaurantPhotoView(item: item, width: 84, height: 84, cornerRadius: 8)
                 VStack(alignment: .leading, spacing: 8) {
                     detailLine(symbol: MapHomeView.symbol(for: item), text: item.restaurantCategory)
                     detailLine(symbol: "person.2", text: "友達の評価は準備中")
@@ -40,6 +39,7 @@ struct RestaurantPreview: View {
                                    ?? "住所の情報がありません")
                 }
             }
+            HotPepperServiceCredit()
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(.horizontal, 16)
@@ -246,8 +246,7 @@ struct RestaurantInformationView: View {
                     InfoRow(symbol: "person.2", text: "友達の評価は準備中です")
                 }
 
-                PhotoPlaceholder(symbol: MapHomeView.symbol(for: item))
-                    .frame(height: 150)
+                RestaurantPhotoView(item: item)
 
                 RestaurantCollectionControls(item: item)
 

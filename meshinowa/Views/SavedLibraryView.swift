@@ -118,6 +118,9 @@ struct SavedRestaurantsView: View {
                     .padding(.top, 6)
                 }
 
+                HotPepperServiceCredit()
+                    .padding(.horizontal, 20)
+
                 Text("この端末に保存しています。\(visibleRestaurants.count)件を表示中。")
                     .font(MeshinowaFont.text(12, relativeTo: .caption))
                     .foregroundStyle(MeshinowaTheme.secondaryText)
@@ -167,8 +170,7 @@ private struct SavedRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            PhotoPlaceholder(symbol: symbol, cornerRadius: 12)
-                .frame(width: 84, height: 84)
+            RestaurantPhotoView(item: restaurant.mapItem, width: 84, height: 84, cornerRadius: 12)
             VStack(alignment: .leading, spacing: 3) {
                 Text(restaurant.name)
                     .font(MeshinowaFont.heading(17))
@@ -198,15 +200,6 @@ private struct SavedRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityHint("お店の情報を開きます")
-    }
-
-    private var symbol: String {
-        switch restaurant.category.map(MKPointOfInterestCategory.init(rawValue:)) {
-        case .cafe?: return "cup.and.saucer"
-        case .bakery?: return "birthday.cake"
-        case .brewery?: return "mug"
-        default: return "fork.knife"
-        }
     }
 }
 

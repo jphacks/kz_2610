@@ -8,9 +8,10 @@ struct RestaurantPhotoView: View {
     var isActive = true
     var expanded = false
     var showsGoogleAttribution = true
+    @ObservedObject private var store = RestaurantPhotoStore.shared
     @State private var loaded: LoadedRestaurantPhoto?
 
-    private var current: LoadedRestaurantPhoto? { loaded ?? RestaurantPhotoStore.shared.cachedPhoto(for: item) }
+    private var current: LoadedRestaurantPhoto? { loaded ?? store.cachedPhoto(for: item) }
     private var photo: UIImage? { current?.image }
     private var metadata: Photo? { current?.metadata }
     private var placeAttributions: AttributedString? { current?.placeAttributions }
@@ -80,7 +81,7 @@ struct RestaurantPhotoView: View {
             failed = false
             defer { loading = false }
             do {
-                let result = try await RestaurantPhotoStore.shared.photo(for: item)
+                let result = try await store.photo(for: item)
                 try Task.checkCancellation()
                 loaded = result
             } catch is CancellationError {

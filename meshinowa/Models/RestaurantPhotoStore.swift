@@ -1,3 +1,4 @@
+import Combine
 import GooglePlacesSwift
 import MapKit
 import UIKit
@@ -10,7 +11,8 @@ struct LoadedRestaurantPhoto {
 
 /// Short-lived display-session reuse only. Persistent HTTP caching remains owned by the SDK.
 @MainActor
-final class RestaurantPhotoStore {
+final class RestaurantPhotoStore: ObservableObject {
+    @Published private(set) var revision = 0
     static let shared = RestaurantPhotoStore()
     typealias Loader = (MKMapItem) async throws -> LoadedRestaurantPhoto?
 
@@ -39,7 +41,10 @@ final class RestaurantPhotoStore {
         memoryObserver = NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            Task { @MainActor in self?.cache.removeAllObjects() }
+            Task { @MainActor in
+                self?.cache.removeAllObjects()
+                self?.revision &+= 1
+            }
         }
     }
 
@@ -75,6 +80,7 @@ final class RestaurantPhotoStore {
             cache.setObject(entry, forKey: requestKey as NSString, cost: cost)
             // Legacy store resolution can discover a Google ID during the request.
             if key(item) != requestKey { cache.setObject(entry, forKey: key(item) as NSString, cost: cost) }
+            revision &+= 1
             return photo
         }
         inFlight[requestKey] = task

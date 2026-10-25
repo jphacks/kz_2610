@@ -6,7 +6,6 @@ struct ReviewEditor: View {
     let item: MKMapItem
     let existing: LocalReview?
     @EnvironmentObject private var reviews: LocalReviewStore
-    @EnvironmentObject private var saved: SavedRestaurantStore
     @Environment(\.dismiss) private var dismiss
     @State private var rating: Double
     @State private var comment: String
@@ -22,10 +21,10 @@ struct ReviewEditor: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var isLoadingPhotos = false
 
-    init(item: MKMapItem, existing: LocalReview?) {
+    init(item: MKMapItem, existing: LocalReview?, initialRating: Double? = nil) {
         self.item = item
         self.existing = existing
-        _rating = State(initialValue: existing?.rating ?? 0)
+        _rating = State(initialValue: initialRating.flatMap { $0 > 0 ? $0 : nil } ?? existing?.rating ?? 0)
         _comment = State(initialValue: existing?.comment ?? "")
         _dish = State(initialValue: existing?.dish ?? "")
         _wantAgain = State(initialValue: existing?.wantAgain ?? false)
@@ -95,11 +94,7 @@ struct ReviewEditor: View {
                                              retainedPhotoNames: retainedPhotoNames, newPhotos: newPhotos)
                             retainedPhotoNames = reviews.review(for: item)?.photoFileNames ?? []
                             newPhotos = []
-                            if saved.markVisited(item) {
-                                dismiss()
-                            } else {
-                                error = "レビューは保存しましたが、「行った」への追加ができませんでした。保存一覧のエラーを確認してください。"
-                            }
+                            dismiss()
                         } catch { self.error = error.localizedDescription }
                         isSaving = false
                     }

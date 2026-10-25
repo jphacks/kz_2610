@@ -1,12 +1,12 @@
 import Foundation
 
 enum PersonalLibrary {
-    /// 保存解除済みでもレビューのある店舗はマイマップに残す。
+    /// いいねしたお店とレビューしたお店をまとめる。いいねを外してもレビューのあるお店は残す。
     static func restaurants(saved: [SavedRestaurant], reviews: [LocalReview]) -> [SavedRestaurant] {
         var merged = Dictionary(uniqueKeysWithValues: saved.map { ($0.id, $0) })
         for review in reviews where merged[review.id] == nil {
             var restaurant = review.restaurant
-            restaurant.status = .visited
+            restaurant.isLiked = false
             merged[restaurant.id] = restaurant
         }
         return merged.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }

@@ -7,13 +7,19 @@ struct SavedRestaurantsView: View {
     @Environment(\.dismiss) private var dismiss
     var onFindRestaurants: (() -> Void)? = nil
     @State private var selected: SavedRestaurant?
-    @State private var collection: SavedCollection = .wantToGo
+    @State private var collection: SavedCollection = .liked
     @State private var sort: SavedSort = .newest
     @State private var query = ""
     @State private var showsMap = false
 
+    private var library: [SavedRestaurant] {
+        PersonalLibrary.restaurants(saved: saved.restaurants, reviews: reviews.reviews)
+    }
+
+    private var reviewed: Set<String> { Set(reviews.reviews.map(\.id)) }
+
     private var visibleRestaurants: [SavedRestaurant] {
-        SavedCollectionQuery.results(saved.restaurants, collection: collection, search: query, sort: sort,
+        SavedCollectionQuery.results(library, collection: collection, search: query, sort: sort,
                                      ratings: Dictionary(uniqueKeysWithValues: reviews.reviews.map { ($0.id, $0.rating) }))
     }
 
@@ -22,7 +28,7 @@ struct SavedRestaurantsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Picker("コレクション", selection: $collection) {
                     ForEach(SavedCollection.allCases) { group in
-                        Text("\(group.title) \(saved.restaurants.filter(group.includes).count)").tag(group)
+                        Text("\(group.title) \(library.filter { group.includes($0, reviewed: reviewed) }.count)").tag(group)
                     }
                 }
                 .pickerStyle(.segmented)

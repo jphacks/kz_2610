@@ -22,8 +22,8 @@ struct ProfileView: View {
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     statistic("レビュー", count: reviews.reviews.count)
-                    statistic("行った", count: saved.restaurants.filter { $0.status == .visited }.count)
-                    statistic("行きたい", count: saved.restaurants.filter { $0.status == .wantToGo }.count)
+                    statistic("行った", count: reviews.reviews.count)
+                    statistic("いいね", count: saved.restaurants.filter(\.isLiked).count)
                 }
                 .padding(18)
                 .paperCard()

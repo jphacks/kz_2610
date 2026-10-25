@@ -1,7 +1,8 @@
 import Foundation
 import MapKit
 
-enum VisitStatus: String, Codable { case wantToGo, visited }
+/// 以前の「行きたい／行った」の保存形式。読み込み時の移行にだけ使う。
+private enum LegacyVisitStatus: String, Codable { case wantToGo, visited }
 
 struct SavedRestaurant: Codable, Identifiable {
     let id: String
@@ -12,10 +13,10 @@ struct SavedRestaurant: Codable, Identifiable {
     let category: String?
     let phoneNumber: String?
     let savedAt: Date
-    var status: VisitStatus?
-    var isFavorite: Bool
+    /// いいね（保存して行きたい）。行ったかどうかはレビューがあるかで決まり、ここには持たない。
+    var isLiked: Bool
 
-    init(item: MKMapItem, savedAt: Date = .now, status: VisitStatus? = .wantToGo, isFavorite: Bool = false) {
+    init(item: MKMapItem, savedAt: Date = .now, isLiked: Bool = true) {
         id = Self.identifier(for: item)
         name = item.name ?? "飲食店"
         address = item.placemark.title ?? "住所の情報がありません"
@@ -24,11 +25,14 @@ struct SavedRestaurant: Codable, Identifiable {
         category = item.pointOfInterestCategory?.rawValue
         phoneNumber = item.phoneNumber
         self.savedAt = savedAt
-        self.status = status
-        self.isFavorite = isFavorite
+        self.isLiked = isLiked
     }
 
-    enum CodingKeys: String, CodingKey { case id, name, address, latitude, longitude, category, phoneNumber, savedAt, status, isFavorite }
+    enum CodingKeys: String, CodingKey {
+        case id, name, address, latitude, longitude, category, phoneNumber, savedAt, isLiked, isVisited
+        // 以前の形式のキー。
+        case status, isFavorite
+    }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(String.self, forKey: .id)
@@ -39,8 +43,16 @@ struct SavedRestaurant: Codable, Identifiable {
         category = try c.decodeIfPresent(String.self, forKey: .category)
         phoneNumber = try c.decodeIfPresent(String.self, forKey: .phoneNumber)
         savedAt = try c.decode(Date.self, forKey: .savedAt)
-        status = c.contains(.status) ? try c.decodeIfPresent(VisitStatus.self, forKey: .status) : .wantToGo
-        isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+        if c.contains(.isLiked) || c.contains(.isVisited) {
+            // 「行った」だけが付いていたお店は、記録を失わないようにいいねへ移す。
+            isLiked = try (c.decodeIfPresent(Bool.self, forKey: .isLiked) ?? false)
+                || (c.decodeIfPresent(Bool.self, forKey: .isVisited) ?? false)
+        } else {
+            // 以前の形式：行きたい・お気に入り・行った（状態のない最初期のデータも含む）は、いいねにまとめる。
+            let status = c.contains(.status) ? try c.decodeIfPresent(LegacyVisitStatus.self, forKey: .status) : .wantToGo
+            let isFavorite = try c.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
+            isLiked = status != nil || isFavorite
+        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -49,9 +61,7 @@ struct SavedRestaurant: Codable, Identifiable {
         try c.encode(latitude, forKey: .latitude); try c.encode(longitude, forKey: .longitude)
         try c.encodeIfPresent(category, forKey: .category); try c.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
         try c.encode(savedAt, forKey: .savedAt)
-        // nilも明示して、古い「行きたい」データとの区別を保つ。
-        try c.encode(status, forKey: .status)
-        try c.encode(isFavorite, forKey: .isFavorite)
+        try c.encode(isLiked, forKey: .isLiked)
     }
 
     /// iOS 17でも再検索した店を照合できるよう、店名と約10m単位の座標を使う。

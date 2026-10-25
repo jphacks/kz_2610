@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>保存・友達・プロフィール改善案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFFFFF; --field:#F4F5F2; --hairline:#E3E5E2; --outline:#D5D8D4; --photo:#EADFCB;
+  --ink:#1C1F1D; --body:#4F5550; --sub:#6B716D;
+  --green:#27755B; --mint:#DDF0E4; --mint-ink:#1F6B4F;
+  --accent:#E8AD45; --mustard-soft:#FBEBC8; --mustard-ink:#7A5410;
+  --like:#E5577E; --like-soft:#FCE4EB; --like-ink:#A3254B;
+  --heading:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
+  --text:"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EEF0EC;color:var(--ink);font-family:var(--text);line-height:1.7;padding:0 16px 90px}
+.wrap{max-width:1180px;margin:0 auto}
+header{padding:48px 0 22px;border-bottom:1px solid var(--hairline)}
+header small{letter-spacing:.25em;color:var(--sub);font-size:12px}
+header h1{font-family:var(--heading);font-size:30px;font-weight:800;margin:4px 0 8px}
+header p{color:var(--body);max-width:880px}
+h2{font-family:var(--heading);font-size:22px;font-weight:800;margin:50px 0 6px}
+.lead{color:var(--body);font-size:15px;max-width:900px;margin-bottom:12px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:16px}
+.rules div{background:#fff;border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;font-size:14px;color:var(--body)}
+.rules b{display:block;color:var(--ink);font-size:15px}
+.changes{background:#fff;border:1px solid var(--hairline);border-radius:14px;padding:14px 18px;font-size:14px;color:var(--body);max-width:900px;margin-bottom:18px}
+.changes li{margin:2px 0 2px 1.2em}
+.changes b{color:var(--ink)}
+.changes .k{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:0 6px;margin-right:6px}
+.k.ui{background:var(--mint);color:var(--mint-ink)}.k.ux{background:var(--field);color:var(--body)}.k.wa{background:var(--mustard-soft);color:var(--mustard-ink)}
+
+.phones{display:flex;gap:26px;flex-wrap:wrap;justify-content:center}
+.cap{font-size:13px;color:var(--sub);margin-bottom:8px;text-align:center}
+.cap b{color:var(--ink);font-size:14px;margin-right:4px}
+.phone{width:310px;height:670px;border-radius:46px;background:#111;padding:10px;box-shadow:0 18px 40px #0003}
+.screen{position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:var(--paper)}
+.island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:88px;height:25px;background:#111;border-radius:14px;z-index:50}
+.status{height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:12px;font-weight:700}
+.page{padding:0 18px;height:calc(100% - 44px);overflow:hidden}
+.title{display:flex;align-items:center;justify-content:space-between;margin:2px 0 4px}
+.title h3{font-family:var(--heading);font-weight:800;font-size:26px}
+.pill{height:36px;padding:0 13px;border-radius:18px;border:1px solid var(--outline);display:inline-flex;align-items:center;gap:5px;font-size:12.5px;background:#fff;white-space:nowrap}
+.pill.on{border:2px solid var(--ink);font-weight:700}
+.pill svg{width:15px;height:15px}
+.utabs{display:flex;gap:22px;border-bottom:1px solid var(--hairline);margin-bottom:10px}
+.utabs span{font-size:15px;color:var(--sub);padding:8px 0 7px;position:relative;cursor:pointer}
+.utabs span b{font-family:var(--heading);font-weight:800;margin-left:4px}
+.utabs span.on{color:var(--ink);font-weight:700}
+.utabs span.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--ink)}
+.search{height:40px;border-radius:20px;background:var(--field);display:flex;align-items:center;gap:8px;padding:0 14px;font-size:13px;color:var(--sub)}
+.search svg{width:15px;height:15px;color:var(--ink)}
+.toolbar{display:flex;gap:6px;align-items:center;margin:10px 0 2px}
+.toolbar .count{font-size:12px;color:var(--sub);margin-right:auto;white-space:nowrap}
+.row{display:flex;gap:11px;padding:10px 0;border-bottom:1px solid var(--hairline);align-items:center}
+.thumb{width:56px;height:56px;border-radius:12px;background:var(--photo);display:flex;align-items:center;justify-content:center;flex:none}
+.row h5{font-family:var(--heading);font-weight:800;font-size:14.5px;line-height:1.35}
+.row p{font-size:11.5px;color:var(--sub);line-height:1.5}
+.row .end{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex:none}
+.fscore{font-family:var(--heading);font-weight:800;color:var(--green);font-size:15px;line-height:1.2}
+.fscore small{font-family:var(--text);font-size:10px;color:var(--sub);font-weight:600;margin-left:2px}
+.mine{font-family:var(--heading);font-weight:800;color:var(--mustard-ink);background:var(--mustard-soft);border-radius:6px;padding:0 7px;font-size:13px;line-height:1.6}
+.mine small{font-family:var(--text);font-size:9.5px;font-weight:700;margin-right:3px}
+.liked{color:var(--like);font-size:14px}
+.empty{text-align:center;padding:26px 6px 0}
+.empty .ic{width:86px;height:86px;border-radius:50%;background:var(--mint);margin:0 auto 12px;display:flex;align-items:center;justify-content:center}
+.empty h4{font-family:var(--heading);font-weight:800;font-size:16px}
+.empty p{font-size:12.5px;color:var(--body);margin-top:4px}
+.pbtn{display:flex;align-items:center;justify-content:center;height:48px;border-radius:12px;background:var(--green);color:#fff;font-family:var(--heading);font-weight:800;font-size:15px;margin-top:14px}
+.foot{font-size:11px;color:var(--sub);margin-top:12px}
+.sec{font-family:var(--heading);font-weight:800;font-size:17px;margin:14px 0 6px;display:flex;align-items:center;gap:8px}
+.sec .demo{font-family:var(--text);font-size:10.5px;font-weight:700;background:var(--field);color:var(--body);border-radius:4px;padding:0 6px}
+.sec a{margin-left:auto;font-family:var(--text);font-size:12px;color:var(--green);font-weight:700}
+.banner{display:flex;gap:12px;align-items:center;background:var(--mint);border-radius:16px;padding:12px 14px}
+.banner b{font-family:var(--heading);font-weight:800;font-size:15px;line-height:1.4;display:block}
+.banner span{font-size:11.5px;color:var(--body)}
+.banner a{font-size:12px;color:var(--mint-ink);font-weight:700;display:block;margin-top:2px}
+.hscroll{display:flex;gap:10px;overflow:hidden;margin-right:-18px}
+.fcard{width:170px;flex:none}
+.fcard .ph{height:104px;border-radius:14px;background:var(--photo);position:relative;display:flex;align-items:center;justify-content:center}
+.fcard .chip{position:absolute;left:8px;top:8px;background:#fff;border-radius:14px;padding:2px 9px 2px 3px;font-size:11.5px;font-weight:700;display:flex;gap:5px;align-items:center}
+.av{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:var(--ink);flex:none}
+.fcard h6{font-family:var(--heading);font-weight:800;font-size:13.5px;margin-top:6px;display:flex;justify-content:space-between;gap:6px}
+.fcard p{font-size:11.5px;color:var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.maprow{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--hairline);border-radius:14px;margin-top:12px;font-size:13px;font-weight:700}
+.maprow .i{width:34px;height:34px;border-radius:10px;background:var(--mint);display:flex;align-items:center;justify-content:center;color:var(--green)}
+.maprow .chev{margin-left:auto;color:var(--sub);font-weight:400}
+.prof{display:flex;gap:12px;align-items:center;margin:4px 0 12px}
+.prof .face{width:56px;height:56px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;flex:none}
+.prof b{font-family:var(--heading);font-weight:800;font-size:22px;display:block;line-height:1.3}
+.prof span{font-size:12px;color:var(--sub)}
+.stats{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--hairline);border-radius:16px;box-shadow:0 2px 6px #0000000f}
+.stats div{text-align:center;padding:10px 0}
+.stats div+div{border-left:1px solid var(--hairline)}
+.stats b{font-family:var(--heading);font-weight:800;font-size:24px;display:block;line-height:1.2}
+.stats span{font-size:11.5px;color:var(--sub);display:inline-flex;gap:4px;align-items:center}
+.stats .liked{color:var(--like)}
+.genre{display:flex;justify-content:space-between;margin:6px 0 2px}
+.genre div{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:10px;color:var(--body);width:48px}
+.genre div b{font-family:var(--heading);font-weight:800;font-size:13px;color:var(--ink);line-height:1}
+.genre div.zero{opacity:.35}
+.link{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--hairline);font-size:14px}
+.link .chev{margin-left:auto;color:var(--sub)}
+.link small{color:var(--sub);font-size:12px}
+
+/* タブバー（選んだときだけのれん＋真ん中のお椀） */
+/* 余白：左右に8pt、両端のタブと真ん中の間をそろえる */
+.tabbar{position:absolute;left:14px;right:14px;bottom:18px;height:60px;padding:0 8px;background:#fff;border-radius:30px;box-shadow:0 2px 10px #00000024;display:flex;align-items:center;z-index:20}
+.tab{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:9.5px;position:relative;white-space:nowrap;min-width:0}
+.tab svg{width:22px;height:22px;position:relative;z-index:2}
+.tab span{position:relative;z-index:2}
+.tab.on{color:var(--green);font-weight:700}
+/* 選んだタブのアイコンの後ろに、提灯の灯り（tabbar-noren.html の案2） */
+.tab .ico{position:relative;width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+.tab.on .ico::before{content:"";position:absolute;left:50%;top:50%;width:30px;height:36px;transform:translate(-50%,-50%);border-radius:46%;
+  background:radial-gradient(circle at 50% 45%,#FFE7B0 0%,#FBEBC8 55%,#F6DDA4 100%);box-shadow:0 0 12px 2px #f2b65a66;z-index:1}
+.tab.on .ico::after{content:"";position:absolute;left:50%;top:50%;width:15px;height:36px;transform:translate(-50%,-50%);z-index:1;
+  background:linear-gradient(var(--green),var(--green)) top/100% 3px no-repeat,linear-gradient(var(--green),var(--green)) bottom/100% 3px no-repeat;border-radius:1px}
+.center{flex:0 0 80px;height:100%;position:relative}
+/* バー（高さ64）より少し大きくして、上下に少しはみ出させる */
+.center .b{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:68px;height:68px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px #00000030;display:flex;align-items:center;justify-content:center;background:#27755B}
+.center span{position:absolute;bottom:5px;left:0;right:0;text-align:center;font-size:10px;font-weight:700}
+.note{font-size:13px;color:var(--sub);margin-top:12px;max-width:900px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="i-map" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M3 6.5l5.5-2.5 7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20z M8.5 4v13.5 M15.5 6.5V20"/></symbol>
+  <symbol id="i-saved" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+  <symbol id="i-friends" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5 M14.5 14.3c.6-.2 1.3-.3 2-.3 2.3 0 4 1.5 4.5 4.5"/></g></symbol>
+  <symbol id="i-me" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18.2c1.2-2.2 3.2-3.3 5.5-3.3s4.3 1.1 5.5 3.3"/></g></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-sort" viewBox="0 0 24 24"><path d="M7 5v14 M4 16l3 3 3-3 M17 19V5 M14 8l3-3 3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bubble" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-4 3v-3H4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="bowl" viewBox="0 0 200 200"><circle cx="99" cy="99" r="49" fill="none" stroke="#27755B" stroke-width="22"/><circle cx="120" cy="52" r="3.8" fill="#fff"/><circle cx="133" cy="61" r="3.8" fill="#fff"/><path d="M55 43 L167 115 M45 59 L161 131" stroke="#E8AD45" stroke-width="10" stroke-linecap="round"/></symbol>
+  <symbol id="bowl-badge" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#27755B"/><g transform="translate(100 100) scale(.78) translate(-99 -99)"><circle cx="99" cy="99" r="49" fill="none" stroke="#FDF8EE" stroke-width="22"/><circle cx="120" cy="52" r="3.8" fill="#27755B"/><circle cx="133" cy="61" r="3.8" fill="#27755B"/><path d="M55 43 L167 115 M45 59 L161 131" stroke="#E8AD45" stroke-width="10" stroke-linecap="round"/></g></symbol>
+</defs></svg>
+
+<header>
+  <small>MESHINOWA · SAVED / FRIENDS / PROFILE</small>
+  <h1>保存・友達・プロフィールの改善案</h1>
+  <p>ピンとタブバーで決めた考え方を、ほかの画面にも広げた案です。画面の構成と機能は今のままで、見た目と使い勝手の小さなところを整えます。</p>
+  <div class="rules">
+    <div><b>形＝ジャンル</b>ピンで作った器の形（お椀・丼・提灯など）を、一覧の写真の代わりや、ジャンルの集計にも使う。地図と一覧で同じ形が出る。</div>
+    <div><b>色＝自分の記録</b>白＝記録なし、ピンク＝いいね、緑＝友達の評価、からし色＝自分の評価。どの画面でも同じ意味。</div>
+    <div><b>和は選んだときだけ</b>ふだんの見た目はモダンなまま。タブバーは文字なしのアイコンだけ。選んだタブのアイコンの後ろにだけ提灯の灯りがともり、真ん中はお椀の輪。</div>
+  </div>
+</header>
+
+<h2>1. 保存</h2>
+<div class="changes"><ul>
+  <li><span class="k ux">使い勝手</span><b>「行った」タブをなくし、いいねの一覧だけ</b>にする。レビューしたお店は、プロフィールの「自分のレビュー一覧」で見る。</li>
+  <li><span class="k ui">見た目</span><b>写真がない行に、ジャンルの器の形</b>を出す。色は記録の色（いいね＝ピンク、レビュー済み＝緑）。今は全部同じフォークとナイフ。</li>
+  <li><span class="k ui">見た目</span>右側に<b>友達の評価（緑）と自分の評価（からし色）</b>を並べ、どちらの点数か分かるようにする。</li>
+  <li><span class="k ux">使い勝手</span><b>検索を上に</b>、並び替え4つのチップは<b>「保存した順 ▾」の1つのボタン</b>にまとめる。今は横にはみ出して「自分の評価順」が隠れている。</li>
+  <li><span class="k wa">和</span>空のときは、ハートの代わりに<b>空のお椀</b>（和食のピンの形）と「マップのハートを押すとここに入ります」。</li>
+</ul></div>
+<div class="phones">
+  <div><div class="cap"><b>A</b>いいね（お店あり）</div><div class="phone"><div class="screen" id="saved"></div></div></div>
+  <div><div class="cap"><b>B</b>空のとき</div><div class="phone"><div class="screen" id="savedEmpty"></div></div></div>
+</div>
+
+<h2>2. 友達</h2>
+<div class="changes"><ul>
+  <li><span class="k ui">見た目</span>大きな案内カードを<b>小さな帯</b>にして、友達の記録を上に上げる。</li>
+  <li><span class="k ui">見た目</span>記録のカードの写真がないところに、<b>ジャンルの器の形</b>。点数は友達の評価なので緑。</li>
+  <li><span class="k ux">使い勝手</span>「友達のおすすめを地図で見る」を<b>1行の入口</b>として置く（今は案内カードの中の小さなリンクだけ）。</li>
+  <li><span class="k ux">使い勝手</span>「架空」の注意は見出しの横の小さなタグだけにし、下の長い説明は短くする。</li>
+</ul></div>
+<div class="phones">
+  <div><div class="cap"><b>C</b>友達（おすすめ）</div><div class="phone"><div class="screen" id="friends"></div></div></div>
+</div>
+
+<h2>3. プロフィール</h2>
+<div class="changes"><ul>
+  <li><span class="k ui">見た目</span>数字の箱に<b>記録の色の小さな印</b>（行った＝からし色の点数マーク、いいね＝ピンクのハート）を添える。</li>
+  <li><span class="k wa">和</span><b>「よく行くジャンル」</b>を器の形で並べる。行ったお店をジャンルごとに数え、行ったことがないジャンルは薄く出す。集めていく楽しさを作る。</li>
+  <li><span class="k ui">見た目</span>最近のレビューの行も、保存と同じ形（器の形・からし色の自分の評価）に揃える。</li>
+  <li><span class="k wa">和</span>レビューがないときは、空のお椀と「お店の詳細から星だけでも記録できます」。</li>
+</ul></div>
+<div class="phones">
+  <div><div class="cap"><b>D</b>記録あり</div><div class="phone"><div class="screen" id="profile"></div></div></div>
+  <div><div class="cap"><b>E</b>まだ記録がない</div><div class="phone"><div class="screen" id="profileEmpty"></div></div></div>
+</div>
+<p class="note">※ ジャンルの器の形は <code>category-pins.html</code> と同じものです。一覧ではピンの先（三角）を外して使います。ジャンルが分からないお店は今と同じフォークとナイフの形になります。</p>
+</div>
+
+<script>
+const G="#27755B",LIKE="#E5577E",WOOD="#6B4A32",MUST="#C9932F";
+const CATS={
+ washoku:{name:"和食",body:'M4 17 H32 C32 25 26 30 18 30 C10 30 4 25 4 17Z M6 15.5 C6 9 11 6 18 6 C25 6 30 9 30 15.5Z',deco:'M15 4.5 H21 M3.5 16.2 H32.5'},
+ sushi:{name:"寿司",body:'M8 6 H28 L26.5 27 C26.3 29 25 30 23 30 H13 C11 30 9.7 29 9.5 27Z',deco:'M8.6 11 H27.4 M9.3 21 H26.7'},
+ noodle:{name:"麺",body:'M2 13 H34 C34 23 27 30 18 30 C9 30 2 23 2 13Z',deco:'M5 17 h3 v3 h3 v-3 h3 v3 h3 v-3 h3 v3 h3 v-3 h3 v3 h3',sticks:true},
+ yakiniku:{name:"焼肉",body:'M7 10 H29 L27.5 28 C27.4 29.3 26.5 30 25 30 H11 C9.5 30 8.6 29.3 8.5 28Z M5 7 H31 V10.5 H5Z',deco:'M9 5 V8.5 M14 5 V8.5 M19 5 V8.5 M24 5 V8.5 M28 5 V8.5 M10 23 H26'},
+ izakaya:{name:"居酒屋",body:'M7 5 C3 9 3 25 7 29 H29 C33 25 33 9 29 5Z',deco:'M10 2.5 H26 M10 31.5 H26 M5 11 H31 M4.3 17 H31.7 M5 23 H31',cap:true},
+ yoshoku:{name:"洋食",body:'M5 24 C5 14 11 9 18 9 C25 9 31 14 31 24Z M2 24 H34 V27 C34 28.5 33 29.5 31.5 29.5 H4.5 C3 29.5 2 28.5 2 27Z',deco:'M16 7.5 H20'},
+ chuka:{name:"中華",body:'M3 8 H33 V12 H3Z M5 12 H31 V29 C31 29.6 30.6 30 30 30 H6 C5.4 30 5 29.6 5 29Z',deco:'M5 20.5 H31 M9 12 V29 M27 12 V29'},
+ cafe:{name:"カフェ",body:'M7 8 H26 V21 C26 26.5 22.5 30 16.5 30 C10.5 30 7 26.5 7 21Z',handle:true,deco:'M3 31 H30'},
+ pan:{name:"パン",body:'M7 14 C3 14 3 5.5 10 5.5 C12.5 3 23.5 3 26 5.5 C33 5.5 33 14 29 14 V30 H7Z',deco:'M11 14 H25'}
+};
+// tone: line（線だけ）/ like / green / mustard / faint
+function ware(id,size=30,tone='line'){
+  const c=CATS[id]; const fill={line:'#fff',like:LIKE,green:G,mustard:'#E8AD45',faint:'#fff'}[tone];
+  const line=tone==='line'||tone==='faint'?G:'#fff', deco=tone==='line'||tone==='faint'?'#27755B66':'#FFFFFF8C';
+  const sticks=c.sticks?`<path d="M21 13 L30 1.5 M24.5 13 L33 2.5" stroke="${WOOD}" stroke-width="1.6" stroke-linecap="round"/>`:'';
+  const handle=c.handle?`<path d="M26 12 C31.5 12 31.5 21 25.5 21" fill="none" stroke="${tone==='line'||tone==='faint'?G:fill}" stroke-width="${tone==='line'||tone==='faint'?4.4:3.4}"/>${tone==='line'||tone==='faint'?'<path d="M26 12 C31.5 12 31.5 21 25.5 21" fill="none" stroke="#fff" stroke-width="1.6"/>':''}`:'';
+  const cap=c.cap?`<rect x="10" y="1" width="16" height="4" rx="1.2" fill="#1F4D3D"/><rect x="10" y="29" width="16" height="4" rx="1.2" fill="#1F4D3D"/>`:'';
+  return `<svg width="${size}" height="${size*34/36}" viewBox="0 0 36 34" style="overflow:visible">${sticks}${handle}<path d="${c.body}" fill="${fill}" stroke="${line}" stroke-width="1.5" stroke-linejoin="round"/>${c.deco?`<path d="${c.deco}" fill="none" stroke="${deco}" stroke-width="1.1" stroke-linecap="round"/>`:''}${cap}</svg>`;
+}
+const avTones=["#F2C9A8","#BFD9ED","#E8D699","#E8C2D1","#CCE0C7","#DBD1ED"];
+const tone=n=>avTones[[...n].reduce((a,c)=>a+c.codePointAt(0),0)%avTones.length];
+const frame=(inner,active)=>`<div class="island"></div><div class="status"><span>9:41</span><span>●●●</span></div><div class="page">${inner}</div>${tabbar(active)}`;
+function tabbar(active){
+  const t=(id,label)=>`<div class="tab${id===active?' on':''}"><span class="ico" aria-label="${label}"><svg><use href="#i-${id}"/></svg></span></div>`;
+  return `<div class="tabbar">${t('map','マップ')}${t('saved','保存')}<div class="center"><div class="b"><svg width="62" height="62"><use href="#bowl-badge"/></svg></div></div>${t('friends','友達')}${t('me','プロフィール')}</div>`;
+}
+const savedHead=(tab,counts)=>`<div class="title"><h3>保存</h3><span class="pill"><svg><use href="#i-map"/></svg>地図</span></div>
+ <div class="search" style="margin-top:6px"><svg><use href="#i-search"/></svg>保存したお店を検索</div>`;
+const row=(cat,t,name,meta,end)=>`<div class="row"><div class="thumb">${ware(cat,32,t)}</div><div><h5>${name}</h5><p>${meta}</p></div><div class="end">${end}</div></div>`;
+const fs=(v,n)=>`<span class="fscore">${v}<small>友達${n}人</small></span>`;
+const mine=v=>`<span class="mine"><small>自分</small>${v}</span>`;
+
+document.getElementById('saved').innerHTML=frame(savedHead('liked',[5,2])+`
+ <div class="toolbar"><span class="count">いいね 5件</span><span class="pill">未レビュー</span><span class="pill on"><svg><use href="#i-sort"/></svg>保存した順 ▾</span></div>
+ ${row('yoshoku','like','こもれび食堂','洋食・丸の内1丁目',fs('4.7',3)+'<span class="liked">♥</span>')}
+ ${row('noodle','like','めん処 ひだまり','ラーメン・大手町',fs('4.3',2)+'<span class="liked">♥</span>')}
+ ${row('cafe','green','まるい喫茶室','カフェ・丸の内2丁目',mine('4.5')+'<span class="liked">♥</span>')}
+ ${row('pan','like','パン工房 つむぎ','ベーカリー・八重洲',fs('4.8',2)+'<span class="liked">♥</span>')}
+ ${row('izakaya','like','酒場 ともしび','居酒屋・有楽町','<span class="fscore" style="color:var(--sub)">—</span><span class="liked">♥</span>')}`,'saved');
+
+
+document.getElementById('savedEmpty').innerHTML=frame(savedHead('liked',[0,0])+`
+ <div class="empty"><div class="ic">${ware('washoku',50,'line')}</div><h4>いいねのお店はまだありません</h4><p>マップでお店のハートを押すと、ここに集まります。</p><div class="pbtn">マップでお店を探す</div></div>`,'saved');
+
+const fcard=(cat,who,name,score,q)=>`<div class="fcard"><div class="ph">${ware(cat,52,'line')}<span class="chip"><span class="av" style="background:${tone(who)}">${who[0]}</span>${who}</span></div><h6><span>${name}</span><span class="fscore">${score}</span></h6><p>${q}</p></div>`;
+document.getElementById('friends').innerHTML=frame(`<div class="title"><h3>友達</h3></div>
+ <div class="utabs"><span class="on">おすすめ</span><span>フィード</span></div>
+ <div class="banner"><svg width="44" height="44"><use href="#bowl"/></svg><div><b>友達の「うまい」を地図に集めよう</b><span>友達との接続は準備中です</span></div></div>
+ <div class="maprow"><span class="i"><svg width="18" height="18"><use href="#i-map"/></svg></span>友達のおすすめを地図で見る<span class="chev">›</span></div>
+ <div class="sec">友達の最近の記録<span class="demo">架空</span><a>すべて</a></div>
+ <div class="hscroll">${fcard('yoshoku','たくま','こもれび食堂','5.0','デミグラスのオムライスが好き。')}${fcard('cafe','さき','まるい喫茶室','5.0','プリンとコーヒーが最高。')}</div>`,'friends');
+
+const prof=(empty)=>`<div class="prof"><div class="face"><svg width="40" height="40"><use href="#bowl"/></svg></div><div><b>あなたの記録</b><span>この端末のプロフィール</span></div></div>
+ <div class="stats"><div><b>${empty?0:2}</b><span><span class="mine" style="font-size:9px;padding:0 4px">★</span>行った</span></div><div><b>${empty?0:5}</b><span><span class="liked" style="font-size:12px">♥</span>いいね</span></div></div>
+ <div class="sec">よく行くジャンル</div>
+ <div class="genre">${[['washoku',0],['sushi',empty?0:1],['noodle',0],['izakaya',0],['cafe',empty?0:1]].map(([c,n])=>`<div class="${n?'':'zero'}">${ware(c,30,n?'mustard':'faint')}<b>${n}</b>${CATS[c].name}</div>`).join('')}</div>
+ <div class="link"><svg width="18" height="18"><use href="#i-bubble"/></svg>自分のレビュー一覧<small>${empty?'':'2件'}</small><span class="chev">›</span></div>
+ <div class="link"><svg width="18" height="18"><use href="#i-map"/></svg>マイマップ<small>${empty?'':'6店'}</small><span class="chev">›</span></div>`;
+document.getElementById('profile').innerHTML=frame(prof(false)+`<div class="sec">最近のレビュー</div>
+ ${row('cafe','green','まるい喫茶室','10月18日・プリンが固めでおいしい',mine('4.5'))}`,'me');
+document.getElementById('profileEmpty').innerHTML=frame(prof(true)+`<div class="empty" style="padding-top:10px"><div class="ic" style="width:64px;height:64px">${ware('washoku',38,'line')}</div><h4 style="font-size:14.5px">まだレビューがありません</h4><p>お店の詳細から、星だけでも記録できます。</p></div>`,'me');
+</script>
+</body>
+</html>

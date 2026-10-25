@@ -1,2 +1,0 @@
-# Copy to .dev.vars (ignored by Git), then set your own key.
-HOTPEPPER_API_KEY=

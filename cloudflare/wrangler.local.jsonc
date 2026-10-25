@@ -26,11 +26,6 @@
   },
   "ratelimits": [
     {
-      "name": "PHOTO_RATE_LIMITER",
-      "namespace_id": "1002",
-      "simple": { "limit": 60, "period": 60 },
-    },
-    {
       "name": "AUTH_RATE_LIMITER",
       "namespace_id": "1001",
       "simple": {

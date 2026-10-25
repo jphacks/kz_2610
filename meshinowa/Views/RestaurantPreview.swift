@@ -4,7 +4,6 @@ import SwiftUI
 /// 地図の下に横並びで出るお店のカード。左に写真、右に種類・評価・住所を並べる。
 struct RestaurantPreview: View {
     let item: MKMapItem
-    var onClose: () -> Void = {}
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @State private var showsDetails = false

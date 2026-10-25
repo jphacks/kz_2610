@@ -90,6 +90,15 @@ struct MapHomeView: View {
         }
     }
 
+    static func symbol(for item: MKMapItem) -> String {
+        switch item.pointOfInterestCategory {
+        case .cafe: return "cup.and.saucer.fill"
+        case .bakery: return "birthday.cake.fill"
+        case .brewery: return "mug.fill"
+        default: return "fork.knife"
+        }
+    }
+
     private var searchHeader: some View {
         VStack(spacing: 10) {
             searchField

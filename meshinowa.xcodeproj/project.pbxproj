@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01E602971C011B08BAFA4337 /* FoodGenreMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9397A836E91CD0912A99DD65 /* FoodGenreMark.swift */; };
 		0740130B922266080F76DF27 /* SavedRestaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EDDA12B5063E801A24C4F6 /* SavedRestaurant.swift */; };
 		1100715A94E49D2356FD0C0E /* GoogleRestaurantSearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD6BD7A0704BF5D1296EF4A /* GoogleRestaurantSearchTests.swift */; };
 		14D65948F42B952666E17633 /* LocalReviewStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6ACCCCC66DD63E97793E31C /* LocalReviewStoreTests.swift */; };
@@ -37,6 +38,7 @@
 		618F6BA1CF1EC73A4384A3C8 /* ReviewEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF5BFEC5D8EC1D753B79BB8 /* ReviewEditor.swift */; };
 		6385829CB9B5C603F8E4EB61 /* RestaurantSearchResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDC39E39AC607804692021D7 /* RestaurantSearchResult.swift */; };
 		6738D900A1C900AEB85788BA /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0183910F122A18A5FFB7B628 /* WelcomeView.swift */; };
+		67B5F6311F9F75FFE01247E8 /* FoodGenre.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F6564F03B43298E2E65369 /* FoodGenre.swift */; };
 		6EF334B703ABC4F9BF0BFD13 /* PersonalLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96749259896F81BC86350905 /* PersonalLibrary.swift */; };
 		71DA4D9E7B07F1D6DFB223E6 /* CloudflareBackendTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0F377C555C3A4F96579E60 /* CloudflareBackendTests.swift */; };
 		75FF29171F0F2823EF02793E /* FriendStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB1CE340448C7F8D00C242F /* FriendStore.swift */; };
@@ -59,6 +61,7 @@
 		ADCAF94F1117F362134CCFBA /* BackendConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28CE918526BA4A261C00B692 /* BackendConfigurationTests.swift */; };
 		AE0A5D43960F006CB71508BB /* RestaurantGenrePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F71437264182AC9635493EE /* RestaurantGenrePicker.swift */; };
 		B00ADA0B0E142FE980C128F2 /* SaveRestaurantButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D47C9B0C6921A9A6D9003C0 /* SaveRestaurantButton.swift */; };
+		B068117C1854972728441B03 /* FoodGenreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5FFA1E7031A840437A56E93 /* FoodGenreTests.swift */; };
 		B15F3120730430D4B8DB42AD /* SavedRestaurantStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B81A1FC735B0AE97C9F9025 /* SavedRestaurantStore.swift */; };
 		B3CDD9B832F1F41CE0C18CF9 /* FriendLensTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A61A1BA4C32088BE917992 /* FriendLensTests.swift */; };
 		B3D7078C882BDDB35573DE21 /* FriendDataset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C9E7CAD2CE8688C5AAFECC /* FriendDataset.swift */; };
@@ -128,9 +131,11 @@
 		8775E0D2B4F5F645040C5037 /* GooglePlacesConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GooglePlacesConfigurationTests.swift; sourceTree = "<group>"; };
 		8D3A358E2FA4B933A9316DD9 /* CloudflareBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudflareBackend.swift; sourceTree = "<group>"; };
 		92C9E7CAD2CE8688C5AAFECC /* FriendDataset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendDataset.swift; sourceTree = "<group>"; };
+		9397A836E91CD0912A99DD65 /* FoodGenreMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodGenreMark.swift; sourceTree = "<group>"; };
 		94A61A1BA4C32088BE917992 /* FriendLensTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendLensTests.swift; sourceTree = "<group>"; };
 		94A669F3BD372D108ABDA6BB /* BackendConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendConfiguration.swift; sourceTree = "<group>"; };
 		94D2F013B4DBC864974574D8 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		95F6564F03B43298E2E65369 /* FoodGenre.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodGenre.swift; sourceTree = "<group>"; };
 		96749259896F81BC86350905 /* PersonalLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalLibrary.swift; sourceTree = "<group>"; };
 		981EE49B9C6084A8A446750C /* RestaurantGenreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantGenreTests.swift; sourceTree = "<group>"; };
 		985307791878B8EA8388A8CE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -153,6 +158,7 @@
 		D3130AD03FDF4268E2C852DE /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		D6439EEA5C1C2C5A1CDE9852 /* DemoRecommendations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRecommendations.swift; sourceTree = "<group>"; };
 		D8CCA1BE30D8500DDA40C3AC /* meshinowaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = meshinowaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E5FFA1E7031A840437A56E93 /* FoodGenreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodGenreTests.swift; sourceTree = "<group>"; };
 		E9454CCCCD38E848D88D8DCF /* GoogleRestaurantSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleRestaurantSearch.swift; sourceTree = "<group>"; };
 		F293999A340A70CDE5B668D3 /* ZenMaruGothic-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Medium.ttf"; sourceTree = "<group>"; };
 		F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaTheme.swift; sourceTree = "<group>"; };
@@ -206,6 +212,7 @@
 		57467B0690964F270C77FF7E /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				9397A836E91CD0912A99DD65 /* FoodGenreMark.swift */,
 				458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */,
 				F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */,
 				5306E590F0306302A10B6E0D /* NorenTabs.swift */,
@@ -231,6 +238,7 @@
 			isa = PBXGroup;
 			children = (
 				D6439EEA5C1C2C5A1CDE9852 /* DemoRecommendations.swift */,
+				95F6564F03B43298E2E65369 /* FoodGenre.swift */,
 				92C9E7CAD2CE8688C5AAFECC /* FriendDataset.swift */,
 				1CEAD0451C63C40694CBAB84 /* FriendLens.swift */,
 				9EB1CE340448C7F8D00C242F /* FriendStore.swift */,
@@ -330,6 +338,7 @@
 			children = (
 				28CE918526BA4A261C00B692 /* BackendConfigurationTests.swift */,
 				1B0F377C555C3A4F96579E60 /* CloudflareBackendTests.swift */,
+				E5FFA1E7031A840437A56E93 /* FoodGenreTests.swift */,
 				94A61A1BA4C32088BE917992 /* FriendLensTests.swift */,
 				FEBBF967F9AA306D02319732 /* FriendRatingSummaryTests.swift */,
 				9ABF50A345BA17D468DCF9C8 /* FriendStoreTests.swift */,
@@ -449,6 +458,7 @@
 			files = (
 				ADCAF94F1117F362134CCFBA /* BackendConfigurationTests.swift in Sources */,
 				71DA4D9E7B07F1D6DFB223E6 /* CloudflareBackendTests.swift in Sources */,
+				B068117C1854972728441B03 /* FoodGenreTests.swift in Sources */,
 				B3CDD9B832F1F41CE0C18CF9 /* FriendLensTests.swift in Sources */,
 				ACC07526B935EDBA61A47726 /* FriendRatingSummaryTests.swift in Sources */,
 				D3BE997B1E6FBA19A7853DC3 /* FriendStoreTests.swift in Sources */,
@@ -471,6 +481,8 @@
 				29F1C8CBC93B5643B19D6DAE /* CloudflareBackend.swift in Sources */,
 				8F126F9A7342A046592EE19C /* DemoRecommendations.swift in Sources */,
 				5E1D8F4B5E30577AE5AE5766 /* DemoRecommendationsView.swift in Sources */,
+				67B5F6311F9F75FFE01247E8 /* FoodGenre.swift in Sources */,
+				01E602971C011B08BAFA4337 /* FoodGenreMark.swift in Sources */,
 				B3D7078C882BDDB35573DE21 /* FriendDataset.swift in Sources */,
 				A80BA9CCAB7DFD2F09D194A0 /* FriendLens.swift in Sources */,
 				5725116C47A7B4B04721A8DE /* FriendLensPicker.swift in Sources */,

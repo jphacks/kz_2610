@@ -3,6 +3,7 @@ options:
   deploymentTarget:
     iOS: "17.0"
   createIntermediateGroups: true
+  developmentLanguage: ja
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -28,6 +29,9 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: meshinowa
+        CFBundleDevelopmentRegion: ja
+        CFBundleLocalizations:
+          - ja
         SupabaseURL: $(SUPABASE_URL)
         SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
         UILaunchScreen: {}

@@ -345,11 +345,12 @@
 				};
 			};
 			buildConfigurationList = BAEC22AEA8C63170E20C1587 /* Build configuration list for PBXProject "meshinowa" */;
-			developmentRegion = en;
+			developmentRegion = ja;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
 				en,
+				ja,
 			);
 			mainGroup = BC0DFA885E1CA6BE23F20ACF;
 			minimizedProjectReferenceProxies = 1;

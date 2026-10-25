@@ -4,7 +4,7 @@ import SwiftUI
 struct DemoRecommendationsView: View {
     var initialSelection: String? = nil
 
-    @State private var camera: MapCameraPosition = .region(MKCoordinateRegion(
+    @State private var camera: GoogleMapPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
         latitudinalMeters: 1100, longitudinalMeters: 1100
     ))
@@ -41,20 +41,12 @@ struct DemoRecommendationsView: View {
     }
 
     var body: some View {
-        Map(position: $camera, selection: $selectedID) {
-            ForEach(visible) { restaurant in
-                let summary = summary(for: restaurant)
-                Annotation(restaurant.name, coordinate: restaurant.coordinate, anchor: .bottom) {
-                    ScorePin(title: summary.average.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "—",
-                             tag: summary.count > 0 ? "友達\(summary.count)" : "未評価",
-                             tagTone: summary.count > 0 ? .mint : .neutral,
-                             isSelected: selectedID == restaurant.id)
-                }
-                .annotationTitles(.hidden)
-                .tag(restaurant.id)
-            }
-        }
-        .mapStyle(.standard(emphasis: .muted, pointsOfInterest: .excludingAll))
+        GoogleMapCanvas(position: camera, pins: visible.map { restaurant in
+            let summary = summary(for: restaurant)
+            return GoogleMapPin(id: restaurant.id, title: restaurant.name, coordinate: restaurant.coordinate,
+                                scoreTag: summary.count > 0 ? "友達\(summary.count)" : "未評価",
+                                scoreTitle: summary.average.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "—")
+        }, selectedID: $selectedID)
         .safeAreaInset(edge: .top, spacing: 0) { header }
         .safeAreaInset(edge: .bottom, spacing: 0) { sheet }
         .reservesFloatingTabBarSpace()

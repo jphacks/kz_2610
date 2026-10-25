@@ -43,7 +43,7 @@ struct SearchResultsView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            GooglePlaceCard(item: result.item)
+                            RestaurantPhotoView(item: result.item)
                             SaveRestaurantButton(item: result.item)
                         }
                         .padding(16)

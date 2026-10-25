@@ -1,7 +1,7 @@
 import GooglePlacesSwift
 import MapKit
 
-/// Only public store identity is sent to Google's UI Kit; no account/review data or current location.
+/// Only public store identity is sent to Google Places; no account/review data or current location.
 struct GooglePlaceQuery: Hashable {
     let name: String
     let address: String
@@ -29,8 +29,8 @@ struct GooglePlaceQuery: Hashable {
     var request: SearchByTextRequest {
         SearchByTextRequest(
             textQuery: [name, address].filter { !$0.isEmpty }.joined(separator: " "),
-            // UI Kit determines its own fields; no separate Places API request is issued.
-            placeProperties: [.placeID],
+            // Used only to resolve pre-migration saved stores without a Google place ID.
+            placeProperties: [.placeID, .displayName, .coordinate, .photos],
             locationBias: CircularCoordinateRegion(
                 center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude), radius: 300),
             maxResultCount: 1,

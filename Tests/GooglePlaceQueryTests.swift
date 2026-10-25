@@ -36,8 +36,8 @@ final class GooglePlaceQueryTests: XCTestCase {
     }
 
     @MainActor func testUnconfiguredCardRendersWithoutCallingGoogle() throws {
-        guard !GooglePlacesService.isConfigured else { throw XCTSkip("Configured Google key uses live UI Kit") }
-        let renderer = ImageRenderer(content: GooglePlaceCard(item: item()).frame(width: 350).padding(16))
+        guard !GooglePlacesService.isConfigured else { throw XCTSkip("Configured Google key uses live requests") }
+        let renderer = ImageRenderer(content: RestaurantPhotoView(item: item()).frame(width: 350).padding(16))
         XCTAssertNotNil(renderer.uiImage)
     }
 }

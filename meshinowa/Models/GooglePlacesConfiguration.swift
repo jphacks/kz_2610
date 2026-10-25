@@ -1,5 +1,6 @@
 import Foundation
 import GooglePlacesSwift
+import GoogleMaps
 
 struct GooglePlacesConfiguration {
     let apiKey: String
@@ -22,10 +23,12 @@ struct GooglePlacesConfiguration {
 @MainActor
 enum GooglePlacesService {
     private(set) static var isConfigured = false
+    private(set) static var isMapConfigured = false
 
     static func configure(bundle: Bundle = .main) {
         guard !isConfigured,
               let configuration = try? GooglePlacesConfiguration.load(info: bundle.infoDictionary ?? [:]) else { return }
+        isMapConfigured = GMSServices.provideAPIKey(configuration.apiKey)
         isConfigured = PlacesClient.provideAPIKey(configuration.apiKey)
     }
 }

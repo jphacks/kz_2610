@@ -113,7 +113,7 @@ struct SavedRestaurantsView: View {
                                              rating: reviews.review(for: restaurant.mapItem)?.rating)
                                 }
                                 .buttonStyle(.plain)
-                                GooglePlaceCard(item: restaurant.mapItem)
+                                RestaurantPhotoView(item: restaurant.mapItem)
                             }
                             .padding(.bottom, 12)
                         }
@@ -208,21 +208,19 @@ struct SavedRestaurantMap: View {
     /// レビューしたお店の自分の点数。レビュー済みは緑、いいねだけはピンクの印にする。
     var ratings: [String: Double] = [:]
     var onSelect: (SavedRestaurant) -> Void
-    @State private var camera: MapCameraPosition = .automatic
+    @State private var camera = GoogleMapPosition.fit([])
     @State private var selectedID: String?
 
     var body: some View {
-        Map(position: $camera, selection: $selectedID) {
-            ForEach(restaurants) { restaurant in
-                let isReviewed = ratings[restaurant.id] != nil
-                Marker(restaurant.name, systemImage: isReviewed ? "star.fill" : "heart.fill",
-                       coordinate: restaurant.mapItem.placemark.coordinate)
-                    .tint(isReviewed ? MeshinowaTheme.green : MeshinowaTheme.like)
-                    .tag(restaurant.id)
-            }
+        GoogleMapCanvas(position: camera, pins: restaurants.map { restaurant in
+            GoogleMapPin(id: restaurant.id, title: restaurant.name,
+                         coordinate: restaurant.mapItem.placemark.coordinate,
+                         mark: ratings[restaurant.id].map { .reviewed($0) } ?? .liked)
+        }, selectedID: $selectedID)
+        .onAppear { camera = .fit(restaurants.map { $0.mapItem.placemark.coordinate }) }
+        .onChange(of: restaurants.map(\.id)) { _, _ in
+            camera = .fit(restaurants.map { $0.mapItem.placemark.coordinate })
         }
-        .mapStyle(.standard(emphasis: .muted, pointsOfInterest: .excludingAll))
-        .onChange(of: restaurants.map(\.id)) { _, _ in camera = .automatic }
         .onChange(of: selectedID) { _, id in
             if let restaurant = restaurants.first(where: { $0.id == id }) {
                 onSelect(restaurant)

@@ -1,10 +1,10 @@
 import MapKit
 import SwiftUI
 
-/// 地図の下に並ぶ店舗カード。自分の記録とGoogle提供の店舗カードを分けて表示する。
+/// 地図の下に並ぶ店舗カード。店舗写真と自分の記録を表示する。
 struct RestaurantPreview: View {
     let item: MKMapItem
-    var loadsGoogleCard = true
+    var loadsPhoto = true
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @State private var showsDetails = false
@@ -44,7 +44,7 @@ struct RestaurantPreview: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { showsDetails = true }
-            GooglePlaceCard(item: item, isActive: loadsGoogleCard)
+            RestaurantPhotoView(item: item, isActive: loadsPhoto)
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(.horizontal, 16)
@@ -244,13 +244,13 @@ struct RestaurantInformationView: View {
                     .font(MeshinowaFont.heading(28, relativeTo: .title))
                     .accessibilityAddTraits(.isHeader)
 
+                RestaurantPhotoView(item: item, expanded: true)
+
                 VStack(alignment: .leading, spacing: 12) {
                     InfoRow(symbol: "mappin.and.ellipse", text: item.placemark.title ?? "住所の情報がありません")
                     InfoRow(symbol: "fork.knife", text: item.restaurantCategory)
                     InfoRow(symbol: "person.2", text: "友達の評価は準備中です")
                 }
-
-                GooglePlaceCard(item: item, expanded: true)
 
                 RestaurantCollectionControls(item: item)
 
@@ -311,19 +311,28 @@ struct RestaurantInformationView: View {
 struct DirectionsButton: View {
     let item: MKMapItem
     @State private var showsError = false
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         Button {
-            showsError = !item.openInMaps(launchOptions: [
-                MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeWalking
-            ])
+            let coordinate = item.placemark.coordinate
+            var components = URLComponents(string: "https://www.google.com/maps/dir/")!
+            components.queryItems = [URLQueryItem(name: "api", value: "1"),
+                                     URLQueryItem(name: "destination", value: "\(coordinate.latitude),\(coordinate.longitude)"),
+                                     URLQueryItem(name: "travelmode", value: "walking")]
+            if let id = item.googleDetails?.placeID {
+                components.queryItems?.append(URLQueryItem(name: "destination_place_id", value: id))
+            }
+            if let url = components.url {
+                openURL(url) { accepted in showsError = !accepted }
+            } else { showsError = true }
         } label: {
             Label("経路", systemImage: "figure.walk")
         }
         .buttonStyle(PaperButtonStyle())
         .accessibilityLabel("経路を見る")
-        .accessibilityHint("Appleマップで徒歩の経路を開きます")
-        .alert("Appleマップを開けませんでした", isPresented: $showsError) {
+        .accessibilityHint("Google Mapsで徒歩の経路を開きます")
+        .alert("Google Mapsを開けませんでした", isPresented: $showsError) {
             Button("閉じる", role: .cancel) {}
         } message: {
             Text("時間をおいて、もう一度お試しください。")

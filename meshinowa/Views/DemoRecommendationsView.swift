@@ -1,7 +1,9 @@
 import MapKit
 import SwiftUI
 
+/// 友達のおすすめマップ。架空のデモと、サーバーから届いた友達の実データの両方を表示する。
 struct DemoRecommendationsView: View {
+    var dataset: FriendDataset = DemoRecommendations.dataset
     var initialSelection: String? = nil
 
     @State private var camera: MapCameraPosition = .region(MKCoordinateRegion(
@@ -9,7 +11,7 @@ struct DemoRecommendationsView: View {
         latitudinalMeters: 1100, longitudinalMeters: 1100
     ))
     @State private var selectedID: String?
-    @State private var detail: DemoRestaurant?
+    @State private var detail: FriendRestaurant?
     @State private var lens = FriendLens()
     @State private var showsLens = false
     @State private var highOnly = false
@@ -17,26 +19,25 @@ struct DemoRecommendationsView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var includedIDs: Set<String> {
-        lens.includedFriendIDs(friends: DemoRecommendations.friends,
-                               favorites: DemoRecommendations.favoriteFriendIDs)
+        lens.includedFriendIDs(friends: dataset.friends, favorites: dataset.favoriteFriendIDs)
     }
 
-    private func summary(for restaurant: DemoRestaurant) -> FriendRatingSummary {
-        DemoRecommendations.summary(for: restaurant, friendIDs: includedIDs)
+    private func summary(for restaurant: FriendRestaurant) -> FriendRatingSummary {
+        dataset.summary(for: restaurant, friendIDs: includedIDs)
     }
 
-    private var visible: [DemoRestaurant] {
-        DemoRecommendations.restaurants.filter { restaurant in
+    private var visible: [FriendRestaurant] {
+        dataset.restaurants.filter { restaurant in
             (genre == nil || restaurant.genre == genre)
                 && (!highOnly || (summary(for: restaurant).average ?? 0) >= 4.5)
         }
     }
 
-    private var rated: [DemoRestaurant] {
+    private var rated: [FriendRestaurant] {
         visible.filter { summary(for: $0).count > 0 }
     }
 
-    private var selected: DemoRestaurant? {
+    private var selected: FriendRestaurant? {
         visible.first { $0.id == selectedID }
     }
 
@@ -60,16 +61,22 @@ struct DemoRecommendationsView: View {
         .reservesFloatingTabBarSpace()
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
-            if selectedID == nil { selectedID = initialSelection ?? "diner" }
+            // 実データはお店の場所が決まっていないので、全部が入るように地図を合わせる。
+            if !dataset.isDemo { camera = .automatic }
+            if selectedID == nil { selectedID = initialSelection ?? (dataset.isDemo ? "diner" : rated.first?.id) }
         }
         .onChange(of: visible.map(\.id)) { _, ids in
             if let id = selectedID, !ids.contains(id) { selectedID = rated.first?.id }
         }
         .sheet(item: $detail) { restaurant in
-            DemoRestaurantDetail(restaurant: restaurant, summary: summary(for: restaurant), lensTitle: lens.mode.title)
+            if dataset.isDemo {
+                DemoRestaurantDetail(restaurant: restaurant, summary: summary(for: restaurant), lensTitle: lens.mode.title)
+            } else {
+                RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends)
+            }
         }
         .sheet(isPresented: $showsLens) {
-            FriendLensPicker(lens: $lens)
+            FriendLensPicker(lens: $lens, dataset: dataset)
         }
     }
 
@@ -82,20 +89,21 @@ struct DemoRecommendationsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("友達のおすすめマップ")
                         .font(MeshinowaFont.heading(18))
-                    Text("DEMO · 店舗・友達・レビューはすべて架空です")
+                    Text(dataset.isDemo ? "DEMO · 店舗・友達・レビューはすべて架空です"
+                         : "友達\(dataset.friends.count)人の評価から")
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.secondaryText)
                 }
                 Spacer(minLength: 0)
             }
             HStack(spacing: 0) {
-                Label("東京駅周辺", systemImage: "mappin.and.ellipse")
+                Label(dataset.isDemo ? "東京駅周辺" : "友達が行った店", systemImage: "mappin.and.ellipse")
                     .frame(maxWidth: .infinity)
-                    .accessibilityLabel("エリア、東京駅周辺")
+                    .accessibilityLabel(dataset.isDemo ? "エリア、東京駅周辺" : "友達が行ったお店")
                 Rectangle().fill(MeshinowaTheme.outline).frame(width: 1, height: 26)
                 Button { showsLens = true } label: {
                     HStack(spacing: 8) {
-                        FriendAvatarStack(names: DemoRecommendations.friends
+                        FriendAvatarStack(names: dataset.friends
                             .filter { includedIDs.contains($0.id) }.map(\.name), size: 20)
                         Text(lensShortTitle)
                         Image(systemName: "chevron.down").font(.system(size: 12, weight: .semibold))
@@ -117,7 +125,7 @@ struct DemoRecommendationsView: View {
                     Button("友達4.5以上") { highOnly.toggle() }
                         .buttonStyle(PillButtonStyle(isOn: highOnly))
                         .accessibilityAddTraits(highOnly ? .isSelected : [])
-                    ForEach(["洋食", "カフェ", "ラーメン", "ベーカリー"], id: \.self) { name in
+                    ForEach(dataset.genres, id: \.self) { name in
                         Button(name) { genre = genre == name ? nil : name }
                             .buttonStyle(PillButtonStyle(isOn: genre == name))
                             .accessibilityAddTraits(genre == name ? .isSelected : [])
@@ -180,7 +188,7 @@ struct DemoRecommendationsView: View {
 
             if let selected {
                 Button { detail = selected } label: {
-                    DemoRestaurantCard(restaurant: selected, summary: summary(for: selected))
+                    DemoRestaurantCard(restaurant: selected, summary: summary(for: selected), dataset: dataset)
                 }
                 .buttonStyle(.plain)
                 .padding(.top, 14)
@@ -188,7 +196,9 @@ struct DemoRecommendationsView: View {
                 .transition(.opacity)
             } else {
                 Text(rated.isEmpty
-                     ? "この条件での評価はまだありません。友達や絞り込みを変えてみてください。"
+                     ? (dataset.isDemo || !dataset.reviews.isEmpty
+                        ? "この条件での評価はまだありません。友達や絞り込みを変えてみてください。"
+                        : "友達の評価はまだありません。友達がお店を評価すると、ここに並びます。")
                      : "ピンをタップすると、友達のおすすめが見られます。")
                     .font(MeshinowaFont.text(14))
                     .foregroundStyle(MeshinowaTheme.bodyText)
@@ -212,8 +222,9 @@ struct DemoRecommendationsView: View {
 
 /// 地図の下に出る、写真を大きく見せるカード。
 private struct DemoRestaurantCard: View {
-    let restaurant: DemoRestaurant
+    let restaurant: FriendRestaurant
     let summary: FriendRatingSummary
+    let dataset: FriendDataset
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -222,7 +233,7 @@ private struct DemoRestaurantCard: View {
                 .frame(height: 130)
                 .overlay(alignment: .bottomLeading) {
                     if let review = summary.reviews.first {
-                        let name = DemoRecommendations.friendName(review.friendID)
+                        let name = dataset.friendName(review.friendID)
                         HStack(spacing: 8) {
                             FriendAvatar(name: name, size: 26)
                             Text(review.comment)
@@ -246,12 +257,13 @@ private struct DemoRestaurantCard: View {
                 RatingStamp(rating: summary.average, friendCount: summary.count, size: 20)
             }
             .padding(.top, 12)
-            Text("\(DemoRecommendations.area(for: restaurant)) · \(restaurant.genre)")
+            Text("\(dataset.area(for: restaurant)) · \(restaurant.genre)")
+                .lineLimit(1)
                 .font(MeshinowaFont.text(15))
                 .foregroundStyle(MeshinowaTheme.bodyText)
                 .padding(.top, 2)
             if !summary.reviews.isEmpty {
-                SoftTag(text: summary.reviews.map { DemoRecommendations.friendName($0.friendID) }
+                SoftTag(text: summary.reviews.map { dataset.friendName($0.friendID) }
                     .joined(separator: "・") + "が行った")
                     .padding(.top, 10)
             }
@@ -281,7 +293,7 @@ struct DemoNotice: View {
 struct DemoRestaurantDetail: View {
     private enum Section: Hashable { case voices, info }
 
-    let restaurant: DemoRestaurant
+    let restaurant: FriendRestaurant
     let summary: FriendRatingSummary
     let lensTitle: String
     @Environment(\.dismiss) private var dismiss
@@ -360,7 +372,7 @@ struct DemoRestaurantDetail: View {
 }
 
 private struct DemoReviewRow: View {
-    let review: DemoReview
+    let review: FriendReview
 
     var body: some View {
         let name = DemoRecommendations.friendName(review.friendID)
@@ -386,7 +398,7 @@ private struct DemoReviewRow: View {
 }
 
 extension DemoRecommendations {
-    static func symbol(for restaurant: DemoRestaurant) -> String {
+    static func symbol(for restaurant: FriendRestaurant) -> String {
         switch restaurant.genre {
         case "カフェ": return "cup.and.saucer"
         case "ラーメン": return "takeoutbag.and.cup.and.straw"
@@ -395,7 +407,7 @@ extension DemoRecommendations {
         }
     }
 
-    static func photoTint(for restaurant: DemoRestaurant) -> Color {
+    static func photoTint(for restaurant: FriendRestaurant) -> Color {
         switch restaurant.genre {
         case "カフェ": return Color(red: 0.90, green: 0.86, blue: 0.82)
         case "ラーメン": return Color(red: 0.94, green: 0.89, blue: 0.78)
@@ -404,7 +416,7 @@ extension DemoRecommendations {
         }
     }
 
-    static func area(for restaurant: DemoRestaurant) -> String {
+    static func area(for restaurant: FriendRestaurant) -> String {
         restaurant.coordinate.longitude < 139.7671 ? "千代田区丸の内（架空）" : "中央区八重洲（架空）"
     }
 }

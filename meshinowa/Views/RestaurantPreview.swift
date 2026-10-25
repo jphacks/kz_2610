@@ -7,6 +7,7 @@ struct RestaurantPreview: View {
     var loadsGoogleCard = true
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
+    @EnvironmentObject private var friends: FriendStore
     @State private var showsDetails = false
     @State private var showsError = false
     @State private var showsRating = false
@@ -36,7 +37,7 @@ struct RestaurantPreview: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
                     detailLine(symbol: MapHomeView.symbol(for: item), text: item.restaurantCategory)
-                    detailLine(symbol: "person.2", text: "友達の評価は準備中")
+                    detailLine(symbol: "person.2", text: friends.ratingText(for: item))
                     detailLine(symbol: "mappin.and.ellipse",
                                text: item.placemark.title.map { $0.withoutPostalCode.replacingOccurrences(of: "\n", with: " ") }
                                    ?? "住所の情報がありません")
@@ -207,13 +208,21 @@ struct QuickRatingSheet: View {
 }
 
 struct RestaurantInformationView: View {
-    private enum Section: Hashable { case mine, info, friends }
+    enum Section: Hashable { case mine, info, friends }
 
     let item: MKMapItem
     @EnvironmentObject private var saved: SavedRestaurantStore
     @Environment(\.dismiss) private var dismiss
-    @State private var section: Section = .mine
+    @EnvironmentObject private var friends: FriendStore
+    @State private var section: Section
+
+    init(item: MKMapItem, initialSection: Section = .mine) {
+        self.item = item
+        _section = State(initialValue: initialSection)
+    }
     @State private var showsError = false
+
+    private var friendSummary: FriendRatingSummary { friends.summary(for: item) }
 
     var body: some View {
         let isLiked = saved.restaurant(for: item)?.isLiked == true
@@ -247,7 +256,7 @@ struct RestaurantInformationView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     InfoRow(symbol: "mappin.and.ellipse", text: item.placemark.title ?? "住所の情報がありません")
                     InfoRow(symbol: "fork.knife", text: item.restaurantCategory)
-                    InfoRow(symbol: "person.2", text: "友達の評価は準備中です")
+                    InfoRow(symbol: "person.2", text: friends.ratingText(for: item))
                 }
 
                 GooglePlaceCard(item: item, expanded: true)
@@ -257,7 +266,7 @@ struct RestaurantInformationView: View {
                 UnderlineTabs(items: [
                     .init(value: Section.mine, title: "自分の記録"),
                     .init(value: Section.info, title: "情報"),
-                    .init(value: Section.friends, title: "友達の声")
+                    .init(value: Section.friends, title: "友達の声", badge: friendSummary.count > 0 ? "\(friendSummary.count)" : nil)
                 ], selection: $section)
 
                 switch section {
@@ -277,16 +286,7 @@ struct RestaurantInformationView: View {
                         InfoRow(symbol: "clock", text: "営業時間の情報がありません。来店前にお店へ確認してください。")
                     }
                 case .friends:
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("友達の声は準備中です")
-                            .font(MeshinowaFont.heading(17))
-                        Text("友達とつながると、ここに友達の評価とひとことが並びます。")
-                            .font(MeshinowaFont.text(14))
-                            .foregroundStyle(MeshinowaTheme.bodyText)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    FriendVoicesSection(summary: friendSummary)
                 }
             }
             .padding(20)
@@ -346,5 +346,70 @@ extension MKMapItem {
         case .brewery: return "ブルワリー"
         default: return "飲食店"
         }
+    }
+}
+
+/// お店の詳細の「友達の声」。友達の最新の評価とひとことを新しい順に並べる。
+private struct FriendVoicesSection: View {
+    let summary: FriendRatingSummary
+    @EnvironmentObject private var friends: FriendStore
+
+    var body: some View {
+        if summary.reviews.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("友達の声はまだありません")
+                    .font(MeshinowaFont.heading(17))
+                Text(friends.isAvailable
+                     ? "友達がこのお店を評価すると、ここに評価とひとことが並びます。"
+                     : "サーバーに接続すると、友達の評価とひとことが並びます。")
+                    .font(MeshinowaFont.text(14))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else {
+            let dataset = friends.dataset
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(summary.reviews) { review in
+                    let name = dataset.friendName(review.friendID)
+                    HStack(alignment: .top, spacing: 12) {
+                        FriendAvatar(name: name, size: 36)
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(name).font(MeshinowaFont.text(14, weight: .bold))
+                                Spacer()
+                                Text(review.rating, format: .number.precision(.fractionLength(1)))
+                                    .font(MeshinowaFont.number(16, relativeTo: .body))
+                                    .foregroundStyle(MeshinowaTheme.green)
+                            }
+                            if !review.comment.isEmpty {
+                                Text(review.comment)
+                                    .font(MeshinowaFont.text(15))
+                                    .foregroundStyle(MeshinowaTheme.bodyText)
+                            }
+                            if !review.dish.isEmpty {
+                                Label(review.dish, systemImage: "fork.knife")
+                                    .font(MeshinowaFont.text(13, relativeTo: .caption))
+                                    .foregroundStyle(MeshinowaTheme.secondaryText)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 10)
+                    .overlay(alignment: .bottom) { Rectangle().fill(MeshinowaTheme.hairline).frame(height: 1) }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+    }
+}
+
+extension FriendStore {
+    /// プレビュー・詳細の1行。友達がいなくても0点は付けない。
+    func ratingText(for item: MKMapItem) -> String {
+        guard isAvailable else { return "友達の評価はサーバー接続後に表示" }
+        let summary = summary(for: item)
+        guard let average = summary.average else { return "友達の評価はまだありません" }
+        return "友達\(summary.count)人の評価 " + average.formatted(.number.precision(.fractionLength(1)))
     }
 }

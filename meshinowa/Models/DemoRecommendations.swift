@@ -1,58 +1,15 @@
 import Foundation
 import CoreLocation
-
-struct DemoFriend: Identifiable {
-    let id: String
-    let name: String
-}
-
-struct DemoRestaurant: Identifiable {
-    let id: String
-    let name: String
-    let genre: String
-    let coordinate: CLLocationCoordinate2D
-}
-
-struct DemoReview: Identifiable {
-    let id: String
-    let friendID: String
-    let restaurantID: String
-    let rating: Double
-    let comment: String
-    let updatedAt: Date
-}
-
-struct FriendRatingSummary {
-    let reviews: [DemoReview]
-    var count: Int { reviews.count }
-    var average: Double? {
-        guard !reviews.isEmpty else { return nil }
-        return reviews.reduce(0) { $0 + $1.rating } / Double(reviews.count)
-    }
-
-    init(restaurantID: String, reviews: [DemoReview], friendIDs: Set<String>? = nil) {
-        var latest: [String: DemoReview] = [:]
-        for review in reviews where review.restaurantID == restaurantID {
-            if let friendIDs, !friendIDs.contains(review.friendID) { continue }
-            guard (1...5).contains(review.rating), review.rating * 2 == floor(review.rating * 2) else { continue }
-            if let previous = latest[review.friendID], previous.updatedAt > review.updatedAt { continue }
-            latest[review.friendID] = review
-        }
-        self.reviews = latest.values.sorted {
-            if $0.updatedAt != $1.updatedAt { return $0.updatedAt > $1.updatedAt }
-            return $0.friendID < $1.friendID
-        }
-    }
-}
+import MapKit
 
 /// デモ専用。実在店舗の検索・保存データとは結合しない。
 enum DemoRecommendations {
     static let favoriteFriendIDs: Set<String> = ["takuma", "saki", "mio"]
     static let friends = [
-        DemoFriend(id: "takuma", name: "たくま"), DemoFriend(id: "yuki", name: "ゆうき"),
-        DemoFriend(id: "ryo", name: "りょう"), DemoFriend(id: "saki", name: "さき"),
-        DemoFriend(id: "haruto", name: "はると"), DemoFriend(id: "mio", name: "みお"),
-        DemoFriend(id: "kenta", name: "けんた"), DemoFriend(id: "ayane", name: "あやね")
+        FriendProfile(id: "takuma", name: "たくま"), FriendProfile(id: "yuki", name: "ゆうき"),
+        FriendProfile(id: "ryo", name: "りょう"), FriendProfile(id: "saki", name: "さき"),
+        FriendProfile(id: "haruto", name: "はると"), FriendProfile(id: "mio", name: "みお"),
+        FriendProfile(id: "kenta", name: "けんた"), FriendProfile(id: "ayane", name: "あやね")
     ]
     static let restaurants = [
         restaurant("diner", "こもれび食堂", "洋食", 35.6830, 139.7640),
@@ -74,7 +31,10 @@ enum DemoRecommendations {
         review("r9", "mio", "bakery", 4.5, "朝の散歩に寄りたいお店。", 2)
     ]
 
-    static func summary(for restaurant: DemoRestaurant, friendIDs: Set<String>? = nil) -> FriendRatingSummary {
+    static let dataset = FriendDataset(friends: friends, favoriteFriendIDs: favoriteFriendIDs,
+                                       restaurants: restaurants, reviews: reviews, isDemo: true)
+
+    static func summary(for restaurant: FriendRestaurant, friendIDs: Set<String>? = nil) -> FriendRatingSummary {
         FriendRatingSummary(restaurantID: restaurant.id, reviews: reviews, friendIDs: friendIDs)
     }
 
@@ -83,14 +43,14 @@ enum DemoRecommendations {
     }
 
     private static func restaurant(_ id: String, _ name: String, _ genre: String,
-                                   _ latitude: Double, _ longitude: Double) -> DemoRestaurant {
-        DemoRestaurant(id: id, name: "【架空】\(name)", genre: genre,
+                                   _ latitude: Double, _ longitude: Double) -> FriendRestaurant {
+        FriendRestaurant(id: id, name: "【架空】\(name)", genre: genre,
                        coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
     }
 
     private static func review(_ id: String, _ friend: String, _ restaurant: String,
-                              _ rating: Double, _ comment: String, _ time: Double) -> DemoReview {
-        DemoReview(id: id, friendID: friend, restaurantID: restaurant,
+                              _ rating: Double, _ comment: String, _ time: Double) -> FriendReview {
+        FriendReview(id: id, friendID: friend, restaurantID: restaurant,
                    rating: rating, comment: comment, updatedAt: Date(timeIntervalSince1970: time))
     }
 }

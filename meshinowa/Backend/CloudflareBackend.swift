@@ -5,13 +5,7 @@ struct CloudflareBackend {
     let configuration: BackendConfiguration
     var session: URLSession = .shared
 
-    struct AuthChallenge: Decodable {
-        let nonce: String
-        let nonceHash: String
-        let expiresIn: Int
-    }
-
-    struct AuthSession: Decodable {
+    struct GuestSession: Decodable {
         let accessToken: String
         let expiresAt: Int
         let userId: UUID
@@ -34,15 +28,11 @@ struct CloudflareBackend {
         return CloudflareBackend(configuration: configuration)
     }
 
-    func authChallenge() async throws -> AuthChallenge {
-        try await request("/auth/challenge", method: "POST")
-    }
-
-    /// Apple認証リクエストのnonceには、challenge.nonceHashを設定する。
-    /// 返されたセッションは呼び出し側でKeychainに保存し、UserDefaultsやログへ出さない。
-    func signInWithApple(identityToken: String, nonce: String) async throws -> AuthSession {
-        let payload = try JSONEncoder().encode(["identity_token": identityToken, "nonce": nonce])
-        return try await request("/auth/apple", method: "POST", body: payload)
+    /// ログインなしのゲストアカウントを作る。
+    /// 返されたトークンは呼び出し側でKeychainに保存し、UserDefaultsやログへ出さない。
+    func signInAsGuest(displayName: String) async throws -> GuestSession {
+        let payload = try JSONEncoder().encode(["display_name": displayName])
+        return try await request("/auth/guest", method: "POST", body: payload)
     }
 
     func signOut(accessToken: String) async throws {

@@ -67,6 +67,14 @@ struct FoodGenreMark: View {
     }
 }
 
+extension FoodGenreMark {
+    /// 中に点数やハートを置く位置。0〜1 の割合で返す。
+    static func contentAnchor(for genre: FoodGenre) -> UnitPoint {
+        let center = GenreShapes.shape(for: genre).center
+        return UnitPoint(x: center.x / 36, y: center.y / 34)
+    }
+}
+
 private enum GenreShapes {
     struct Shape {
         let body: String
@@ -74,37 +82,39 @@ private enum GenreShapes {
         var chopsticks = false
         var handle = false
         var caps = false
+        /// 中に点数やハートを置く位置（36×34 の座標）。
+        var center = CGPoint(x: 18, y: 18)
     }
 
     static func shape(for genre: FoodGenre) -> Shape {
         switch genre {
         case .washoku: // 蓋付きのお椀
             return Shape(body: "M4 17 H32 C32 25 26 30 18 30 C10 30 4 25 4 17Z M6 15.5 C6 9 11 6 18 6 C25 6 30 9 30 15.5Z",
-                         deco: "M15 4.5 H21 M3.5 16.2 H32.5")
+                         deco: "M15 4.5 H21 M3.5 16.2 H32.5", center: CGPoint(x: 18, y: 22))
         case .sushi: // 寿司屋の湯呑
             return Shape(body: "M8 6 H28 L26.5 27 C26.3 29 25 30 23 30 H13 C11 30 9.7 29 9.5 27Z",
-                         deco: "M8.6 11 H27.4 M9.3 21 H26.7")
+                         deco: "M8.6 11 H27.4 M9.3 21 H26.7", center: CGPoint(x: 18, y: 17))
         case .noodle: // 雷紋の丼と箸
             return Shape(body: "M2 13 H34 C34 23 27 30 18 30 C9 30 2 23 2 13Z",
-                         deco: "M5 17 h3 v3 h3 v-3 h3 v3 h3 v-3 h3 v3 h3 v-3 h3 v3 h3", chopsticks: true)
+                         deco: "M5 17 h3 v3 h3 v-3 h3 v3 h3 v-3 h3 v3 h3 v-3 h3 v3 h3", chopsticks: true, center: CGPoint(x: 18, y: 22))
         case .yakiniku: // 七輪
             return Shape(body: "M7 10 H29 L27.5 28 C27.4 29.3 26.5 30 25 30 H11 C9.5 30 8.6 29.3 8.5 28Z M5 7 H31 V10.5 H5Z",
-                         deco: "M9 5 V8.5 M14 5 V8.5 M19 5 V8.5 M24 5 V8.5 M28 5 V8.5 M10 23 H26")
+                         deco: "M9 5 V8.5 M14 5 V8.5 M19 5 V8.5 M24 5 V8.5 M28 5 V8.5 M10 23 H26", center: CGPoint(x: 18, y: 18))
         case .izakaya: // 提灯
             return Shape(body: "M7 5 C3 9 3 25 7 29 H29 C33 25 33 9 29 5Z",
-                         deco: "M5 11 H31 M4.3 17 H31.7 M5 23 H31", caps: true)
+                         deco: "M5 11 H31 M4.3 17 H31.7 M5 23 H31", caps: true, center: CGPoint(x: 18, y: 17))
         case .yoshoku: // ふたをした洋皿
             return Shape(body: "M5 24 C5 14 11 9 18 9 C25 9 31 14 31 24Z M2 24 H34 V27 C34 28.5 33 29.5 31.5 29.5 H4.5 C3 29.5 2 28.5 2 27Z",
-                         deco: "M16 7.5 H20")
+                         deco: "M16 7.5 H20", center: CGPoint(x: 18, y: 19))
         case .chuka: // 蒸籠
             return Shape(body: "M3 8 H33 V12 H3Z M5 12 H31 V29 C31 29.6 30.6 30 30 30 H6 C5.4 30 5 29.6 5 29Z",
-                         deco: "M5 20.5 H31 M9 12 V29 M27 12 V29")
+                         deco: "M5 20.5 H31 M9 12 V29 M27 12 V29", center: CGPoint(x: 18, y: 21))
         case .cafe: // 取っ手付きのカップ
-            return Shape(body: "M7 8 H26 V21 C26 26.5 22.5 30 16.5 30 C10.5 30 7 26.5 7 21Z", deco: "M3 31 H30", handle: true)
+            return Shape(body: "M7 8 H26 V21 C26 26.5 22.5 30 16.5 30 C10.5 30 7 26.5 7 21Z", deco: "M3 31 H30", handle: true, center: CGPoint(x: 16.5, y: 18.5))
         case .bread: // 山型の食パン
-            return Shape(body: "M7 14 C3 14 3 5.5 10 5.5 C12.5 3 23.5 3 26 5.5 C33 5.5 33 14 29 14 V30 H7Z", deco: "M11 14 H25")
+            return Shape(body: "M7 14 C3 14 3 5.5 10 5.5 C12.5 3 23.5 3 26 5.5 C33 5.5 33 14 29 14 V30 H7Z", deco: "M11 14 H25", center: CGPoint(x: 18, y: 21))
         case .other: // 今のピンと同じ丸
-            return Shape(body: "M31 17 C31 24.2 25.2 30 18 30 C10.8 30 5 24.2 5 17 C5 9.8 10.8 4 18 4 C25.2 4 31 9.8 31 17Z")
+            return Shape(body: "M31 17 C31 24.2 25.2 30 18 30 C10.8 30 5 24.2 5 17 C5 9.8 10.8 4 18 4 C25.2 4 31 9.8 31 17Z", center: CGPoint(x: 18, y: 17))
         }
     }
 }

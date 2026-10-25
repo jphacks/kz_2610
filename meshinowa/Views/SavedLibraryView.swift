@@ -225,6 +225,7 @@ struct SavedRestaurantMap: View {
         GoogleMapCanvas(position: camera, pins: restaurants.map { restaurant in
             GoogleMapPin(id: restaurant.id, title: restaurant.name,
                          coordinate: restaurant.mapItem.placemark.coordinate,
+                         genre: restaurant.foodGenre,
                          mark: ratings[restaurant.id].map { .reviewed($0) } ?? .liked)
         }, selectedID: $selectedID)
         .onAppear { camera = .fit(restaurants.map { $0.mapItem.placemark.coordinate }) }

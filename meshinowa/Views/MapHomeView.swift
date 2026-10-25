@@ -106,6 +106,7 @@ struct MapHomeView: View {
             return GoogleMapPin(id: result.id.uuidString, title: result.item.name ?? "飲食店",
                                 coordinate: result.item.placemark.coordinate,
                                 symbol: Self.symbol(for: result.item),
+                                genre: result.item.foodGenre,
                                 mark: review.map { .reviewed($0.rating) } ?? (entry?.isLiked == true ? .liked : .none),
                                 showsLikeBadge: review != nil && entry?.isLiked == true)
         }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),

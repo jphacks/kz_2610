@@ -78,53 +78,58 @@ struct ScorePin: View {
     }
 }
 
-/// 実際の地図のピン。小さな丸に記号だけを置き、選ぶと大きな丸になる。
-/// いいねはピンク、レビューしたお店は緑に自分の点数を出し、地図を見ただけで自分の記録が分かるようにする。
-/// 先端は丸の縁と同じ色にして、縁から先端までひと続きに見せる。
+/// 実際の地図のピン。形はジャンルの器（お椀・丼・提灯など）、色は自分の記録。
+/// 記録なしは白に緑の線、いいねはピンクにハート、レビューしたお店は緑に自分の点数。選ぶと大きくなり、緑で塗る。
+/// 形は output/wa-design/category-pins.html のデザインと同じ。
 struct PlacePin: View {
     enum Mark: Equatable { case none, liked, reviewed(Double) }
 
-    let symbol: String
+    /// 以前の丸いピンのアイコン。今は形をジャンルで決めるため使わない。
+    var symbol: String = "fork.knife"
+    var genre: FoodGenre = .other
     var mark: Mark = .none
     /// レビューしたお店にいいねも付いているとき、右上に小さなハートを添える。
     var showsLikeBadge = false
     var isSelected = false
 
-    private var fill: Color {
-        // いいねのピンは選択中もピンクのまま。大きさで選択中を示す。
-        if isSelected && mark != .liked { return MeshinowaTheme.green }
+    private var tone: FoodGenreMark.Tone {
         switch mark {
-        case .none: return MeshinowaTheme.card
-        case .liked: return MeshinowaTheme.like
-        case .reviewed: return MeshinowaTheme.green
+        // いいねのピンは選択中もピンクのまま。大きさで選択中を示す。
+        case .liked: return .liked
+        case .reviewed: return .reviewed
+        case .none: return isSelected ? .reviewed : .plain
         }
     }
+
+    private var width: CGFloat { isSelected ? 50 : 32 }
 
     @ViewBuilder private var content: some View {
         switch mark {
         case .none:
-            Image(systemName: symbol)
-                .font(.system(size: isSelected ? 17 : 10, weight: .bold))
+            EmptyView()
         case .liked:
             Image(systemName: "heart.fill")
-                .font(.system(size: isSelected ? 17 : 10, weight: .bold))
+                .font(.system(size: isSelected ? 14 : 9, weight: .bold))
         case .reviewed(let score):
             Text(score, format: .number.precision(.fractionLength(1)))
-                .font(MeshinowaFont.number(isSelected ? 16 : 11, relativeTo: .caption))
-                .padding(.horizontal, isSelected ? 6 : 4)
+                .font(MeshinowaFont.number(isSelected ? 15 : 10, relativeTo: .caption))
+                .fixedSize()
         }
     }
 
     var body: some View {
-        let isPlain = !isSelected && mark == .none
-        let rim = isPlain ? MeshinowaTheme.green : Color.white
+        let anchor = FoodGenreMark.contentAnchor(for: genre)
+        let tailColor = tone == .plain ? MeshinowaTheme.green
+            : (tone == .liked ? MeshinowaTheme.like : MeshinowaTheme.green)
         VStack(spacing: -1) {
-            // 点数のピンは横に広がれるようカプセルにする。幅と高さが同じときは丸になる。
-            content
-                .frame(minWidth: isSelected ? 42 : 24, minHeight: isSelected ? 42 : 24)
-                .fixedSize()
-                .background(Capsule().fill(fill))
-                .overlay(Capsule().strokeBorder(rim, lineWidth: isPlain ? 1.5 : (isSelected ? 3 : 2)))
+            FoodGenreMark(genre: genre, tone: tone, size: width)
+                .overlay {
+                    GeometryReader { proxy in
+                        content
+                            .foregroundStyle(.white)
+                            .position(x: proxy.size.width * anchor.x, y: proxy.size.height * anchor.y)
+                    }
+                }
                 .overlay(alignment: .topTrailing) {
                     if showsLikeBadge {
                         Image(systemName: "heart.fill")
@@ -136,13 +141,13 @@ struct PlacePin: View {
                             .offset(x: 5, y: -5)
                     }
                 }
-            .foregroundStyle(isPlain ? MeshinowaTheme.green : .white)
             PinTail()
-                .fill(rim)
-                .frame(width: isSelected ? 14 : 8, height: isSelected ? 8 : 5)
+                .fill(tailColor)
+                .frame(width: isSelected ? 12 : 8, height: isSelected ? 8 : 6)
         }
         .shadow(color: .black.opacity(isSelected ? 0.3 : 0.22), radius: isSelected ? 6 : 3, y: isSelected ? 3 : 1.5)
         .animation(.spring(response: 0.28, dampingFraction: 0.75), value: isSelected)
+        .accessibilityHidden(true)
     }
 }
 
@@ -169,10 +174,10 @@ private struct PinTail: Shape {
             ScorePin(title: "4.8", tag: "友達2", isSelected: true)
         }
         HStack(spacing: 16) {
-            PlacePin(symbol: "fork.knife")
-            PlacePin(symbol: "cup.and.saucer.fill", mark: .liked)
-            PlacePin(symbol: "birthday.cake.fill", mark: .reviewed(4.5), showsLikeBadge: true)
-            PlacePin(symbol: "fork.knife", isSelected: true)
+            PlacePin(genre: .noodle)
+            PlacePin(genre: .cafe, mark: .liked)
+            PlacePin(genre: .bread, mark: .reviewed(4.5), showsLikeBadge: true)
+            PlacePin(genre: .izakaya, isSelected: true)
         }
     }
     .padding(32)

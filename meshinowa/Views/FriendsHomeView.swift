@@ -7,9 +7,9 @@ struct FriendsHomeView: View {
     @EnvironmentObject private var store: FriendStore
     @State private var section: Section = .recommended
 
-    /// サーバー未設定ならデモのまま。接続できればゲストの実データを出す。
+    /// 接続状態にかかわらず、取得済みの実データだけを表示する。
     private var dataset: FriendDataset {
-        store.isAvailable ? store.dataset : DemoRecommendations.dataset
+        store.dataset
     }
 
     var body: some View {
@@ -69,12 +69,14 @@ struct FriendsHomeView: View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(spacing: 10) {
                 banner
-                NavigationLink {
-                    FriendMapScreen(isDemo: !store.isAvailable)
-                } label: {
-                    mapEntry
+                if !dataset.ratedRestaurants.isEmpty {
+                    NavigationLink {
+                        FriendMapScreen()
+                    } label: {
+                        mapEntry
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(.horizontal, 20)
 
@@ -100,14 +102,13 @@ struct FriendsHomeView: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text("友達の最近の記録")
                             .font(MeshinowaFont.heading(20))
-                        if dataset.isDemo { SoftTag(text: "架空", tone: .neutral, compact: true) }
                     }
                     .padding(.horizontal, 20)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(dataset.latestReviews.prefix(6)) { review in
                                 NavigationLink {
-                                    FriendMapScreen(isDemo: dataset.isDemo, initialSelection: review.restaurantID)
+                                    FriendMapScreen(initialSelection: review.restaurantID)
                                 } label: {
                                     RecentReviewCard(review: review, dataset: dataset)
                                 }
@@ -119,17 +120,10 @@ struct FriendsHomeView: View {
                 }
             }
 
-            if store.isAvailable {
-                NavigationLink { DemoRecommendationsView() } label: {
-                    Label("架空データのデモを見る", systemImage: "sparkles")
-                        .font(MeshinowaFont.text(14, weight: .bold))
-                        .foregroundStyle(MeshinowaTheme.green)
-                }
-                .padding(.horizontal, 20)
-            } else {
-                Text("ここに出る友達・お店・レビューは架空です。")
-                    .font(MeshinowaFont.text(12, relativeTo: .caption))
-                    .foregroundStyle(MeshinowaTheme.secondaryText)
+            if store.isAvailable && !store.friends.isEmpty && dataset.latestReviews.isEmpty {
+                Text("友達の評価はまだありません。友達がお店を評価すると、ここに表示されます。")
+                    .font(MeshinowaFont.text(14))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
                     .padding(.horizontal, 20)
             }
         }
@@ -144,8 +138,8 @@ struct FriendsHomeView: View {
                 Text("友達の「うまい」を地図に集めよう")
                     .font(MeshinowaFont.heading(16))
                     .fixedSize(horizontal: false, vertical: true)
-                Text(dataset.isDemo ? "架空の友達の評価で試せます。"
-                     : "友達\(dataset.friends.count)人・\(dataset.restaurants.count)軒の評価")
+                Text(store.isAvailable ? "友達\(dataset.friends.count)人・\(dataset.restaurants.count)軒の評価"
+                     : "友達の機能は現在利用できません。")
                     .font(MeshinowaFont.text(13, relativeTo: .caption))
                     .foregroundStyle(MeshinowaTheme.bodyText)
             }
@@ -165,7 +159,7 @@ struct FriendsHomeView: View {
                 .foregroundStyle(MeshinowaTheme.green)
                 .frame(width: 36, height: 36)
                 .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            Text(dataset.isDemo ? "架空データのおすすめを地図で見る" : "友達のおすすめを地図で見る")
+            Text("友達のおすすめを地図で見る")
                 .font(MeshinowaFont.text(15, weight: .bold))
             Spacer(minLength: 0)
             Image(systemName: "chevron.right")
@@ -182,7 +176,7 @@ struct FriendsHomeView: View {
     private var feed: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text(dataset.isDemo ? "架空の友達の記録" : "友達の記録")
+                Text("友達の記録")
                     .font(MeshinowaFont.text(13, relativeTo: .caption))
                     .foregroundStyle(MeshinowaTheme.secondaryText)
                 Spacer()
@@ -197,7 +191,7 @@ struct FriendsHomeView: View {
                 let restaurant = dataset.restaurant(review.restaurantID)
                 let name = dataset.friendName(review.friendID)
                 NavigationLink {
-                    FriendMapScreen(isDemo: dataset.isDemo, initialSelection: review.restaurantID)
+                    FriendMapScreen(initialSelection: review.restaurantID)
                 } label: {
                     HStack(alignment: .top, spacing: 12) {
                         FriendAvatar(name: name, size: 40)
@@ -233,12 +227,11 @@ struct FriendsHomeView: View {
 
 /// 友達のおすすめマップ。実データは開いている間も最新の状態を反映する。
 private struct FriendMapScreen: View {
-    let isDemo: Bool
     var initialSelection: String? = nil
     @EnvironmentObject private var store: FriendStore
 
     var body: some View {
-        DemoRecommendationsView(dataset: isDemo ? DemoRecommendations.dataset : store.dataset,
+        FriendRecommendationsView(dataset: store.dataset,
                                 initialSelection: initialSelection)
     }
 }

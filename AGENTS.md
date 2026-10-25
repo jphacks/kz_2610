@@ -1,6 +1,6 @@
 # AGENTS.md
 
-メシノワ（meshinowa）は、友達が評価したお店だけで地図を作る iOS アプリ（SwiftUI・iOS 17 以上）です。
+メシノワ（meshinowa）は、一般のお店も探せて、友達が評価したお店を地図で優先表示する iOS アプリ（SwiftUI・iOS 17 以上）です。
 地図と店舗検索は Google Maps / Places、友達・レビューの同期は Cloudflare を使います。
 
 ## 作業を始める前に

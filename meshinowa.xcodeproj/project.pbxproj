@@ -20,6 +20,7 @@
 		33B1960A20D3F3D3A3FA1085 /* SavedLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BC085FF36791F553F0A0B7 /* SavedLibraryView.swift */; };
 		34880AD8F1DFDF536AA44B53 /* SearchResultsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57D7B8B8D794F6C7A8FA4213 /* SearchResultsView.swift */; };
 		352E67108C463FB8E9C32797 /* BackendConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A669F3BD372D108ABDA6BB /* BackendConfiguration.swift */; };
+		37AA3E631B3FE00B3C737DF3 /* FriendRecommendationFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB2DFA0B31ACD0861F2C9494 /* FriendRecommendationFixtures.swift */; };
 		3D39A3C75606EC05B11F1D29 /* NorenTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5306E590F0306302A10B6E0D /* NorenTabs.swift */; };
 		41236D80CA53B999028FDE3D /* MeshinowaTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC3407C1A238FE8F597805 /* MeshinowaTheme.swift */; };
 		417AA8000B181B06F226F67D /* GooglePlacesConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC683D467302840E195E8465 /* GooglePlacesConfiguration.swift */; };
@@ -34,7 +35,6 @@
 		576564540658A76D80C46002 /* RestaurantPhotoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C997E9C24246F021E6BCFACB /* RestaurantPhotoStore.swift */; };
 		5957C2B6CB6037661127E406 /* GoogleMapCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84042569BCF37F32E1D86C42 /* GoogleMapCanvas.swift */; };
 		5BA741912A11F54F4A2A4967 /* GoogleMaps in Frameworks */ = {isa = PBXBuildFile; productRef = 774FDDBBE08EB385E7AF2A9D /* GoogleMaps */; };
-		5E1D8F4B5E30577AE5AE5766 /* DemoRecommendationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38D91CA3ABB6FB77DF596BDB /* DemoRecommendationsView.swift */; };
 		618F6BA1CF1EC73A4384A3C8 /* ReviewEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AF5BFEC5D8EC1D753B79BB8 /* ReviewEditor.swift */; };
 		6385829CB9B5C603F8E4EB61 /* RestaurantSearchResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDC39E39AC607804692021D7 /* RestaurantSearchResult.swift */; };
 		643456A90B9CE870169CE59F /* RatingInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF46CB35ADE6736D4498F1C6 /* RatingInput.swift */; };
@@ -48,7 +48,6 @@
 		814451534E28D95CB7A5EC6B /* GoogleRestaurantSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9454CCCCD38E848D88D8DCF /* GoogleRestaurantSearch.swift */; };
 		84B9A7DDF3C220847FEBC561 /* SavedCollectionQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5039353589BD0FB31682 /* SavedCollectionQuery.swift */; };
 		8F113A281AA8994362E4A796 /* MapHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78547210CCC61EAD05DD939F /* MapHomeView.swift */; };
-		8F126F9A7342A046592EE19C /* DemoRecommendations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6439EEA5C1C2C5A1CDE9852 /* DemoRecommendations.swift */; };
 		9788929DEAFCB21D7624D6BA /* GooglePlacesConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8775E0D2B4F5F645040C5037 /* GooglePlacesConfigurationTests.swift */; };
 		9B3975C7775DF1578BD649F5 /* RestaurantPhotoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AEC086805668086191414F9 /* RestaurantPhotoStoreTests.swift */; };
 		9DA43F7000D4C1FDD787E227 /* ZenMaruGothic-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9B65E1E0933983489CB95551 /* ZenMaruGothic-Black.ttf */; };
@@ -68,6 +67,7 @@
 		B3D7078C882BDDB35573DE21 /* FriendDataset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92C9E7CAD2CE8688C5AAFECC /* FriendDataset.swift */; };
 		B8DD8A6D3B9217D93768D324 /* GooglePlaceQueryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2A0A31C7D001987E1AD8D5 /* GooglePlaceQueryTests.swift */; };
 		BDEEA1CFB400BD303835701C /* RestaurantCollectionControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C6882B0A977012C2EFD90E3 /* RestaurantCollectionControls.swift */; };
+		C298734BF91EB608E1ACCB73 /* FriendRecommendationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BC927BC40D6C3D5E48E6FB5 /* FriendRecommendationsView.swift */; };
 		C5E8C6D45EB3A1B5636F1482 /* MPLUSRounded1c-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */; };
 		C7361C3EAC017CE62D901732 /* GooglePlaceQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C53E94E627DFB9E8C875D6A /* GooglePlaceQuery.swift */; };
 		CD470AF0A99161FAD90A41F2 /* ZenMaruGothic-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */; };
@@ -108,9 +108,9 @@
 		2C53E94E627DFB9E8C875D6A /* GooglePlaceQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GooglePlaceQuery.swift; sourceTree = "<group>"; };
 		2C6882B0A977012C2EFD90E3 /* RestaurantCollectionControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantCollectionControls.swift; sourceTree = "<group>"; };
 		323C45E1DFC74360C7BA6EA8 /* MPLUSRounded1c-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-Black.ttf"; sourceTree = "<group>"; };
-		38D91CA3ABB6FB77DF596BDB /* DemoRecommendationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRecommendationsView.swift; sourceTree = "<group>"; };
 		3AF5BFEC5D8EC1D753B79BB8 /* ReviewEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewEditor.swift; sourceTree = "<group>"; };
 		3B81A1FC735B0AE97C9F9025 /* SavedRestaurantStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRestaurantStore.swift; sourceTree = "<group>"; };
+		3BC927BC40D6C3D5E48E6FB5 /* FriendRecommendationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRecommendationsView.swift; sourceTree = "<group>"; };
 		3D47C9B0C6921A9A6D9003C0 /* SaveRestaurantButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveRestaurantButton.swift; sourceTree = "<group>"; };
 		458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaFont.swift; sourceTree = "<group>"; };
 		5306E590F0306302A10B6E0D /* NorenTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorenTabs.swift; sourceTree = "<group>"; };
@@ -146,6 +146,7 @@
 		9EB1CE340448C7F8D00C242F /* FriendStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendStore.swift; sourceTree = "<group>"; };
 		A832D8210680A227BBD37AB8 /* RestaurantPhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPhotoView.swift; sourceTree = "<group>"; };
 		A8BC085FF36791F553F0A0B7 /* SavedLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedLibraryView.swift; sourceTree = "<group>"; };
+		AB2DFA0B31ACD0861F2C9494 /* FriendRecommendationFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRecommendationFixtures.swift; sourceTree = "<group>"; };
 		AC586D38E56B95D55CF0F629 /* RatingStamp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingStamp.swift; sourceTree = "<group>"; };
 		B6ACCCCC66DD63E97793E31C /* LocalReviewStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalReviewStoreTests.swift; sourceTree = "<group>"; };
 		B85D860393D45FFD47145E55 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -157,7 +158,6 @@
 		CEEE3547A7BF68F1031D8C7A /* ZenMaruGothic-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ZenMaruGothic-Bold.ttf"; sourceTree = "<group>"; };
 		D0E0C2D0227B0ECA57AB21F4 /* PaperButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaperButtonStyle.swift; sourceTree = "<group>"; };
 		D3130AD03FDF4268E2C852DE /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
-		D6439EEA5C1C2C5A1CDE9852 /* DemoRecommendations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoRecommendations.swift; sourceTree = "<group>"; };
 		D8CCA1BE30D8500DDA40C3AC /* meshinowaTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = meshinowaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E5FFA1E7031A840437A56E93 /* FoodGenreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodGenreTests.swift; sourceTree = "<group>"; };
 		E9454CCCCD38E848D88D8DCF /* GoogleRestaurantSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleRestaurantSearch.swift; sourceTree = "<group>"; };
@@ -240,7 +240,6 @@
 		A6FB7F146545F3F034F1C344 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				D6439EEA5C1C2C5A1CDE9852 /* DemoRecommendations.swift */,
 				95F6564F03B43298E2E65369 /* FoodGenre.swift */,
 				92C9E7CAD2CE8688C5AAFECC /* FriendDataset.swift */,
 				1CEAD0451C63C40694CBAB84 /* FriendLens.swift */,
@@ -297,8 +296,8 @@
 		D5EE1A628518B74651808996 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				38D91CA3ABB6FB77DF596BDB /* DemoRecommendationsView.swift */,
 				26CB4D6AD16F17CF03D7FC2A /* FriendLensPicker.swift */,
+				3BC927BC40D6C3D5E48E6FB5 /* FriendRecommendationsView.swift */,
 				61E95A7DC1FF0B8E365727EA /* FriendsHomeView.swift */,
 				84042569BCF37F32E1D86C42 /* GoogleMapCanvas.swift */,
 				94D2F013B4DBC864974574D8 /* MainTabView.swift */,
@@ -344,6 +343,7 @@
 				E5FFA1E7031A840437A56E93 /* FoodGenreTests.swift */,
 				94A61A1BA4C32088BE917992 /* FriendLensTests.swift */,
 				FEBBF967F9AA306D02319732 /* FriendRatingSummaryTests.swift */,
+				AB2DFA0B31ACD0861F2C9494 /* FriendRecommendationFixtures.swift */,
 				9ABF50A345BA17D468DCF9C8 /* FriendStoreTests.swift */,
 				0B2A0A31C7D001987E1AD8D5 /* GooglePlaceQueryTests.swift */,
 				8775E0D2B4F5F645040C5037 /* GooglePlacesConfigurationTests.swift */,
@@ -464,6 +464,7 @@
 				B068117C1854972728441B03 /* FoodGenreTests.swift in Sources */,
 				B3CDD9B832F1F41CE0C18CF9 /* FriendLensTests.swift in Sources */,
 				ACC07526B935EDBA61A47726 /* FriendRatingSummaryTests.swift in Sources */,
+				37AA3E631B3FE00B3C737DF3 /* FriendRecommendationFixtures.swift in Sources */,
 				D3BE997B1E6FBA19A7853DC3 /* FriendStoreTests.swift in Sources */,
 				B8DD8A6D3B9217D93768D324 /* GooglePlaceQueryTests.swift in Sources */,
 				9788929DEAFCB21D7624D6BA /* GooglePlacesConfigurationTests.swift in Sources */,
@@ -482,13 +483,12 @@
 			files = (
 				352E67108C463FB8E9C32797 /* BackendConfiguration.swift in Sources */,
 				29F1C8CBC93B5643B19D6DAE /* CloudflareBackend.swift in Sources */,
-				8F126F9A7342A046592EE19C /* DemoRecommendations.swift in Sources */,
-				5E1D8F4B5E30577AE5AE5766 /* DemoRecommendationsView.swift in Sources */,
 				67B5F6311F9F75FFE01247E8 /* FoodGenre.swift in Sources */,
 				01E602971C011B08BAFA4337 /* FoodGenreMark.swift in Sources */,
 				B3D7078C882BDDB35573DE21 /* FriendDataset.swift in Sources */,
 				A80BA9CCAB7DFD2F09D194A0 /* FriendLens.swift in Sources */,
 				5725116C47A7B4B04721A8DE /* FriendLensPicker.swift in Sources */,
+				C298734BF91EB608E1ACCB73 /* FriendRecommendationsView.swift in Sources */,
 				75FF29171F0F2823EF02793E /* FriendStore.swift in Sources */,
 				457DDD4B69F513ECF34B22E0 /* FriendsHomeView.swift in Sources */,
 				5957C2B6CB6037661127E406 /* GoogleMapCanvas.swift in Sources */,

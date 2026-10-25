@@ -12,7 +12,7 @@ struct MainTabView: View {
 
     var body: some View {
         ZStack {
-            tab(.map) { MapHomeView(showsSavedShortcut: false) }
+            tab(.map) { MapHomeView(showsSavedShortcut: false, isActive: selection == .map) }
             tab(.saved) { SavedRestaurantsView(onFindRestaurants: { selection = .map }) }
             tab(.friends) { FriendsHomeView(isActive: selection == .friends) }
             tab(.profile) { ProfileView(onFindRestaurants: { selection = .map }) }

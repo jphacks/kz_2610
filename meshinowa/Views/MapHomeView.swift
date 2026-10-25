@@ -464,7 +464,7 @@ struct MapHomeView: View {
             return try? await MKLocalSearch(request: request).start().mapItems
         }()
         async let nearby: [MKMapItem]? = {
-            guard !isWide else { return [] }
+            guard !isWide else { return nil }
             let request = MKLocalPointsOfInterestRequest(coordinateRegion: region)
             request.pointOfInterestFilter = filter
             return try? await MKLocalSearch(request: request).start().mapItems

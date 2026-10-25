@@ -1,10 +1,9 @@
-import { before, after, beforeEach, test, mock } from "node:test";
+import { before, after, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { Miniflare } from "miniflare";
-import { generateKeyPair, exportJWK, SignJWT } from "jose";
 import worker from "../src/index.js";
-import { hash, now, verifyAppleIdentity } from "../src/auth.js";
+import { hash, now } from "../src/auth.js";
 
 // Synthetic identities only; ephemeral local D1 and R2, no production credentials.
 const A = "00000000-0000-0000-0000-000000000001";
@@ -58,7 +57,6 @@ before(async () => {
   env = {
     DB: db,
     PHOTOS: await mf.getR2Bucket("PHOTOS"),
-    APPLE_CLIENT_ID: "jp.meshinowa.app",
     AUTH_RATE_LIMITER: { limit: async () => ({ success: true }) },
   };
   // exec() splits lines; prepare().run() supports complete triggers with semicolons.
@@ -68,7 +66,7 @@ before(async () => {
     .sort()) {
     const migration = await readFile(new URL(name, directory), "utf8");
     const statements = migration.match(
-      /create trigger[\s\S]*?\nend;|(?:--[^\n]*\n|\s)*(?:create table|create index|drop trigger)[\s\S]*?;/gi,
+      /create trigger[\s\S]*?\nend;|(?:--[^\n]*\n|\s)*(?:create table|create index|drop trigger|drop table|alter table)[\s\S]*?;/gi,
     );
     assert.ok(statements?.length, `No SQL found in ${name}`);
     for (const statement of statements) await db.prepare(statement).run();
@@ -82,13 +80,12 @@ beforeEach(async () => {
     [
       "delete from users",
       "delete from restaurants",
-      "delete from auth_challenges",
     ].map((s) => db.prepare(s)),
   );
   for (const actor of [A, B, C]) {
     await db.batch([
       sql(
-        "insert into users(id,apple_subject) values(?,?)",
+        "insert into users(id,auth_subject) values(?,?)",
         actor,
         `synthetic:${actor}`,
       ),
@@ -442,99 +439,42 @@ test("logout revokes session; errors omit raw database and user input", async ()
   });
   assert.deepEqual(await response.json(), { error: "conflict" });
 });
-test("JWT signature, audience, issuer, expiry and nonce are verified cryptographically", async () => {
-  const { publicKey, privateKey } = await generateKeyPair("RS256");
-  const nonce = "a".repeat(64);
-  async function sign(overrides = {}) {
-    return new SignJWT({ nonce, ...overrides })
-      .setProtectedHeader({ alg: "RS256" })
-      .setIssuer("https://appleid.apple.com")
-      .setAudience("jp.meshinowa.app")
-      .setSubject("synthetic-apple")
-      .setIssuedAt()
-      .setExpirationTime("5m")
-      .sign(privateKey);
-  }
-  const token = await sign();
-  assert.equal(
-    await verifyAppleIdentity(token, nonce, "jp.meshinowa.app", publicKey),
-    "synthetic-apple",
-  );
-  for (const [jwt, n, a] of [
-    [token, "b".repeat(64), "jp.meshinowa.app"],
-    [token, nonce, "wrong"],
-    [await sign({ nonce: "wrong" }), nonce, "jp.meshinowa.app"],
-  ])
-    await assert.rejects(verifyAppleIdentity(jwt, n, a, publicKey));
-  const expired = await new SignJWT({ nonce })
-    .setProtectedHeader({ alg: "RS256" })
-    .setIssuer("https://appleid.apple.com")
-    .setAudience("jp.meshinowa.app")
-    .setSubject("fixture")
-    .setIssuedAt(now() - 1000)
-    .setExpirationTime(now() - 1)
-    .sign(privateKey);
-  await assert.rejects(
-    verifyAppleIdentity(expired, nonce, "jp.meshinowa.app", publicKey),
-  );
-  const other = await generateKeyPair("RS256");
-  await assert.rejects(
-    verifyAppleIdentity(token, nonce, "jp.meshinowa.app", other.publicKey),
-  );
+test("guest sign-up stores only hashed session and is searchable by its handle", async () => {
+  const guest = await data(null, "POST", "/auth/guest", { display_name: " はなこ " }, 201);
+  assert.match(guest.access_token, /^[a-f0-9]{64}$/);
+  const row = await sql(
+    "select token_hash from sessions where user_id=?",
+    guest.user_id,
+  ).first();
+  assert.equal(row.token_hash, await hash(guest.access_token));
+  const me = await data(guest.access_token, "GET", "/me");
+  assert.equal(me.id, guest.user_id);
+  assert.equal(me.display_name, "はなこ");
+  assert.match(me.handle, /^[a-z2-9]{7}$/);
+  const [found] = await data(A, "GET", `/profiles?handle=${me.handle}`);
+  assert.equal(found.id, guest.user_id);
+  const unnamed = await data(null, "POST", "/auth/guest", {}, 201);
+  assert.notEqual(unnamed.user_id, guest.user_id);
+  assert.equal((await data(unnamed.access_token, "GET", "/me")).display_name, "ゲスト");
+  await data(null, "POST", "/auth/guest", { display_name: "あ".repeat(41) }, 400);
 });
-test("Apple exchange consumes challenge once, stores only hashed session and returns same user on next login", async () => {
-  const { publicKey, privateKey } = await generateKeyPair("RS256");
-  const jwk = {
-    ...(await exportJWK(publicKey)),
-    kid: "synthetic-test-key",
-    alg: "RS256",
-    use: "sig",
-  };
-  const fetchMock = mock.method(globalThis, "fetch", async (url) => {
-    assert.equal(String(url), "https://appleid.apple.com/auth/keys");
-    return Response.json({ keys: [jwk] });
-  });
-  try {
-    const login = async (challenge) => {
-      const jwt = await new SignJWT({ nonce: challenge.nonce_hash })
-        .setProtectedHeader({ alg: "RS256", kid: jwk.kid })
-        .setIssuer("https://appleid.apple.com")
-        .setAudience(env.APPLE_CLIENT_ID)
-        .setSubject("synthetic-login-subject")
-        .setIssuedAt()
-        .setExpirationTime("5m")
-        .sign(privateKey);
-      return { identity_token: jwt, nonce: challenge.nonce };
-    };
-    const challenge = await data(null, "POST", "/auth/challenge");
-    const credentials = await login(challenge);
-    const result = await data(null, "POST", "/auth/apple", credentials);
-    assert.match(result.access_token, /^[a-f0-9]{64}$/);
-    const row = await sql(
-      "select token_hash from sessions where user_id=?",
-      result.user_id,
-    ).first();
-    assert.equal(row.token_hash, await hash(result.access_token));
-    assert.notEqual(row.token_hash, result.access_token);
-    assert.equal(
-      (await data(result.access_token, "GET", "/me")).id,
-      result.user_id,
-    );
-    await data(null, "POST", "/auth/apple", credentials, 401);
-    const again = await data(
-      null,
-      "POST",
-      "/auth/apple",
-      await login(await data(null, "POST", "/auth/challenge")),
-    );
-    assert.equal(again.user_id, result.user_id);
-    assert.equal(
-      (await data(again.access_token, "GET", "/preferences")).allow_id_search,
-      0,
-    );
-  } finally {
-    fetchMock.mock.restore();
-  }
+test("friend reviews list only connected friends with restaurant and author names", async () => {
+  assert.deepEqual(await data(A, "GET", "/friend-reviews"), []);
+  const [pending] = await data(B, "GET", "/requests");
+  assert.equal(pending, undefined);
+  const { id } = await data(A, "POST", "/requests", { target_id: B }, 201);
+  const [incoming] = await data(B, "GET", "/requests");
+  assert.equal(incoming.from_name, "架空ユーザー");
+  assert.equal(incoming.from_handle, "test_1");
+  await data(B, "PATCH", `/requests/${id}`, { accept: true });
+  const [item] = await data(A, "GET", "/friend-reviews");
+  assert.equal(item.user_id, B);
+  assert.equal(item.display_name, "架空ユーザー");
+  assert.equal(item.external_key, "fixture:restaurant");
+  assert.equal(item.rating, 4.5);
+  assert.equal(item.visited_on, undefined);
+  assert.deepEqual(await data(B, "GET", "/friend-reviews"), []);
+  await data(C, "GET", "/friend-reviews").then((rows) => assert.deepEqual(rows, []));
 });
 
 test("pending profiles stay visible after search opt-out; new hidden requests stay forbidden", async () => {
@@ -551,14 +491,14 @@ test("pending profiles stay visible after search opt-out; new hidden requests st
   await data(B, "PATCH", `/requests/${request.id}`, { accept: true });
   assert.equal((await data(A, "GET", "/friends")).length, 1);
 });
-test("auth rate limit rejects requests before creating challenges", async () => {
+test("auth rate limit rejects guest sign-up before creating users", async () => {
   const previous = env.AUTH_RATE_LIMITER;
   env.AUTH_RATE_LIMITER = { limit: async () => ({ success: false }) };
   try {
-    await data(null, "POST", "/auth/challenge", undefined, 429);
+    await data(null, "POST", "/auth/guest", {}, 429);
     assert.equal(
-      (await sql("select * from auth_challenges").all()).results.length,
-      0,
+      (await sql("select * from users").all()).results.length,
+      3,
     );
   } finally {
     env.AUTH_RATE_LIMITER = previous;

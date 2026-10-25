@@ -1,4 +1,4 @@
-import { hash, now, randomToken, verifyAppleIdentity } from "./auth.js";
+import { hash, now, randomToken } from "./auth.js";
 
 const MAX_PHOTO = 5 * 1024 * 1024;
 const uuid = (value) =>
@@ -86,6 +86,14 @@ async function body(request) {
     fail(400, "invalid_json");
   }
 }
+// 7 characters from an alphabet without look-alikes, easy to read aloud at a demo.
+const guestHandle = () => {
+  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
+  return Array.from(
+    crypto.getRandomValues(new Uint8Array(7)),
+    (b) => alphabet[b % alphabet.length],
+  ).join("");
+};
 const blocked = (a, b) =>
   `exists(select 1 from blocks where (blocker_id=${a} and blocked_id=${b}) or (blocker_id=${b} and blocked_id=${a}))`;
 const connected = (a, b) =>
@@ -111,76 +119,52 @@ async function route(request, env) {
     if (!result.success) fail(429, "rate_limited");
   }
   if (path === "/health" && method === "GET") return json({ status: "ok" });
-  if (path === "/v1/auth/challenge" && method === "POST") {
-    const nonce = randomToken();
-    const digest = await hash(nonce);
-    await db.batch([
-      stmt("delete from auth_challenges where expires_at<=?", now()),
-      stmt(
-        "insert into auth_challenges(nonce_hash,expires_at) values(?,?)",
-        digest,
-        now() + 600,
-      ),
-    ]);
-    return json({ nonce, nonce_hash: digest, expires_in: 600 });
-  }
-  if (path === "/v1/auth/apple" && method === "POST") {
+  if (path === "/v1/auth/guest" && method === "POST") {
+    // Hackathon build: the session token is the only credential, so guests keep
+    // the same account while the app keeps it in the Keychain.
     const b = await body(request);
-    const digest = await hash(text(b.nonce, 64, 64));
-    if (
-      !(await one(
-        "select 1 from auth_challenges where nonce_hash=? and expires_at>?",
-        digest,
-        now(),
-      ))
-    )
-      fail(401, "invalid_auth");
-    let subject;
-    try {
-      subject = await verifyAppleIdentity(
-        text(b.identity_token, 16384, 1),
-        digest,
-        env.APPLE_CLIENT_ID,
-      );
-    } catch {
-      fail(401, "invalid_auth");
-    }
-    const token = randomToken(),
+    const name = text(b.display_name ?? "ゲスト", 40).trim() || "ゲスト";
+    const userID = crypto.randomUUID(),
+      token = randomToken(),
       tokenHash = await hash(token),
-      userID = crypto.randomUUID(),
-      expires = now() + 30 * 86400;
-    // The consumed challenge is claimed in the same transaction as the session.
-    // A concurrent replay aborts the whole batch through the NOT NULL constraint.
-    await db.batch([
-      stmt(
-        "insert into users(id,apple_subject) values(?,?) on conflict(apple_subject) do nothing",
-        userID,
-        subject,
-      ),
-      stmt(
-        "insert into profiles(id,display_name,handle) select id,'ユーザー','u_'||replace(id,'-','') from users where apple_subject=? on conflict(id) do nothing",
-        subject,
-      ),
-      stmt(
-        "insert into profile_preferences(user_id) select id from users where apple_subject=? on conflict do nothing",
-        subject,
-      ),
-      stmt(
-        "insert into sessions(token_hash,user_id,expires_at) values(?,(select id from users where apple_subject=? and exists(select 1 from auth_challenges where nonce_hash=? and expires_at>?)),?)",
-        tokenHash,
-        subject,
-        digest,
-        now(),
-        expires,
-      ),
-      stmt("delete from auth_challenges where nonce_hash=?", digest),
-      stmt("delete from sessions where expires_at<=?", now()),
-    ]);
-    const user = await one(
-      "select id from users where apple_subject=?",
-      subject,
-    );
-    return json({ access_token: token, expires_at: expires, user_id: user.id });
+      expires = now() + 365 * 86400;
+    for (let attempt = 0; ; attempt++) {
+      const handle = guestHandle();
+      try {
+        await db.batch([
+          stmt(
+            "insert into users(id,auth_subject) values(?,?)",
+            userID,
+            `guest:${userID}`,
+          ),
+          stmt(
+            "insert into profiles(id,display_name,handle) values(?,?,?)",
+            userID,
+            name,
+            handle,
+          ),
+          // Guests are found by handle so friends can connect without accounts.
+          stmt(
+            "insert into profile_preferences(user_id,allow_id_search) values(?,1)",
+            userID,
+          ),
+          stmt(
+            "insert into sessions(token_hash,user_id,expires_at) values(?,?,?)",
+            tokenHash,
+            userID,
+            expires,
+          ),
+          stmt("delete from sessions where expires_at<=?", now()),
+        ]);
+        return json(
+          { access_token: token, expires_at: expires, user_id: userID },
+          201,
+        );
+      } catch (error) {
+        if (attempt >= 4 || !/constraint/i.test(String(error?.message)))
+          throw error;
+      }
+    }
   }
   if (path === "/v1/restaurants" && method === "GET") {
     const bounds = parseBounds(url);
@@ -274,7 +258,7 @@ async function route(request, env) {
   if (path === "/v1/requests" && method === "GET")
     return json(
       await all(
-        `select * from friend_requests where (from_id=?1 or to_id=?1) and not ${blocked("from_id", "to_id")} order by created_at desc limit 1000`,
+        `select q.*,f.display_name as from_name,f.handle as from_handle,t.display_name as to_name,t.handle as to_handle from friend_requests q join profiles f on f.id=q.from_id join profiles t on t.id=q.to_id where (q.from_id=?1 or q.to_id=?1) and not ${blocked("q.from_id", "q.to_id")} order by q.created_at desc limit 1000`,
         actor,
       ),
     );
@@ -419,6 +403,14 @@ async function route(request, env) {
       ),
     );
   }
+  // One list powers the friends' map, feed and per-restaurant voices on the client.
+  if (path === "/v1/friend-reviews" && method === "GET")
+    return json(
+      await all(
+        `select r.id,r.user_id,p.display_name,r.rating,r.comment,r.dish,r.want_again,r.updated_at,s.id as restaurant_id,s.external_key,s.name,s.category,s.address,s.latitude,s.longitude from reviews r join profiles p on p.id=r.user_id join profile_preferences pref on pref.user_id=r.user_id join restaurants s on s.id=r.restaurant_id where r.user_id<>?1 and pref.include_in_friend_avg=1 and ${connected("?1", "r.user_id")} order by r.updated_at desc,r.id limit 1000`,
+        actor,
+      ),
+    );
   if (path === "/v1/me/reviews" && method === "GET")
     return json(
       await all(

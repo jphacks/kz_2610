@@ -13,6 +13,7 @@ final class FoodGenreTests: XCTestCase {
         XCTAssertEqual(FoodGenre.infer(name: "酒場 ともしび", category: nil), .izakaya)
         XCTAssertEqual(FoodGenre.infer(name: "こもれび食堂", category: nil), .washoku)
         XCTAssertEqual(FoodGenre.infer(name: "Bistro Cafe Aoba", category: nil), .cafe)
+        XCTAssertEqual(FoodGenre.infer(name: "ハンバーガー スタンド", category: nil), .yoshoku)
     }
 
     func testMapKitCategoryIsTheFallback() {

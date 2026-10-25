@@ -1,4 +1,5 @@
 import MapKit
+import ObjectiveC
 
 /// 地図のピンや一覧で、器の形で見せる9つのジャンル＋その他。
 /// 形は output/wa-design/category-pins.html のデザインと同じ。
@@ -45,6 +46,8 @@ enum FoodGenre: String, CaseIterable, Identifiable {
         (.sushi, ["寿司", "鮨", "すし", "鮮魚", "海鮮", "魚"]),
         (.noodle, ["ラーメン", "らーめん", "拉麺", "中華そば", "つけ麺", "めん処", "麺", "そば", "蕎麦", "うどん"]),
         (.yakiniku, ["焼肉", "ホルモン", "ステーキ", "肉"]),
+        // 「バー」が「ハンバーガー」に当たらないよう、先にバーガーを洋食として見る。
+        (.yoshoku, ["バーガー", "burger"]),
         (.izakaya, ["居酒屋", "酒場", "焼鳥", "焼き鳥", "やきとり", "串", "バー", "bar", "酒"]),
         (.chuka, ["中華", "餃子", "飯店", "韓国", "タイ料理", "カレー", "アジア"]),
         (.yoshoku, ["洋食", "イタリアン", "トラットリア", "ビストロ", "パスタ", "ピザ", "フレンチ", "ハンバーグ", "グリル"]),
@@ -66,10 +69,19 @@ enum FoodGenre: String, CaseIterable, Identifiable {
     }
 }
 
+private var searchedGenreKey: UInt8 = 0
+
 extension MKMapItem {
+    /// ジャンルを指定して検索したときの、そのジャンル。店名や種類からジャンルが分からないお店の手がかりにする。
+    var searchedFoodGenre: FoodGenre? {
+        get { (objc_getAssociatedObject(self, &searchedGenreKey) as? String).flatMap(FoodGenre.init(rawValue:)) }
+        set { objc_setAssociatedObject(self, &searchedGenreKey, newValue?.rawValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
+    }
+
     var foodGenre: FoodGenre {
-        FoodGenre.infer(name: name, category: pointOfInterestCategory?.rawValue,
-                        placeTypes: googleDetails?.place?.types.map(\.rawValue) ?? [])
+        let inferred = FoodGenre.infer(name: name, category: pointOfInterestCategory?.rawValue,
+                                       placeTypes: googleDetails?.place?.types.map(\.rawValue) ?? [])
+        return inferred == .other ? (searchedFoodGenre ?? .other) : inferred
     }
 }
 

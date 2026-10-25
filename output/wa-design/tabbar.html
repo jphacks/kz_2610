@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>タブバー和モダン案</title>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --washi:#F5EFE3; --washi-2:#EDE4D3; --rule:#D9CEBB;
+  --sumi:#2B2622; --sumi-2:#5C534B; --sumi-3:#8A8077;
+  --tokiwa:#2F6B55; --tokiwa-soft:#DCE8DF;
+  --shu:#C8473A; --yamabuki:#E2A43B; --urushi:#2A211C; --kin:#C9A35B;
+  --mincho:"Shippori Mincho B1","Hiragino Mincho ProN",serif;
+  --gothic:"Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E9E3D8;color:var(--sumi);font-family:var(--gothic);line-height:1.7;padding:0 16px 80px}
+.wrap{max-width:1180px;margin:0 auto}
+header{padding:48px 0 24px;border-bottom:1px solid var(--rule);margin-bottom:8px}
+header small{letter-spacing:.3em;color:var(--sumi-3);font-size:12px}
+header h1{font-family:var(--mincho);font-size:34px;font-weight:800;letter-spacing:.06em;margin:4px 0 8px}
+header p{color:var(--sumi-2);max-width:760px}
+h2{font-family:var(--mincho);font-size:22px;font-weight:800;letter-spacing:.05em;margin:44px 0 6px;display:flex;align-items:center;gap:10px}
+h2 .tag{font-family:var(--gothic);font-size:12px;font-weight:700;background:var(--sumi);color:var(--washi);padding:1px 8px;border-radius:3px;letter-spacing:.1em}
+h2 .rec{background:var(--shu)}
+.lead{color:var(--sumi-2);margin-bottom:14px;max-width:820px;font-size:15px}
+
+.variant{display:grid;grid-template-columns:420px 1fr;gap:28px;align-items:start}
+@media (max-width:860px){.variant{grid-template-columns:1fr}}
+.stage{position:relative;width:100%;max-width:420px;height:200px;border-radius:22px;overflow:hidden;background:#EFE8DA;box-shadow:0 10px 26px #0002}
+.stage svg.mapbg{position:absolute;inset:0;width:100%;height:100%}
+.stage .home{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:120px;height:4px;border-radius:2px;background:#111;z-index:9}
+.pros{font-size:14px}
+.pros b{font-family:var(--mincho);font-size:16px}
+.pros ul{padding-left:1.1em;margin:4px 0 8px;color:var(--sumi-2)}
+.pros .good li::marker{content:"○ ";color:var(--tokiwa)}
+.pros .bad li::marker{content:"△ ";color:var(--shu)}
+.hint{font-size:12px;color:var(--sumi-3);margin-top:8px}
+
+/* 共通：バー */
+.bar{position:absolute;left:12px;right:12px;bottom:22px;height:66px;display:flex;align-items:stretch;z-index:5}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;cursor:pointer;user-select:none;position:relative;transition:color .2s}
+.tab svg{width:22px;height:22px;transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.tab.on svg{transform:translateY(-1px) scale(1.06)}
+.center{flex:0 0 76px;display:flex;justify-content:center;position:relative;cursor:pointer}
+.center .btn{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .2s}
+.center:active .btn{transform:scale(.92)}
+.center small{font-size:10px;font-weight:700}
+svg .s{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* A 漆盆と朱印 */
+.A .bar{background:var(--urushi);border-radius:20px;box-shadow:inset 0 0 0 1px #ffffff12,inset 0 0 0 4px var(--urushi),inset 0 0 0 5px #c9a35b66,0 8px 18px #0005}
+.A .tab{color:#bfb3a2}
+.A .tab.on{color:var(--kin);font-weight:700}
+.A .tab.on::after{content:"";position:absolute;bottom:7px;width:4px;height:4px;border-radius:50%;background:var(--kin)}
+.A .center .btn{top:-18px;width:58px;height:58px;border-radius:14px;background:var(--shu);color:#fff;box-shadow:0 0 0 4px var(--urushi),0 0 0 5px #c9a35b88,0 6px 12px #0005}
+.A .center .btn::before{content:"";position:absolute;inset:4px;border:1.5px solid #ffffffaa;border-radius:10px}
+.A .center .btn span{font-family:var(--mincho);font-weight:800;font-size:22px;line-height:1}
+.A .center small{position:absolute;bottom:6px;color:#bfb3a2}
+
+/* B 和紙の帯とお椀 */
+.B .bar{background:var(--washi);border:1px solid var(--sumi);border-radius:18px;box-shadow:4px 4px 0 #2b262230}
+.B .tab{color:var(--sumi-2)}
+.B .tab.on{color:var(--tokiwa);font-weight:700}
+.B .tab.on::after{content:"";position:absolute;bottom:6px;width:26px;height:4px;background:var(--tokiwa);border-radius:50% 10% 60% 20%/80% 40% 60% 30%;transform:skewX(-20deg)}
+.bowlc .center .btn{top:-22px;width:64px;height:64px;border-radius:50%;background:var(--washi);border:1px solid var(--sumi);box-shadow:4px 4px 0 #2b262230}
+.bowlc .center .ring{width:44px;height:44px;border-radius:50%;border:5px solid var(--tokiwa);position:relative;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--tokiwa);font-weight:700}
+.bowlc .center .ring::before,.bowlc .center .ring::after{content:"";position:absolute;width:52px;height:4px;background:var(--yamabuki);border-radius:2px;left:-9px;top:12px;transform:rotate(22deg)}
+.bowlc .center .ring::after{top:20px}
+.bowlc .center .ring i{position:relative;z-index:2;font-style:normal;background:var(--washi);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1}
+.bowlc .center small{position:absolute;bottom:5px;color:var(--sumi-2)}
+
+/* C のれん */
+.C .bar{left:0;right:0;bottom:0;height:88px;padding-bottom:22px;background:var(--washi);border-top:1px solid var(--rule)}
+.C .bar::before{content:"";position:absolute;left:0;right:0;top:-1px;height:5px;background:linear-gradient(#7a5638,#4a3324)}
+.C .tab{color:var(--sumi-2);justify-content:flex-start;padding-top:16px}
+.C .tab .cloth{position:absolute;top:4px;width:54px;height:0;background:var(--tokiwa);transition:height .35s cubic-bezier(.3,1.5,.5,1);clip-path:polygon(0 0,100% 0,100% 100%,53% 100%,50% 82%,47% 100%,0 100%);z-index:0}
+.C .tab.on .cloth{height:58px}
+.C .tab svg,.C .tab span{position:relative;z-index:1}
+.C .tab.on{color:#fff;font-weight:700}
+.C .center .btn{top:-26px;width:52px;height:66px}
+.C .lantern{position:relative;width:52px;height:62px}
+.C .lantern .body{position:absolute;left:0;right:0;top:7px;bottom:7px;border-radius:46%;background:#F4B85C;background-image:repeating-linear-gradient(0deg,transparent 0 6px,#2b262226 6px 7px);border:1.5px solid var(--sumi);box-shadow:0 0 22px 6px #f2b65a77;display:flex;align-items:center;justify-content:center;font-family:var(--mincho);font-weight:800;font-size:18px;color:var(--sumi)}
+.C .lantern::before,.C .lantern::after{content:"";position:absolute;left:11px;right:11px;height:8px;background:var(--sumi);border-radius:2px}
+.C .lantern::before{top:0}.C .lantern::after{bottom:0}
+.C .center small{position:absolute;bottom:4px;color:var(--sumi-2)}
+
+/* D 白木と落款（ミニマル） */
+.D .bar{background:#FBF8F2;border-radius:22px;box-shadow:0 1px 0 #ffffff inset,0 8px 20px #2b262222;border:1px solid #e8e0d2}
+.D .tab{color:var(--sumi-3)}
+.D .tab.on{color:var(--sumi);font-weight:700}
+.D .tab .seal{position:absolute;top:10px;right:calc(50% - 18px);width:7px;height:7px;background:var(--shu);border-radius:1.5px;opacity:0;transform:scale(.3);transition:.25s}
+.D .tab.on .seal{opacity:1;transform:scale(1)}
+.D .center .btn{top:9px;width:48px;height:48px;border-radius:12px;background:var(--sumi);color:var(--washi)}
+.D .center .btn span{font-family:var(--mincho);font-weight:800;font-size:20px;line-height:1}
+.D .center .btn::after{content:"";position:absolute;right:-3px;bottom:-3px;width:12px;height:12px;background:var(--shu);border-radius:3px;border:2px solid #FBF8F2}
+
+/* 流れ */
+.flow{display:flex;gap:18px;flex-wrap:wrap}
+.sheet{width:270px;background:var(--washi);border:1px solid var(--rule);border-radius:18px;padding:10px 16px 16px;box-shadow:0 10px 24px #0002;position:relative}
+.sheet .grab{width:34px;height:4px;border-radius:2px;background:var(--rule);margin:0 auto 10px}
+.sheet h4{font-family:var(--mincho);font-size:18px;font-weight:800;margin-bottom:8px}
+.sheet .opt{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px dashed var(--rule);font-size:13px}
+.sheet .opt .ic{width:34px;height:34px;border-radius:8px;background:var(--washi-2);display:flex;align-items:center;justify-content:center;flex:none}
+.sheet .opt small{display:block;font-size:11px;color:var(--sumi-3);line-height:1.4}
+.sheet .opt .chev{margin-left:auto;color:var(--sumi-3)}
+.sheet .search{height:36px;border:1px solid var(--sumi);border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;color:var(--sumi-3);margin-bottom:6px}
+.sheet .stars{font-size:26px;color:var(--yamabuki);letter-spacing:4px;text-align:center;margin:10px 0 4px}
+.sheet .stamp{width:64px;height:64px;margin:6px auto;border:3px solid var(--shu);border-radius:8px;color:var(--shu);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mincho);font-weight:800;line-height:1;animation:press 1.6s ease-in-out infinite}
+.sheet .stamp b{font-size:24px}.sheet .stamp small{font-size:9px;margin-top:3px}
+@keyframes press{0%,40%{transform:scale(1.5);opacity:0}55%{transform:scale(.92);opacity:1}65%,100%{transform:scale(1);opacity:1}}
+.sheet .go{margin-top:10px;height:42px;border-radius:6px;background:var(--tokiwa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.step{font-size:12px;color:var(--sumi-3);margin-bottom:6px;letter-spacing:.1em}
+.step b{font-family:var(--mincho);color:var(--sumi);font-size:15px;margin-right:4px}
+table{width:100%;border-collapse:collapse;background:var(--washi);border:1px solid var(--rule);font-size:14px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mincho);background:var(--washi-2)}
+
+
+.bowlc .center .ring{z-index:1}
+/* 形1 隅切り */
+.K .bar{background:var(--sumi);clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px);filter:drop-shadow(3px 3px 0 #2b262230)}
+.K .bar::before{content:"";position:absolute;inset:1px;background:var(--washi);clip-path:polygon(13.6px 0,calc(100% - 13.6px) 0,100% 13.6px,100% calc(100% - 13.6px),calc(100% - 13.6px) 100%,13.6px 100%,0 calc(100% - 13.6px),0 13.6px)}
+.K .tab,.K .center{z-index:1}
+.K .tab{color:var(--sumi-2)}
+.K .tab.on{color:var(--tokiwa);font-weight:700}
+.K .tab.on::before{content:"";position:absolute;top:9px;width:18px;height:2px;background:var(--tokiwa)}
+.K .stage-wrap{}
+.K .center .btn{top:-20px !important;border-radius:0 !important;border:0 !important;box-shadow:none !important;background:var(--sumi) !important;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}
+.K .center .btn::before{content:"";position:absolute;inset:1px;background:var(--washi);clip-path:polygon(11.6px 0,calc(100% - 11.6px) 0,100% 11.6px,100% calc(100% - 11.6px),calc(100% - 11.6px) 100%,11.6px 100%,0 calc(100% - 11.6px),0 11.6px)}
+.K .center small{bottom:4px}
+/* 形2 唐破風 */
+.L .bar{height:90px;bottom:16px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 90' preserveAspectRatio='none'><path d='M0.5 30 L140 30 C172 30 176 1 200 1 C224 1 228 30 260 30 L399.5 30 L399.5 89.5 L0.5 89.5 Z' fill='%23F5EFE3' stroke='%232B2622' stroke-width='1.2'/></svg>") center/100% 100% no-repeat;filter:drop-shadow(0 4px 8px #0002)}
+.L .tab{color:var(--sumi-2);padding-top:30px}
+.L .tab.on{color:var(--tokiwa);font-weight:700}
+.L .tab.on::before{content:"";position:absolute;top:38px;width:18px;height:2px;background:var(--tokiwa)}
+.L .tab.on svg{margin-top:6px}
+.L .center .btn{top:4px !important;border:0 !important;box-shadow:none !important;background:transparent !important}
+.L .center small{bottom:5px}
+/* 形3 直線と間 */
+.M .bar{left:0;right:0;bottom:0;height:90px;padding-bottom:24px;background:var(--washi)}
+.M .bar::before,.M .bar::after{content:"";position:absolute;top:0;height:5px;border-top:2px solid var(--sumi);border-bottom:1px solid var(--sumi)}
+.M .bar::before{left:0;right:calc(50% + 40px)}
+.M .bar::after{right:0;left:calc(50% + 40px)}
+.M .tab{color:var(--sumi-2);letter-spacing:.12em}
+.M .tab.on{color:var(--sumi);font-weight:700}
+.M .tab.on::before{content:"";position:absolute;top:-2px;left:22%;right:22%;height:5px;background:var(--sumi)}
+.M .center .btn{top:-24px !important;box-shadow:none !important}
+.M .center small{bottom:2px}
+/* 形4 枡目 */
+.N .bar{background:var(--washi);border:1.5px solid var(--sumi);border-radius:0;box-shadow:4px 4px 0 #2b262230}
+.N .tab{color:var(--sumi-2);border-right:1px solid var(--sumi);transition:background .2s,color .2s}
+.N .tab:nth-of-type(2),.N .tab:last-child{border-right:0}
+.N .center{border-left:1px solid var(--sumi);border-right:1px solid var(--sumi)}
+.N .tab.on{background:var(--sumi);color:var(--washi);font-weight:700}
+.N .center .btn{top:-16px !important;width:66px !important;height:66px !important;border-radius:0 !important;border:1.5px solid var(--sumi) !important;box-shadow:4px 4px 0 #2b262230 !important}
+.N .center .btn::before{content:"";position:absolute;inset:5px;border:1px solid var(--rule)}
+.N .center small{bottom:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-map" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M3 6.5l5.5-2.5 7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20z M8.5 4v13.5 M15.5 6.5V20"/></symbol>
+    <symbol id="i-bowl" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M3 7.5l17 6.5 M3 10.5l17 6.5" stroke="#E2A43B" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+    <symbol id="i-friends" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="9" cy="8.5" r="3.2"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="16.5" cy="9" r="2.6"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5 M14.5 14.3c.6-.2 1.3-.3 2-.3 2.3 0 4 1.5 4.5 4.5"/></symbol>
+    <symbol id="i-me" viewBox="0 0 24 24"><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="12" r="8.5"/><circle fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" cx="12" cy="10" r="3"/><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M6.5 18.2c1.2-2.2 3.2-3.3 5.5-3.3s4.3 1.1 5.5 3.3"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M14.5 5.5l4 4L9 19H5v-4z M12.5 7.5l4 4"/></symbol>
+
+    <!-- 和のモチーフ -->
+    <symbol id="wa-map" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 5.5h12v13H6z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 5.5a1.6 1.6 0 0 0-3.2 0v13a1.6 1.6 0 0 0 3.2 0 M18 5.5a1.6 1.6 0 0 1 3.2 0v13a1.6 1.6 0 0 1-3.2 0"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1.6 1.8" d="M8.5 15.5c1.5-3 3-1 4.5-3.5s1.5-3 2.5-3.5"/><circle cx="15.6" cy="8.4" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="wa-saved" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 18.5s-6.8-4.2-6.8-9A3.6 3.6 0 0 1 12 7.6a3.6 3.6 0 0 1 6.8 1.9c0 4.8-6.8 9-6.8 9z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 15.8s-4.3-2.8-4.3-6a2 2 0 0 1 4.3-1 2 2 0 0 1 4.3 1c0 3.2-4.3 6-4.3 6z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M10.6 18.8l-2.2 2.6 M13.4 18.8l2.2 2.6"/></symbol>
+    <symbol id="wa-friends" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M3.2 9.5h7.6l-1.2 7.5H4.4z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M13.2 9.5h7.6l-1.2 7.5h-5.2z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4.6 12h4.8 M14.6 12h4.8"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M10.5 6.8l1.5-2 1.5 2 M12 4.8v2.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 20h6 M14 20h6"/></symbol>
+    <symbol id="wa-me" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6.5 3.5h11.5v17H6.5z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M9.5 3.5v17"/><circle cx="8" cy="6.5" r=".9" fill="currentColor"/><circle cx="8" cy="10.2" r=".9" fill="currentColor"/><circle cx="8" cy="13.8" r=".9" fill="currentColor"/><circle cx="8" cy="17.5" r=".9" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12.3 6.5h3.2v7h-3.2z"/></symbol>
+    <!-- 紋（漢字一文字） -->
+    <symbol id="mon-map" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width=".6"/><text x="12" y="16.3" text-anchor="middle" font-family="Shippori Mincho B1,serif" font-weight="800" font-size="11.5" fill="currentColor">図</text></symbol>
+    <symbol id="mon-saved" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width=".6"/><text x="12" y="16.3" text-anchor="middle" font-family="Shippori Mincho B1,serif" font-weight="800" font-size="11.5" fill="currentColor">好</text></symbol>
+    <symbol id="mon-friends" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width=".6"/><text x="12" y="16.3" text-anchor="middle" font-family="Shippori Mincho B1,serif" font-weight="800" font-size="11.5" fill="currentColor">友</text></symbol>
+    <symbol id="mon-me" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width=".6"/><text x="12" y="16.3" text-anchor="middle" font-family="Shippori Mincho B1,serif" font-weight="800" font-size="11.5" fill="currentColor">己</text></symbol>
+  </defs>
+</svg>
+
+<header>
+  <small>MESHINOWA · TAB BAR</small>
+  <h1>タブバー 和モダン案</h1>
+  <p>4つのタブの真ん中に、評価を投稿するボタンを足した案を4つ並べました。タブを押すと選択中の見た目を確かめられます。どの案も、タブの並び・アイコン・押せる大きさ（44pt 以上）・触覚フィードバックは iOS の作法に揃えています。</p>
+</header>
+
+<!-- A -->
+<h2><span class="tag rec">おすすめ</span>案A　漆の盆と朱印</h2>
+<p class="lead">漆黒の盆に金の細い縁。真ん中に朱印の形をした投稿ボタンを置き、少しだけ盆からはみ出させます。地図の上でも一番はっきり見える案です。</p>
+<div class="variant">
+  <div class="stage A" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>色の多い地図の上でもバーが沈まず、はっきり見える</li><li>「朱印を押す＝評価を残す」という意味がそのまま伝わる</li><li>夜の横丁テーマ（夜は提灯が灯る）とつながる</li></ul>
+    <ul class="bad"><li>保存・プロフィールなど明るい画面では、バーだけが重く見えやすい</li></ul>
+    <p class="hint">選択中は金の文字と小さな点。今のミント色の楕円の代わりです。</p>
+  </div>
+</div>
+
+<!-- B -->
+<h2>案B　和紙の帯とお椀の輪</h2>
+<p class="lead">和紙色の帯に墨の細い線と、ずらした影。真ん中はアプリアイコンの「お椀の輪」をそのままボタンにします。「食べた記録を輪に足す」という見立てです。</p>
+<div class="variant">
+  <div class="stage B bowlc" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>アイコンと同じ形なので、ブランドが一番伝わる</li><li>明るい画面にも地図にもなじむ</li></ul>
+    <ul class="bad"><li>ロゴがボタンに見えにくいので、「評価」のラベルと、はみ出した丸い形で押せることを伝える</li></ul>
+    <p class="hint">選択中は常磐色の文字と、筆で払った下線。</p>
+  </div>
+</div>
+
+<!-- C -->
+<h2>案C　のれんと提灯</h2>
+<p class="lead">画面の下端いっぱいに木の竿を渡し、選んだタブにだけ短いのれんが垂れます。真ん中は灯った提灯。カテゴリのタブと同じ「のれん」で揃える案です。</p>
+<div class="variant">
+  <div class="stage C" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>今ののれんタブと世界観が揃い、一番遊び心がある</li><li>タブを押したときの「のれんが落ちる」動きが楽しい</li></ul>
+    <ul class="bad"><li>マップ画面では、カテゴリののれんと上下両方にのれんが出てくどい</li><li>浮いたバーをやめるので、地図の見える範囲が少し減る</li></ul>
+  </div>
+</div>
+
+<!-- D -->
+<h2>案D　白木と落款（ミニマル）</h2>
+<p class="lead">和の要素を最小限にした案です。白木色の浮いたバーに、選択中は朱の小さな角印だけ。真ん中は墨の角ボタンに明朝の「記」と朱の落款を添えます。</p>
+<div class="variant">
+  <div class="stage D" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>今のバーから一番移行しやすく、モダン寄り</li><li>どの画面にも合う</li></ul>
+    <ul class="bad"><li>和の印象は弱め。明朝の見出しなど、ほかの画面の和に頼ることになる</li></ul>
+  </div>
+</div>
+
+<h2>形で和を出す</h2>
+<p class="lead">柄や素材は使わず、<b>輪郭の形</b>だけを和の造形に変える案です。角丸のカプセルをやめ、隅切り・反り・直線・枡目といった和の形の決まりを使います。アイコン・色・中身は今とほぼ同じです。同じ形の決まりを、カードやボタンにも広げられます。</p>
+
+<div class="variant">
+  <div class="stage K bowlc" data-v></div>
+  <div class="pros"><b>形1　隅切り</b>
+    <p style="color:var(--sumi-2);font-size:14px">角を丸めるのではなく、斜めに切り落とします（家紋の「隅切り角」の形）。真ん中のボタンも隅切りの四角。選択中は、アイコンの上に短い直線を引きます。</p>
+    <ul class="good"><li>角丸から斜めの切り欠きに変えるだけで、一気に和の輪郭になる</li><li>カード・ボタン・検索欄にも同じ形を使えば、アプリ全体で統一できる</li></ul>
+    <ul class="bad"><li>角丸に慣れた iOS の中では少し硬く見える。切り欠きの大きさの調整が大事</li></ul></div>
+</div>
+
+<div class="variant" style="margin-top:22px">
+  <div class="stage L bowlc" data-v></div>
+  <div class="pros"><b>形2　唐破風（からはふ）の反り</b>
+    <p style="color:var(--sumi-2);font-size:14px">バーの上の縁が、真ん中でお寺の屋根のように反り上がります。その反りの中にお椀のボタンが収まります。下の角は直角です。</p>
+    <ul class="good"><li>真ん中のボタンのための出っ張りが、そのまま和の形になる</li><li>柄を描かなくても、輪郭だけで和だと伝わる</li></ul>
+    <ul class="bad"><li>曲線の描き方で印象が大きく変わる。反りが強すぎると重たく見える</li></ul></div>
+</div>
+
+<div class="variant" style="margin-top:22px">
+  <div class="stage M bowlc" data-v></div>
+  <div class="pros"><b>形3　直線と間（ま）</b>
+    <p style="color:var(--sumi-2);font-size:14px">浮いたカプセルをやめて、画面の下いっぱいに置きます。上の縁は二重の罫線で、真ん中のボタンのところだけ線を切って「間」をあけます。選択中は、罫線の上に太い墨の線を重ねます。</p>
+    <ul class="good"><li>一番静かでモダン。余白と直線だけで和を感じさせる</li><li>どの画面にもなじむ</li></ul>
+    <ul class="bad"><li>浮いたバーをやめるので、地図の見える範囲が少し減る</li></ul></div>
+</div>
+
+<div class="variant" style="margin-top:22px">
+  <div class="stage N bowlc" data-v></div>
+  <div class="pros"><b>形4　枡目</b>
+    <p style="color:var(--sumi-2);font-size:14px">直角の四角を枡目に区切ります。選んだマスは墨で塗りつぶして白抜きにします。真ん中は一段高い四角い「枡」で、中にお椀の輪が入ります。</p>
+    <ul class="good"><li>選択中がひと目ではっきり分かる</li><li>原稿用紙や升のような、きっちりした和の印象</li></ul>
+    <ul class="bad"><li>白抜きのマスが強いので、地図の上では少し目立ちすぎる</li></ul></div>
+</div>
+
+<h2>真ん中のボタンを押したあと</h2>
+<p class="lead">レビューはお店ごとに書く仕組みなので、真ん中のボタンはタブではなく、<b>シートを開くボタン</b>にします（押してもタブは切り替わりません）。まずお店を選び、そのあとは今ある評価画面（QuickRatingSheet と ReviewEditor）をそのまま使います。</p>
+<div class="flow">
+  <div>
+    <div class="step"><b>1</b>どのお店を評価する？</div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <h4>どのお店を評価する？</h4>
+      <div class="search">🔍 店名で探す</div>
+      <div class="opt"><div class="ic">📍</div><div>ダンチュウ食堂<small>地図で選んでいるお店</small></div><span class="chev">›</span></div>
+      <div class="opt"><div class="ic">♥</div><div>いいねして未レビュー<small>3件</small></div><span class="chev">›</span></div>
+      <div class="opt"><div class="ic">🕘</div><div>最近見たお店<small>このアプリで開いたお店</small></div><span class="chev">›</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="step"><b>2</b>星を付ける（今の画面）</div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <h4>ダンチュウ食堂</h4>
+      <div class="stars">★★★★☆</div>
+      <p style="text-align:center;font-size:12px;color:var(--sumi-3)">星だけでも記録できます</p>
+      <div class="go">記録する</div>
+      <p style="text-align:center;font-size:12px;margin-top:8px;color:var(--tokiwa)">ひとことや写真も書く ›</p>
+    </div>
+  </div>
+  <div>
+    <div class="step"><b>3</b>押印して完了</div>
+    <div class="sheet" style="text-align:center">
+      <div class="grab"></div>
+      <div class="stamp"><b>4.0</b><small>自分</small></div>
+      <h4 style="margin-top:6px">記録しました</h4>
+      <p style="font-size:12px;color:var(--sumi-3)">判子がぽんと押され、同時に触覚で返します。<br>シートは自動で閉じます。</p>
+    </div>
+  </div>
+</div>
+
+<h2>実装するときのメモ</h2>
+<table>
+  <tr><th>項目</th><th>内容</th></tr>
+  <tr><td>変えるファイル</td><td><code>MainTabView.swift</code> の <code>FloatingTabBar</code>。<code>Tab</code> の enum は4つのままで、真ん中のボタンは別に置く</td></tr>
+  <tr><td>真ん中のボタン</td><td>タブを切り替えず、お店選びのシートを開く。選んだお店で <code>QuickRatingSheet</code> を開く。新しく作るのは、お店選びの画面だけ</td></tr>
+  <tr><td>お店選びの候補</td><td>地図で選んでいるお店・いいねして未レビューのお店（今の <code>unreviewedOnly</code> の絞り込みを使う）・店名検索。「最近見たお店」は新しく記録が要るので、後回しでもよい</td></tr>
+  <tr><td>操作感</td><td>押したときは少し縮む（0.92倍）。開くときに軽い触覚、評価を確定したら押印の動きと強めの触覚</td></tr>
+  <tr><td>アクセシビリティ</td><td>真ん中のボタンは「評価を投稿」と読み上げる。タブとは別のボタンとして扱う</td></tr>
+  <tr><td>余白</td><td>ボタンがバーの上にはみ出す分（約20pt）だけ、<code>floatingTabBarSpace</code> を増やす</td></tr>
+</table>
+</div>
+
+<script>
+const mapSVG = `<svg class="mapbg" viewBox="0 0 420 200" preserveAspectRatio="none"><rect width="420" height="200" fill="#EFE8DA"/><path d="M0 40 Q80 20 120 70 T60 200 L0 200Z" fill="#cfdccd"/><g stroke="#fffaf0" stroke-width="8" fill="none"><path d="M0 60 L420 110"/><path d="M180 0 L210 200"/><path d="M330 0 L300 200"/></g><g stroke="#fffaf0" stroke-width="3" fill="none"><path d="M0 130 L420 150"/><path d="M90 0 L120 200"/><path d="M260 0 L250 200"/><path d="M0 20 L420 40"/></g><text x="216" y="88" font-family="Shippori Mincho B1" font-size="12" fill="#8A8077">丸の内</text></svg>`;
+const tabs = [["map","マップ","i-map"],["saved","保存","i-heart"],null,["friends","友達","i-friends"],["me","プロフィール","i-me"]];
+const centers = {
+  A:`<div class="btn"><span>記</span></div><small>評価</small>`,
+  B:`<div class="btn"><div class="ring"></div></div><small>評価</small>`,
+  C:`<div class="btn"><div class="lantern"><div class="body">記</div></div></div><small>評価</small>`,
+  D:`<div class="btn"><span>記</span></div>`
+};
+document.querySelectorAll('[data-v]').forEach(stage=>{
+  const v = stage.classList[1];
+  let html = mapSVG + '<div class="bar">';
+  tabs.forEach((t,i)=>{
+    if(!t){ html += `<div class="center" title="評価を投稿">${centers[v]||centers.B}</div>`; return; }
+    const set = stage.dataset.icons;
+    const icon = set ? `${set}-${t[0]}` : t[2];
+    html += `<div class="tab${i===0?' on':''}" data-id="${t[0]}"><span class="cloth"></span><span class="seal"></span><svg><use href="#${icon}"/></svg><span>${t[1]}</span></div>`;
+  });
+  html += '</div><div class="home"></div>';
+  stage.innerHTML = html;
+  const setIcons=()=>stage.querySelectorAll('.tab').forEach(el=>{
+    if(el.dataset.id==='map' && !stage.dataset.icons){ el.querySelector('use').setAttribute('href', '#i-map'); }
+  });
+  setIcons();
+  stage.querySelectorAll('.tab').forEach(el=>el.addEventListener('click',()=>{
+    stage.querySelectorAll('.tab').forEach(x=>x.classList.remove('on')); el.classList.add('on'); setIcons();
+  }));
+});
+</script>
+</body>
+</html>

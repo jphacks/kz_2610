@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>メシノワ 和モダン案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 和色 */
+  --washi:#F5EFE3;      /* 生成り（和紙） */
+  --washi-2:#EDE4D3;    /* 砂色 */
+  --sumi:#2B2622;       /* 墨 */
+  --sumi-2:#5C534B;     /* 薄墨 */
+  --sumi-3:#8A8077;     /* 鼠 */
+  --rule:#D9CEBB;       /* 罫 */
+  --tokiwa:#2F6B55;     /* 常磐色（ブランド緑を少し深く） */
+  --tokiwa-soft:#DCE8DF;
+  --shu:#C8473A;        /* 朱（いいね・判子） */
+  --shu-soft:#F6DCD5;
+  --yamabuki:#E2A43B;   /* 山吹（自分の評価） */
+  --yamabuki-soft:#F8E6C2;
+  --urushi:#2A211C;     /* 漆 */
+  --kin:#C9A35B;        /* 金 */
+  --ai:#2D4A6B;         /* 藍（地図の水） */
+  --mincho:"Shippori Mincho B1","Hiragino Mincho ProN",serif;
+  --gothic:"Zen Kaku Gothic New","Hiragino Sans",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E9E3D8;color:var(--sumi);font-family:var(--gothic);line-height:1.7;padding:0 16px 80px}
+.wrap{max-width:1240px;margin:0 auto}
+header.top{padding:56px 0 32px;border-bottom:1px solid var(--rule)}
+header.top small{letter-spacing:.3em;color:var(--sumi-3);font-size:12px}
+header.top h1{font-family:var(--mincho);font-size:40px;font-weight:800;letter-spacing:.08em;margin:6px 0 10px}
+header.top p{max-width:720px;color:var(--sumi-2)}
+h2{font-family:var(--mincho);font-size:24px;font-weight:800;letter-spacing:.06em;margin:56px 0 6px;display:flex;align-items:center;gap:12px}
+h2::before{content:"";width:22px;height:22px;background:var(--shu);border-radius:3px;box-shadow:inset 0 0 0 3px var(--shu),inset 0 0 0 4px #fff6}
+.lead{color:var(--sumi-2);margin-bottom:20px;max-width:760px}
+
+/* 原則 */
+.split2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:14px}
+.split2>div{border-radius:6px;padding:20px 22px}
+.split2 .ui{background:var(--tokiwa);color:#fff;background-image:radial-gradient(circle at 50% 100%,transparent 9px,#ffffff1a 9px,#ffffff1a 10px,transparent 10px,transparent 13px,#ffffff1a 13px,#ffffff1a 14px,transparent 14px);background-size:28px 14px}
+.split2 .ux{background:#fff;border:1px solid #e3e3e3;font-family:-apple-system,"Hiragino Sans",sans-serif}
+.split2 small{letter-spacing:.2em;font-size:12px;opacity:.8}
+.split2 .ui b{font-family:var(--mincho);font-size:22px;display:block;margin:2px 0 8px}
+.split2 .ux b{font-size:21px;font-weight:700;display:block;margin:2px 0 8px}
+.split2 ul{padding-left:1.1em;font-size:14px}
+.ux-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.ux-grid div{background:#fff;border:1px solid #e3e3e3;border-radius:12px;padding:16px;font-family:-apple-system,"Hiragino Sans",sans-serif}
+.ux-grid b{font-size:15px;display:block;margin-bottom:4px}
+.ux-grid span{font-size:13px;color:#555}
+.ux-grid em{font-style:normal;font-size:11px;color:var(--tokiwa);background:var(--tokiwa-soft);padding:1px 6px;border-radius:10px;margin-left:6px}
+.dots{position:absolute;left:0;right:0;bottom:90px;display:flex;justify-content:center;gap:4px;z-index:4}
+.dots i{width:5px;height:5px;border-radius:50%;background:#2b262240}.dots i.on{width:14px;border-radius:3px;background:var(--sumi)}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.principles div{background:var(--washi);border:1px solid var(--rule);padding:18px 18px 16px;border-radius:4px}
+.principles b{font-family:var(--mincho);font-size:18px;display:block;margin-bottom:4px}
+.principles span{font-size:14px;color:var(--sumi-2)}
+
+/* 色見本 */
+.swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.sw{border-radius:4px;overflow:hidden;border:1px solid var(--rule);background:#fff}
+.sw i{display:block;height:64px}
+.sw div{padding:8px 10px;font-size:12px;color:var(--sumi-2)}
+.sw div b{display:block;font-size:14px;color:var(--sumi);font-family:var(--mincho)}
+
+/* 文字 */
+.type{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.type div{background:var(--washi);border:1px solid var(--rule);padding:20px;border-radius:4px}
+.type .m{font-family:var(--mincho);font-weight:800;font-size:28px;letter-spacing:.06em}
+.type .g{font-size:16px}
+.type small{display:block;color:var(--sumi-3);font-size:12px;margin-top:6px}
+
+/* ====== 端末 ====== */
+.phones{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.phone-cap{font-size:13px;color:var(--sumi-2);margin-bottom:8px;letter-spacing:.1em}
+.phone-cap b{font-family:var(--mincho);color:var(--sumi);font-size:15px;margin-right:6px}
+.phone{width:300px;height:640px;border-radius:44px;background:#111;padding:10px;box-shadow:0 20px 40px #0002}
+.screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden;background:var(--washi);
+  background-image:radial-gradient(#0000000a 1px,transparent 1px),radial-gradient(#ffffff55 1px,transparent 1px);
+  background-size:7px 7px,11px 11px;background-position:0 0,3px 5px}
+.status{height:40px;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:12px;font-weight:700;position:relative;z-index:5}
+.island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:86px;height:24px;background:#111;border-radius:14px;z-index:6}
+
+/* 青海波パターン */
+.seigaiha{background-color:var(--tokiwa);
+  background-image:radial-gradient(circle at 50% 100%,transparent 9px,#ffffff22 9px,#ffffff22 10px,transparent 10px,transparent 13px,#ffffff22 13px,#ffffff22 14px,transparent 14px);
+  background-size:28px 14px}
+
+/* 歓迎 */
+.welcome{padding:14px 22px 22px;display:flex;flex-direction:column;height:calc(100% - 40px)}
+.kamon{width:74px;height:74px;border-radius:50%;border:6px solid var(--tokiwa);position:relative;margin:10px 0 16px;flex:none}
+.kamon::before,.kamon::after{content:"";position:absolute;width:86px;height:6px;background:var(--yamabuki);border-radius:3px;left:-12px;top:22px;transform:rotate(22deg)}
+.kamon::after{top:34px}
+.welcome .wm{font-family:var(--mincho);font-size:14px;letter-spacing:.4em;color:var(--tokiwa)}
+.welcome h3{font-family:var(--mincho);font-weight:800;font-size:22px;line-height:1.5;letter-spacing:.02em;margin:6px 0 10px}
+.welcome p{font-size:12px;color:var(--sumi-2)}
+.oshinagaki{margin-top:18px;border-top:1px solid var(--sumi);border-bottom:1px solid var(--sumi);padding:6px 0}
+.oshinagaki li{list-style:none;display:flex;gap:8px;align-items:center;font-size:11.5px;line-height:1.5;padding:6px 0;border-bottom:1px dashed var(--rule)}
+.oshinagaki li:last-child{border:0}
+.oshinagaki em{font-style:normal;font-family:var(--mincho);color:var(--shu);font-weight:800;width:20px}
+.spacer{flex:1}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:6px;font-weight:700;font-size:15px;letter-spacing:.1em}
+.btn.primary{background:var(--tokiwa);color:#fff;box-shadow:inset 0 0 0 2px var(--tokiwa),inset 0 0 0 3px #ffffff40}
+.btn.ghost{border:1px solid var(--sumi);color:var(--sumi);margin-top:10px;height:44px;font-size:13px}
+
+/* 地図 */
+.map{position:absolute;inset:0;background:#EFE8DA;overflow:hidden}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.search{position:absolute;left:12px;right:12px;top:44px;z-index:4;height:44px;background:var(--washi);border:1px solid var(--sumi);border-radius:4px;display:flex;align-items:center;padding:0 12px;gap:8px;font-size:13px;color:var(--sumi-3);box-shadow:3px 3px 0 #2b262222}
+.search .count{margin-left:auto;font-family:var(--mincho);font-weight:800;color:var(--sumi);font-size:13px;border-left:1px solid var(--rule);padding-left:10px}
+.noren-bar{position:absolute;left:12px;right:12px;top:96px;z-index:4}
+.noren-rod{height:5px;background:linear-gradient(#6b4a32,#3e2a1d);border-radius:3px;box-shadow:0 1px 2px #0004}
+.norens{display:flex;gap:4px;padding:0 4px}
+.noren{flex:1;height:30px;background:var(--washi);border:1px solid var(--rule);border-top:0;font-size:11px;white-space:nowrap;display:flex;align-items:center;justify-content:center;position:relative;
+  clip-path:polygon(0 0,100% 0,100% 100%,52% 100%,50% 70%,48% 100%,0 100%)}
+.noren.on{height:52px;background:var(--tokiwa);color:#fff;border:0;flex-direction:column;font-weight:700;padding-top:4px;
+  clip-path:polygon(0 0,100% 0,100% 100%,52% 100%,50% 78%,48% 100%,0 100%)}
+.noren.on::before{content:"";position:absolute;top:6px;width:16px;height:16px;border-radius:50%;border:2px solid #fff;opacity:.9}
+.noren.on span{margin-top:14px}
+.fuda{position:absolute;left:50%;transform:translateX(-50%);top:166px;z-index:4;background:var(--washi);border:1px solid var(--sumi);padding:6px 14px 6px 12px;font-size:12px;font-weight:700;display:flex;gap:6px;align-items:center;border-radius:3px;box-shadow:2px 2px 0 #2b262233}
+.fuda::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--shu)}
+/* 提灯ピン */
+.chochin{position:absolute;width:24px;height:30px;transform:translate(-50%,-100%);z-index:3}
+.chochin .body{position:absolute;left:0;right:0;top:4px;bottom:4px;border-radius:45%;background:var(--washi);
+  background-image:repeating-linear-gradient(0deg,transparent 0 4px,#2b262230 4px 5px);border:1.5px solid var(--sumi);display:flex;align-items:center;justify-content:center;font-family:var(--mincho);font-size:10px;font-weight:800}
+.chochin::before,.chochin::after{content:"";position:absolute;left:5px;right:5px;height:5px;background:var(--sumi);border-radius:1px}
+.chochin::before{top:0}.chochin::after{bottom:0}
+.chochin.liked .body{background-color:var(--shu-soft);border-color:var(--shu)}
+.chochin.liked::before,.chochin.liked::after{background:var(--shu)}
+.chochin.rated .body{background-color:var(--yamabuki-soft);border-color:#9b6a14;color:#7a5410}
+.chochin.sel{width:38px;height:48px;z-index:4}
+.chochin.sel .body{background-color:#F2B65A;border-color:var(--sumi);box-shadow:0 0 18px 6px #f2b65a88;font-size:15px;color:var(--sumi)}
+/* 品書きカード */
+.shinagaki{position:absolute;left:14px;right:14px;bottom:100px;z-index:4;background:var(--washi);border:1px solid var(--sumi);border-radius:4px;padding:12px 12px 12px 12px;box-shadow:4px 4px 0 #2b262226;display:flex;gap:12px}
+.shinagaki .sara{width:72px;height:72px;border-radius:4px;background:var(--washi-2);display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;box-shadow:inset 0 0 0 4px var(--washi),inset 0 0 0 5px var(--rule)}
+.shinagaki h4{font-family:var(--mincho);font-size:17px;font-weight:800;letter-spacing:.04em}
+.shinagaki .meta{font-size:11px;color:var(--sumi-2);line-height:1.6}
+.shinagaki .acts{display:flex;gap:6px;margin-top:6px}
+.chip{font-size:11px;border:1px solid var(--sumi);border-radius:3px;padding:1px 8px;display:inline-flex;gap:4px;align-items:center}
+.chip.shu{border-color:var(--shu);color:var(--shu)}
+/* タブバー（漆の盆） */
+.bon{position:absolute;left:12px;right:12px;bottom:18px;height:62px;background:var(--urushi);border-radius:16px;display:flex;z-index:5;
+  box-shadow:inset 0 0 0 1px #ffffff14,inset 0 0 0 4px var(--urushi),inset 0 0 0 5px #c9a35b55,0 6px 14px #0004}
+.bon a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:#cfc3b2;gap:3px;text-decoration:none}
+.bon a i{font-style:normal;font-size:17px;line-height:1;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.bon a.on{color:var(--kin)}
+.bon a.on i{background:var(--shu);color:#fff}
+
+/* 保存 */
+.page{padding:6px 20px 0;height:calc(100% - 40px);overflow:hidden}
+.page-title{display:flex;align-items:flex-end;justify-content:space-between;padding:12px 0 10px;border-bottom:2px solid var(--sumi);position:relative}
+.page-title::after{content:"";position:absolute;left:0;right:0;bottom:-5px;border-bottom:1px solid var(--sumi)}
+.page-title h3{font-family:var(--mincho);font-size:28px;font-weight:800;letter-spacing:.12em}
+.page-title .sub{font-size:12px;border:1px solid var(--sumi);padding:2px 10px;border-radius:3px}
+.fude-tabs{display:flex;gap:22px;margin:16px 0 12px;font-size:14px}
+.fude-tabs span{position:relative;padding-bottom:6px;color:var(--sumi-3)}
+.fude-tabs span.on{color:var(--sumi);font-weight:700}
+.fude-tabs span.on::after{content:"";position:absolute;left:-2px;right:-6px;bottom:0;height:5px;background:var(--sumi);border-radius:50% 10% 60% 20%/80% 40% 60% 30%;transform:skewX(-20deg)}
+.fudas{display:flex;gap:6px;margin-bottom:12px;overflow:hidden}
+.senjafuda{font-size:11px;padding:4px 8px;background:var(--washi);border:1px solid var(--rule);white-space:nowrap;border-radius:2px}
+.senjafuda.on{background:var(--sumi);color:var(--washi);border-color:var(--sumi)}
+.row{display:flex;gap:12px;padding:12px 0;border-bottom:1px dashed var(--rule);align-items:center}
+.row .sara{width:56px;height:56px;border-radius:4px;background:var(--washi-2);box-shadow:inset 0 0 0 3px var(--washi),inset 0 0 0 4px var(--rule);display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
+.row h5{font-family:var(--mincho);font-size:15px;font-weight:800}
+.row p{font-size:11px;color:var(--sumi-2)}
+.row .end{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.hanko{width:38px;height:38px;border:2px solid var(--shu);color:var(--shu);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mincho);font-weight:800;line-height:1;background:#fff4}
+.hanko b{font-size:15px}.hanko small{font-size:7px;letter-spacing:.1em;margin-top:2px}
+.heart{color:var(--shu);font-size:16px}
+.empty{text-align:center;padding:26px 0 10px}
+.empty .wan{width:86px;height:46px;margin:0 auto 10px;border:3px solid var(--sumi);border-top:0;border-radius:0 0 50px 50px;position:relative}
+.empty .wan::before{content:"";position:absolute;left:-8px;right:-8px;top:-3px;height:3px;background:var(--sumi)}
+.empty .wan::after{content:"";position:absolute;left:28px;right:28px;bottom:-9px;height:6px;border:3px solid var(--sumi);border-top:0}
+.empty b{font-family:var(--mincho);font-size:15px}
+.empty p{font-size:11px;color:var(--sumi-3)}
+
+/* 詳細 */
+.detail-head{height:150px;position:relative;margin:-40px 0 0;padding-top:40px}
+.detail-head .noren-big{position:absolute;left:0;right:0;top:0;height:150px;display:flex;gap:3px;padding:0 0}
+.detail-head .noren-big div{flex:1;background:var(--tokiwa);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--mincho);font-size:22px;font-weight:800;
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.detail-head .noren-big .kamon-s{margin-top:30px;width:42px;height:42px;border:4px solid #fff;border-radius:50%}
+.detail-body{padding:16px 20px}
+.detail-body h3{font-family:var(--mincho);font-weight:800;font-size:24px;letter-spacing:.06em}
+.detail-body .meta{font-size:12px;color:var(--sumi-2);margin:2px 0 12px}
+.split{display:flex;gap:10px;margin-bottom:14px}
+.split > div{flex:1;border:1px solid var(--rule);border-radius:4px;padding:10px;background:#fff6;text-align:center}
+.split small{display:block;font-size:10px;color:var(--sumi-3);letter-spacing:.1em}
+.split b{font-family:var(--mincho);font-size:22px}
+.seg{display:flex;border:1px solid var(--sumi);border-radius:4px;overflow:hidden;font-size:12px;margin-bottom:12px}
+.seg span{flex:1;text-align:center;padding:6px 0}
+.seg span.on{background:var(--sumi);color:var(--washi);font-weight:700}
+.makimono{border-top:1px solid var(--sumi);border-bottom:1px solid var(--sumi);padding:10px 2px;font-size:12px;color:var(--sumi-2)}
+.makimono b{color:var(--sumi);font-family:var(--mincho)}
+.stars{color:var(--yamabuki);letter-spacing:2px;font-size:13px}
+.actbar{position:absolute;left:0;right:0;bottom:0;padding:12px 16px 24px;background:var(--washi);border-top:1px solid var(--rule);display:flex;gap:8px}
+.actbar .btn{flex:1;height:44px;font-size:13px}
+.btn.shu-line{border:1px solid var(--shu);color:var(--shu)}
+
+/* プロフィール */
+.prof{display:flex;gap:14px;align-items:center;margin:14px 0}
+.prof .face{width:58px;height:58px;border-radius:50%;background:var(--tokiwa-soft);border:2px solid var(--tokiwa);display:flex;align-items:center;justify-content:center;font-family:var(--mincho);font-size:22px;font-weight:800;color:var(--tokiwa)}
+.prof b{font-family:var(--mincho);font-size:18px}
+.prof p{font-size:11px;color:var(--sumi-3)}
+.masu{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--sumi);border-radius:4px;overflow:hidden;margin-bottom:14px}
+.masu div{text-align:center;padding:10px 0;border-right:1px solid var(--rule)}
+.masu div:last-child{border:0}
+.masu b{display:block;font-family:var(--mincho);font-size:24px;font-weight:800;line-height:1.2}
+.masu small{font-size:10px;color:var(--sumi-2)}
+.link{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--rule);font-size:13px}
+.link span:last-child{color:var(--sumi-3)}
+.kumiko{height:10px;margin:14px -20px;background:
+  linear-gradient(45deg,transparent 45%,var(--rule) 45% 55%,transparent 55%) 0 0/10px 10px,
+  linear-gradient(-45deg,transparent 45%,var(--rule) 45% 55%,transparent 55%) 0 0/10px 10px}
+
+/* 対応表 */
+table{width:100%;border-collapse:collapse;background:var(--washi);border:1px solid var(--rule);font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mincho);background:var(--washi-2);font-weight:800}
+td code{font-size:12px;background:#fff8;padding:1px 4px;border-radius:3px}
+.note{font-size:13px;color:var(--sumi-2);margin-top:12px}
+.alt{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.alt div{border:1px solid var(--rule);background:var(--washi);border-radius:4px;padding:16px}
+.alt b{font-family:var(--mincho);font-size:17px}
+.alt .bar{display:flex;height:14px;border-radius:2px;overflow:hidden;margin:8px 0}
+.alt .bar i{flex:1}
+.alt p{font-size:13px;color:var(--sumi-2)}
+@media (max-width:640px){header.top h1{font-size:30px}.phone{transform:scale(.92);transform-origin:top center}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <small>MESHINOWA · DESIGN PROPOSAL</small>
+  <h1>見た目は和、使い心地はモダン。</h1>
+  <p>UI（色・文字・形・柄）は和の食事処の見立てでまとめ、UX（操作・動き・情報の出し方）は今どきの iOS アプリの作法に揃える「和モダン」案です。アプリの動きと画面構成は今のまま変えません。</p>
+</header>
+
+<h2>コンセプト：UIは和、UXはモダン</h2>
+<p class="lead">地図は「城下町の絵図」、お店は「軒先の提灯」、カテゴリは「のれん」、お店の情報は「お品書き」、自分の評価は「判子」。和柄やモチーフは要所だけに使い、文字が読みやすいことを優先します。</p>
+<div class="split2">
+  <div class="ui"><small>UI ＝ 和</small><b>見た目で和を感じさせる</b>
+    <ul><li>和紙の生成り色を地にし、墨色の文字と罫線を使う</li><li>見出しと店名は明朝体にする</li><li>色は和色（常磐・朱・山吹・漆）</li><li>のれん・提灯・お品書き・判子などのモチーフ</li><li>青海波・組子を区切りに少しだけ使う</li></ul></div>
+  <div class="ux"><small>UX ＝ モダン</small><b>使い心地は iOS 標準のまま</b>
+    <ul><li>シート・スワイプ・戻る操作は iOS 標準の動き</li><li>数字・日付・件数は算用数字で、すぐ読める</li><li>短く軽いスプリングの動きと触覚フィードバック</li><li>タップできる範囲は 44pt 以上、状態は色＋アイコン＋文字で示す</li><li>視差効果を減らす設定・Dynamic Type・VoiceOver に対応</li></ul></div>
+</div>
+<div class="principles">
+  <div><b>一、和紙と墨</b><span>真っ白をやめて生成りの和紙色を地にし、文字と罫線は墨色にします。影はぼかさず、ずらした墨の影で版画のような手触りを出します。</span></div>
+  <div><b>二、見出しは明朝</b><span>店名・画面タイトル・数字は明朝体に変えます。本文と操作の文字は読みやすいゴシックのままにします。</span></div>
+  <div><b>三、色は意味で使い分ける</b><span>常磐色＝操作、朱＝いいね、山吹＝自分の評価。今の「緑・ピンク・マスタード」の役割をそのまま和色に移します。</span></div>
+  <div><b>四、柄は控えめに</b><span>青海波・組子・点線の罫は、区切りや空の画面にだけ使います。地図とお店の上には柄を敷きません。</span></div>
+</div>
+
+<h2>色（和色）</h2>
+<p class="lead">今の <code>MeshinowaTheme</code> と同じ役割で、値だけを差し替えます。</p>
+<div class="swatches">
+  <div class="sw"><i style="background:#F5EFE3"></i><div><b>生成り</b>#F5EFE3 · paper / card</div></div>
+  <div class="sw"><i style="background:#EDE4D3"></i><div><b>砂色</b>#EDE4D3 · field / photo</div></div>
+  <div class="sw"><i style="background:#D9CEBB"></i><div><b>罫</b>#D9CEBB · hairline / outline</div></div>
+  <div class="sw"><i style="background:#2B2622"></i><div><b>墨</b>#2B2622 · ink</div></div>
+  <div class="sw"><i style="background:#5C534B"></i><div><b>薄墨</b>#5C534B · bodyText</div></div>
+  <div class="sw"><i style="background:#2F6B55"></i><div><b>常磐色</b>#2F6B55 · green（主操作）</div></div>
+  <div class="sw"><i style="background:#C8473A"></i><div><b>朱</b>#C8473A · like（いいね）</div></div>
+  <div class="sw"><i style="background:#E2A43B"></i><div><b>山吹</b>#E2A43B · accent（自分の評価）</div></div>
+  <div class="sw"><i style="background:#2A211C"></i><div><b>漆</b>#2A211C · タブバー</div></div>
+  <div class="sw"><i style="background:#C9A35B"></i><div><b>金</b>#C9A35B · 選択中のタブ文字</div></div>
+</div>
+
+<h2>文字</h2>
+<div class="type">
+  <div><p class="m">ダンチュウ食堂　4.5</p><small>見出し・店名・数字：しっぽり明朝 B1（ExtraBold）。今の M PLUS Rounded の置き換え。</small></div>
+  <div><p class="g">東京都千代田区丸の内1丁目・飲食店</p><small>本文・操作：今のヒラギノ角ゴを据え置き（または Zen 角ゴシック New）。読みやすさを優先します。</small></div>
+</div>
+
+<h2>画面の案</h2>
+<p class="lead">画面の構成・ボタンの位置・表示する情報は今のアプリのままです。</p>
+
+<div class="phones">
+
+  <!-- 歓迎 -->
+  <div>
+    <div class="phone-cap"><b>一</b>歓迎</div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●●</span></div>
+      <div class="welcome">
+        <div class="kamon"></div>
+        <div class="wm">メシノワ</div>
+        <h3>おいしい店は、<br>友達が知っている。</h3>
+        <p>友達が評価したお店が、そのまま地図になる。知らない人の星より、友達のおすすめで選べます。</p>
+        <ul class="oshinagaki">
+          <li><em>1</em>地図でお店を探して、気になる店にいいね</li>
+          <li><em>2</em>行ったお店は星とひとことで記録</li>
+          <li><em>3</em>友達の評価だけで点数を出す（準備中）</li>
+        </ul>
+        <div class="spacer"></div>
+        <div class="btn primary">マップを開く</div>
+        <div class="btn ghost">架空データで友達の評価を試す</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- マップ -->
+  <div>
+    <div class="phone-cap"><b>二</b>マップ（お店を選択中）</div>
+    <div class="phone"><div class="screen">
+      <div class="map">
+        <svg viewBox="0 0 280 620" preserveAspectRatio="none">
+          <rect width="280" height="620" fill="#EFE8DA"/>
+          <path d="M0 250 Q60 230 70 300 T40 420 L0 430Z" fill="#cfdccd"/>
+          <path d="M0 330 Q30 320 50 360 T30 470" stroke="#9bb3c9" stroke-width="10" fill="none"/>
+          <g stroke="#fffaf0" stroke-width="7" fill="none">
+            <path d="M0 200 L280 260"/><path d="M90 0 L120 620"/><path d="M200 0 L170 620"/><path d="M0 470 L280 420"/>
+          </g>
+          <g stroke="#fffaf0" stroke-width="3" fill="none">
+            <path d="M0 140 L280 170"/><path d="M0 360 L280 330"/><path d="M40 0 L70 620"/><path d="M240 0 L230 620"/><path d="M0 540 L280 520"/>
+          </g>
+          <path d="M150 0 L135 620" stroke="#2b262255" stroke-width="2" stroke-dasharray="6 4"/>
+          <text x="104" y="232" font-family="Shippori Mincho B1" font-size="11" fill="#8A8077">大手町</text>
+          <text x="112" y="350" font-family="Shippori Mincho B1" font-size="11" fill="#8A8077">丸の内</text>
+          <text x="196" y="480" font-family="Shippori Mincho B1" font-size="14" fill="#8A8077" letter-spacing="4">中央区</text>
+        </svg>
+      </div>
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●●</span></div>
+      <div class="search">🔍 お店やジャンルを探す <span class="count">70件</span></div>
+      <div class="noren-bar">
+        <div class="noren-rod"></div>
+        <div class="norens">
+          <div class="noren on"><span>すべて</span></div>
+          <div class="noren">飲食店</div><div class="noren">カフェ</div><div class="noren">ベーカリー</div>
+        </div>
+      </div>
+      <div class="fuda">このエリアで探す</div>
+      <div class="chochin" style="left:110px;top:270px"><div class="body">食</div></div>
+      <div class="chochin liked" style="left:84px;top:330px"><div class="body">♥</div></div>
+      <div class="chochin rated" style="left:205px;top:318px"><div class="body">4.5</div></div>
+      <div class="chochin" style="left:72px;top:372px"><div class="body">食</div></div>
+      <div class="chochin" style="left:180px;top:362px"><div class="body">食</div></div>
+      <div class="chochin" style="left:96px;top:398px"><div class="body">茶</div></div>
+      <div class="chochin sel" style="left:148px;top:318px"><div class="body">食</div></div>
+      <div class="dots"><i></i><i class="on"></i><i></i><i></i></div>
+      <div class="shinagaki">
+        <div class="sara">🍽</div>
+        <div>
+          <h4>ダンチュウ食堂</h4>
+          <div class="meta">飲食店 ・ 友達の評価は準備中<br>東京都千代田区丸の内1丁目…</div>
+          <div class="acts"><span class="chip">☆ 評価</span><span class="chip shu">♡ いいね</span></div>
+        </div>
+      </div>
+      <div class="bon">
+        <a class="on"><i>◎</i>マップ</a><a><i>♡</i>保存</a><a><i>⚇</i>友達</a><a><i>◯</i>プロフィール</a>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 保存 -->
+  <div>
+    <div class="phone-cap"><b>三</b>保存</div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●●</span></div>
+      <div class="page">
+        <div class="page-title"><h3>保存</h3><span class="sub">地図</span></div>
+        <div class="fude-tabs"><span class="on">いいね 3</span><span>行った 2</span></div>
+        <div class="fudas"><span class="senjafuda">未レビュー</span><span class="senjafuda on">保存した順</span><span class="senjafuda">店名順</span><span class="senjafuda">自分の評価順</span></div>
+        <div class="row"><div class="sara">🍜</div><div><h5>ダンチュウ食堂</h5><p>飲食店 · 丸の内1丁目</p></div><div class="end"><div class="hanko"><b>4.5</b><small>自分</small></div></div></div>
+        <div class="row"><div class="sara">☕</div><div><h5>喫茶 凪</h5><p>カフェ · 丸の内2丁目</p></div><div class="end"><span class="heart">♥</span></div></div>
+        <div class="row"><div class="sara">🥐</div><div><h5>パン工房 こむぎ</h5><p>ベーカリー · 八重洲1丁目</p></div><div class="end"><span class="heart">♥</span></div></div>
+        <div class="empty" style="padding-top:18px">
+          <div class="wan"></div>
+          <b>空のときは、空のお椀</b>
+          <p>「いいねのお店はまだありません」の画面に使う絵</p>
+        </div>
+      </div>
+      <div class="bon">
+        <a><i>◎</i>マップ</a><a class="on"><i>♥</i>保存</a><a><i>⚇</i>友達</a><a><i>◯</i>プロフィール</a>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- 詳細 -->
+  <div>
+    <div class="phone-cap"><b>四</b>お店の詳細</div>
+    <div class="phone"><div class="screen">
+      <div class="detail-head">
+        <div class="noren-big seigaiha"><div style="background:transparent"><span class="kamon-s"></span></div></div>
+      </div>
+      <div class="island"></div>
+      <div class="detail-body">
+        <h3>ダンチュウ食堂</h3>
+        <div class="meta">飲食店 · 東京都千代田区丸の内1丁目</div>
+        <div class="split">
+          <div><small>友達の評価</small><b style="color:var(--tokiwa)">—</b><small>準備中</small></div>
+          <div><small>自分の評価</small><b style="color:#9b6a14">4.5</b><span class="stars">★★★★☆</span></div>
+        </div>
+        <div class="seg"><span class="on">自分の記録</span><span>お店の情報</span><span>友達</span></div>
+        <div class="makimono"><b>おすすめ</b>　唐揚げ定食<br><b>来店日</b>　10月18日<br><b>ひとこと</b>　揚げたてが最高。また行きたい。</div>
+      </div>
+      <div class="actbar"><div class="btn shu-line">♥ いいね済み</div><div class="btn primary">経路を見る</div></div>
+    </div></div>
+  </div>
+
+  <!-- プロフィール -->
+  <div>
+    <div class="phone-cap"><b>五</b>プロフィール</div>
+    <div class="phone"><div class="screen">
+      <div class="island"></div><div class="status"><span>9:41</span><span>●●●</span></div>
+      <div class="page">
+        <div class="page-title"><h3>プロフィール</h3></div>
+        <div class="prof"><div class="face">私</div><div><b>この端末の記録</b><p>おいしい寄り道の帳面</p></div></div>
+        <div class="masu"><div><b>3</b><small>いいね</small></div><div><b>2</b><small>行った</small></div><div><b>2</b><small>レビュー</small></div></div>
+        <div class="link"><span>✎ 自分のレビュー</span><span>2件 ›</span></div>
+        <div class="link"><span>◎ マイマップ</span><span>4店 ›</span></div>
+        <div class="kumiko"></div>
+        <div class="row"><div class="sara">🍜</div><div><h5>ダンチュウ食堂</h5><p>10月18日</p></div><div class="end"><div class="hanko"><b>4.5</b><small>自分</small></div></div></div>
+        <div class="row"><div class="sara">☕</div><div><h5>喫茶 凪</h5><p>10月12日</p></div><div class="end"><div class="hanko"><b>4.0</b><small>自分</small></div></div></div>
+      </div>
+      <div class="bon">
+        <a><i>◎</i>マップ</a><a><i>♡</i>保存</a><a><i>⚇</i>友達</a><a class="on"><i>●</i>プロフィール</a>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+<h2>UX：モダンにするところ</h2>
+<p class="lead">見た目を和にしても、使い方で迷わせないようにします。多くは今のアプリがすでにできていることなので、和の見た目にしても崩さないことが目的です。</p>
+<div class="ux-grid">
+  <div><b>標準の操作を崩さない</b><span>シートの段階表示（中・大）、端からのスワイプで戻る、下に引いて閉じる。和の枠をかぶせても、つまみ（グラバー）と閉じるボタンは残します。</span></div>
+  <div><b>動きは短く、軽く</b><span>のれんが垂れる・提灯が灯る動きは 0.25〜0.35 秒のスプリングにします。視差効果を減らす設定ではフェードだけにします（のれんは対応済み）。</span><em>今あり</em></div>
+  <div><b>触覚フィードバック</b><span>のれんの切り替え・いいね・評価の確定で軽く振動させます。判子を押す瞬間に「ぽん」と触覚を返すと、和の見た目とモダンな手触りがつながります。</span></div>
+  <div><b>数字はすぐ読める形で</b><span>点数・件数・日付は算用数字にします。漢数字や縦書きは、読み取らせる場所には使いません。</span></div>
+  <div><b>色だけに頼らない</b><span>いいね＝朱＋ハート、自分の評価＝山吹＋数字、選択中＝大きさ＋灯り。色の区別がつきにくい人にも同じ情報が伝わるようにします。</span></div>
+  <div><b>カードは横にスワイプ</b><span>お品書きカードは、ぴたっと止まる横スクロールにし、隣のカードを少しのぞかせて位置の点も付けます。ピンとカードは今の連動のままです。</span><em>今あり</em></div>
+  <div><b>待ち時間の見せ方</b><span>検索中は和紙色のスケルトンを薄く光らせます。結果の通知は、上に短く出して数秒で消すトーストにします。</span></div>
+  <div><b>文字の大きさに追従</b><span>明朝の見出しも <code>relativeTo:</code> で Dynamic Type に追従させます。大きい文字では柄や飾りを省きます。</span><em>今あり</em></div>
+</div>
+
+<h2>部品ごとの見立て</h2>
+<p class="lead">差し替えるのは見た目だけです。どのファイルの何を変えるかの目安も付けています。</p>
+<table>
+  <tr><th>今の部品</th><th>UI（和）</th><th>UX（モダン）</th><th>変えるところ</th></tr>
+  <tr><td>カテゴリのタブ</td><td><b>のれん（据え置き）</b>。上に木の竿を一本足し、選ばれた布の中央に家紋風の丸を入れる</td><td>押したらすぐ切り替え、揺れは後から。4つまでは等分し、それより多ければ横スクロール</td><td><code>NorenTabs.swift</code> の <code>cloth</code></td></tr>
+  <tr><td>地図のピン</td><td><b>提灯</b>。ふだんは和紙色、いいねは朱、自分の評価は山吹で点数入り、選択中は大きく灯る</td><td>見た目が小さくても、タップできる範囲は 44pt。重なるピンは間引く（今のまま）</td><td><code>PlacePin</code>（MapHomeView）・<code>ScorePin</code></td></tr>
+  <tr><td>地図のスタイル</td><td>今の muted を据え置く。上に生成りの半透明を重ねて、紙の絵図の色味に寄せる（任意）</td><td>地図の操作・拡大縮小は標準のまま</td><td><code>MapHomeView</code> の overlay</td></tr>
+  <tr><td>「このエリアで探す」</td><td><b>木札</b>。四角い札に墨の縁、朱の点</td><td>必要なときだけ出し、検索中はくるくる表示</td><td><code>PaperButtonStyle</code> に札のスタイルを追加</td></tr>
+  <tr><td>下のお店カード</td><td><b>お品書き</b>。和紙地に墨の細枠、ずらした影。写真枠は角皿</td><td>横スワイプで切り替え、ピンと連動。タップで詳細をシートで開く</td><td><code>PaperCard</code>・<code>RestaurantPreview</code></td></tr>
+  <tr><td>浮いたタブバー</td><td><b>漆の盆</b>。漆黒に金の細い縁。選択中は朱の丸に白い印、文字は金</td><td>アイコンは SF Symbols のまま。押すと触覚</td><td><code>FloatingTabBar</code>（MainTabView）</td></tr>
+  <tr><td>画面タイトル</td><td>明朝の大見出しと、下の二重罫</td><td>スクロールすると小さな見出しに縮む</td><td><code>MeshinowaFont.heading</code></td></tr>
+  <tr><td>下線タブ（いいね／行った）</td><td>筆で払ったような下線</td><td>下線が横にすべって移る</td><td><code>SavedLibraryView</code></td></tr>
+  <tr><td>並び替えのチップ</td><td><b>千社札</b>。角ばった札で、選択中は墨地に白抜き</td><td>横スクロール。選択中はチェックも付ける</td><td><code>RestaurantCollectionControls</code></td></tr>
+  <tr><td>自分の評価</td><td><b>判子</b>。朱の角印に明朝の数字、少し傾ける</td><td>数字はまっすぐ読める向き。評価を確定すると押印の動きと触覚</td><td><code>RatingStamp</code></td></tr>
+  <tr><td>件数・数字</td><td>明朝体の算用数字</td><td>算用数字</td><td><code>MeshinowaFont.number</code></td></tr>
+  <tr><td>空の画面</td><td>空のお椀の線画</td><td>次にする操作のボタンを必ず置く</td><td><code>SavedLibraryView</code> ほか</td></tr>
+  <tr><td>区切り</td><td>点線の罫と組子の帯。詳細の上部だけ青海波</td><td>新しい <code>WaPattern</code> 部品</td></tr>
+</table>
+<p class="note">※ コントラストは、墨と生成りで約 13:1、朱の地に白抜きの文字で約 4.6:1。今と同じ水準を保てます。</p>
+
+<h2>色の別案</h2>
+<p class="lead">骨組みは同じままで、主の色を差し替えた案です。</p>
+<div class="alt">
+  <div><b>甲：常磐（本案）</b><div class="bar"><i style="background:#F5EFE3"></i><i style="background:#2F6B55"></i><i style="background:#C8473A"></i><i style="background:#E2A43B"></i><i style="background:#2A211C"></i></div><p>今のブランドの緑と、アイコンの「お椀の輪」をそのまま活かせる。いちばん移行しやすい案です。</p></div>
+  <div><b>乙：藍染</b><div class="bar"><i style="background:#F3EEE4"></i><i style="background:#2D4A6B"></i><i style="background:#C8473A"></i><i style="background:#E2A43B"></i><i style="background:#1E2733"></i></div><p>のれん・主操作を藍色にする。より「食事処」らしくなるが、アイコンの緑と揃わなくなります。</p></div>
+  <div><b>丙：夜の横丁</b><div class="bar"><i style="background:#221C18"></i><i style="background:#F2B65A"></i><i style="background:#C8473A"></i><i style="background:#2F6B55"></i><i style="background:#F5EFE3"></i></div><p>地図以外の画面を漆黒の地にし、提灯の灯りを主役にする。ダークモード対応の下敷きにもなります。</p></div>
+</div>
+
+</div>
+</body>
+</html>

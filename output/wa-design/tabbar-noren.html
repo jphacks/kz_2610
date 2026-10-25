@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>さりげない和のタブバー</title>
+<style>
+:root{
+  --paper:#FFFFFF; --field:#F4F5F2; --hair:#E3E5E2;
+  --ink:#1C1F1D; --body:#4F5550; --sub:#6B716D;
+  --green:#27755B; --mint:#DDF0E4; --accent:#E8AD45; --mustard-soft:#FBEBC8;
+  --shu:#C8473A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EEF0EC;color:var(--ink);font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;line-height:1.7;padding:0 16px 80px}
+.wrap{max-width:1100px;margin:0 auto}
+header{padding:48px 0 22px;border-bottom:1px solid var(--hair)}
+header small{letter-spacing:.25em;color:var(--sub);font-size:12px}
+header h1{font-size:30px;font-weight:800;margin:4px 0 8px}
+header p{color:var(--body);max-width:780px}
+.rule{display:flex;gap:14px;flex-wrap:wrap;margin:22px 0 4px}
+.rule div{flex:1 1 300px;background:#fff;border:1px solid var(--hair);border-radius:14px;padding:16px 18px}
+.rule b{display:block;font-size:15px;margin-bottom:2px}
+.rule span{font-size:14px;color:var(--body)}
+h2{font-size:21px;font-weight:800;margin:44px 0 6px;display:flex;align-items:center;gap:10px}
+h2 .tag{font-size:12px;background:var(--green);color:#fff;padding:1px 9px;border-radius:10px}
+.lead{color:var(--body);font-size:15px;max-width:820px;margin-bottom:14px}
+.variant{display:grid;grid-template-columns:420px 1fr;gap:28px;align-items:center}
+@media (max-width:860px){.variant{grid-template-columns:1fr}}
+.stage{position:relative;max-width:420px;height:190px;border-radius:22px;overflow:hidden;box-shadow:0 10px 26px #0002;background:#F3EFE6}
+.stage svg.mapbg{position:absolute;inset:0;width:100%;height:100%}
+.home{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);width:120px;height:4px;border-radius:2px;background:#111;z-index:9}
+.pros{font-size:14px;color:var(--body)}
+.pros ul{padding-left:1.1em;margin:6px 0}
+.pros .good li::marker{content:"○ ";color:var(--green)}
+.pros .bad li::marker{content:"△ ";color:var(--shu)}
+.try{font-size:12px;color:var(--sub);margin-top:6px}
+
+/* ===== 今のバー（共通） ===== */
+.bar{position:absolute;left:12px;right:12px;bottom:20px;height:68px;background:#fff;border-radius:34px;box-shadow:0 2px 10px #00000024;display:flex;z-index:5;overflow:visible}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10.5px;color:var(--ink);cursor:pointer;user-select:none;position:relative}
+.tab .ico{position:relative;width:44px;height:30px;display:flex;align-items:center;justify-content:center;z-index:1}
+.tab svg{width:21px;height:21px;position:relative;z-index:2}
+.tab.on{color:var(--green);font-weight:700}
+.tab .label{position:relative;z-index:2}
+.center{flex:0 0 74px;position:relative;cursor:pointer}
+.center .btn{position:absolute;left:50%;top:-18px;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;background:#fff;box-shadow:0 2px 10px #00000030;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.center:active .btn{transform:translateX(-50%) scale(.92)}
+.center .btn svg{width:40px;height:40px;overflow:visible}
+.center .lbl{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:10.5px;font-weight:700;color:var(--ink)}
+.center .hashi{transform-origin:20px 20px}
+.center.tap .hashi{animation:hashi .55s cubic-bezier(.3,1.6,.5,1)}
+@keyframes hashi{0%{transform:rotate(0)}40%{transform:rotate(-14deg) translate(0,-2px)}100%{transform:rotate(0)}}
+
+.tab .steam,.tab .rest{display:none}
+.yuge .tab .steam,.hashioki .tab .rest{display:block}
+/* 0 今 */
+.now .tab.on .ico{background:var(--mint);border-radius:15px}
+
+/* 1 暖簾 */
+.noren .tab .cloth{position:absolute;top:0;left:50%;width:44px;height:0;transform:translateX(-50%);background:var(--green);z-index:1;
+  clip-path:polygon(0 0,100% 0,100% 100%,53% 100%,50% 72%,47% 100%,0 100%);transition:height .45s cubic-bezier(.3,1.7,.45,1)}
+.noren .tab.on .cloth{height:38px}
+.noren .tab.on svg{color:#fff}
+.noren .tab .ico{margin-top:-6px}
+.noren .tab .label{margin-top:6px}
+.noren .tab.on .ico svg{animation:sway .9s ease-out}
+@keyframes sway{0%{transform:translateY(-6px)}35%{transform:translateY(1px) rotate(4deg)}65%{transform:rotate(-2deg)}100%{transform:none}}
+
+/* 2 提灯の灯り */
+.chochin .tab .lamp{position:absolute;left:50%;top:50%;width:30px;height:34px;transform:translate(-50%,-50%) scale(.6);opacity:0;border-radius:46%;
+  background:radial-gradient(circle at 50% 45%,#FFE7B0 0%,#FBEBC8 55%,#F6DDA4 100%);box-shadow:0 0 14px 2px #f2b65a66;transition:.35s cubic-bezier(.3,1.5,.5,1)}
+.chochin .tab .lamp::before,.chochin .tab .lamp::after{content:"";position:absolute;left:8px;right:8px;height:3px;border-radius:1px;background:var(--green)}
+.chochin .tab .lamp::before{top:-2px}.chochin .tab .lamp::after{bottom:-2px}
+.chochin .tab.on .lamp{opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+/* 3 箸置き */
+.hashioki .tab .rest{position:absolute;bottom:7px;left:50%;width:20px;height:6px;transform:translateX(-50%) translateY(6px);opacity:0;transition:.3s cubic-bezier(.3,1.7,.5,1)}
+.hashioki .tab .rest svg{width:20px;height:6px;display:block}
+.hashioki .tab.on .rest{opacity:1;transform:translateX(-50%)}
+.hashioki .tab{padding-bottom:8px}
+
+/* 4 湯気 */
+.yuge .tab.on .ico{background:var(--mint);border-radius:15px}
+.yuge .tab .steam{position:absolute;top:-14px;left:50%;width:22px;height:18px;transform:translateX(-50%);opacity:0;pointer-events:none;z-index:3}
+.yuge .tab .steam path{fill:none;stroke:var(--green);stroke-width:1.5;stroke-linecap:round;opacity:.7}
+.yuge .tab.on .steam{animation:steam 1.3s ease-out}
+@keyframes steam{0%{opacity:0;transform:translate(-50%,8px)}30%{opacity:1}100%{opacity:0;transform:translate(-50%,-6px)}}
+
+.more{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--hair);font-size:14px;border-radius:12px;overflow:hidden}
+.more th,.more td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--hair);vertical-align:top}
+.more th{background:var(--field)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-map" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M3 6.5l5.5-2.5 7 2.5L21 4v13.5L15.5 20l-7-2.5L3 20z M8.5 4v13.5 M15.5 6.5V20"/></symbol>
+    <symbol id="i-saved" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M12 20s-7.5-4.6-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.4-7.5 10-7.5 10z"/></symbol>
+    <symbol id="i-friends" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M3.5 19c.6-3.3 2.8-5 5.5-5s4.9 1.7 5.5 5 M14.5 14.3c.6-.2 1.3-.3 2-.3 2.3 0 4 1.5 4.5 4.5"/></g></symbol>
+    <symbol id="i-me" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18.2c1.2-2.2 3.2-3.3 5.5-3.3s4.3 1.1 5.5 3.3"/></g></symbol>
+  </defs>
+</svg>
+
+<header>
+  <small>MESHINOWA · TAB BAR</small>
+  <h1>のれんのように、さりげなく和を出すタブバー</h1>
+  <p>カテゴリののれんは、ふだんは普通の白いボタンで、<b>選んだ一枚だけ</b>がのれんになって垂れてきます。タブバーも同じ考え方にします。バーそのものは今のまま（白いカプセル・線のアイコン・緑）にして、<b>選んだときの印と動き</b>にだけ和を一つ忍ばせます。</p>
+  <div class="rule">
+    <div><b>ふだんはモダン</b><span>形・色・アイコンは今のまま。柄や素材で飾らない。</span></div>
+    <div><b>選んだ瞬間だけ和</b><span>和が出てくるのは、選択中の印と、そこへ切り替わる動きだけ。</span></div>
+    <div><b>意味は今と同じ</b><span>今のミント色の楕円と同じ役割（どれを選んでいるか）を、和の形で示す。</span></div>
+  </div>
+</header>
+
+<h2>今のバー</h2>
+<p class="lead">比べるための今の見た目です。選択中は、アイコンの後ろにミント色の楕円が出ます。</p>
+<div class="variant"><div class="stage now" data-v></div><div class="pros"><p class="try">タブや真ん中のボタンを押して試せます。真ん中のお椀は、押すと箸が少し持ち上がります（どの案も共通）。</p></div></div>
+
+<h2><span class="tag">おすすめ</span>案1　暖簾</h2>
+<p class="lead">選んだタブにだけ、バーの上の縁から小さなのれんが垂れてきます。アイコンはのれんの上に白く出ます。カテゴリののれんと同じ緑・同じ切れ目なので、アプリの中で「選ぶ＝のれんが下りる」がそろいます。</p>
+<div class="variant">
+  <div class="stage noren" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>カテゴリののれんと同じ言葉づかいになり、統一感が一番出る</li><li>今の楕円をのれんの形に変えるだけなので、作りやすい</li><li>垂れて少し揺れる動きは、今の <code>NorenCloth</code> の形と動きを流用できる</li></ul>
+    <ul class="bad"><li>マップ画面では上（カテゴリ）と下（タブ）の両方にのれんが出る。下は小さく短くして差を付ける</li></ul>
+  </div>
+</div>
+
+<h2>案2　提灯の灯り</h2>
+<p class="lead">選んだタブのアイコンの後ろに、小さな提灯の形の灯りがふわっとともります。上下に細い緑の口金があり、形は今の楕円を縦長にしただけです。</p>
+<div class="variant">
+  <div class="stage chochin" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>地図のピンを提灯にする案とつながる</li><li>灯りがともる動きは、やわらかく気持ちいい</li></ul>
+    <ul class="bad"><li>小さいと、ただの黄色い楕円に見えやすい</li></ul>
+  </div>
+</div>
+
+<h2>案3　箸置き</h2>
+<p class="lead">選んだタブの文字の下に、小さな箸置きがちょこんと置かれます。下線の代わりに箸置き、という見立てです。</p>
+<div class="variant">
+  <div class="stage hashioki" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>一番控えめで、食事のアプリらしい遊び心がある</li><li>真ん中のお椀（と箸）と話がつながる</li></ul>
+    <ul class="bad"><li>小さいので、選択中だと分かりにくい。文字の色と太さの変化も一緒に使う</li></ul>
+  </div>
+</div>
+
+<h2>案4　湯気</h2>
+<p class="lead">見た目は今のミント色の楕円のままで、切り替えた瞬間にだけ、アイコンから湯気がふわっと立ちのぼって消えます。和は動きの中にだけ出てきます。</p>
+<div class="variant">
+  <div class="stage yuge" data-v></div>
+  <div class="pros">
+    <ul class="good"><li>止まっている見た目は今と同じなので、一番変化が小さい</li><li>「できたて」の温かさが伝わる</li></ul>
+    <ul class="bad"><li>動いている一瞬しか和が出ないので、印象には残りにくい</li><li>視差効果を減らす設定では湯気を出さない</li></ul>
+  </div>
+</div>
+
+<h2>同じ考え方を、ほかの場所にも</h2>
+<p class="lead">「ふだんはモダン、操作した瞬間だけ和」の決まりで、アプリ全体にさりげなく和を散らせます。</p>
+<table class="more">
+  <tr><th>場所</th><th>ふだん</th><th>操作した瞬間</th></tr>
+  <tr><td>カテゴリ</td><td>白いボタン</td><td>のれんが垂れる（今ある）</td></tr>
+  <tr><td>タブバー</td><td>白いカプセル</td><td>のれん／提灯／箸置き／湯気（この案）</td></tr>
+  <tr><td>地図のピン</td><td>今のピン</td><td>選ぶと提灯のように灯る</td></tr>
+  <tr><td>いいね</td><td>ハート</td><td>押すと水引がきゅっと結ばれるように締まる</td></tr>
+  <tr><td>評価の確定</td><td>今の評価シート</td><td>判子をぽんと押す動きと触覚</td></tr>
+  <tr><td>検索中</td><td>今の読み込み表示</td><td>お椀から湯気が立つ</td></tr>
+</table>
+</div>
+
+<script>
+const mapSVG=`<svg class="mapbg" viewBox="0 0 420 190" preserveAspectRatio="none"><rect width="420" height="190" fill="#F3EFE6"/><path d="M0 30 Q90 20 120 70 T60 190 L0 190Z" fill="#d6e4d3"/><g stroke="#fff" stroke-width="8" fill="none"><path d="M0 55 L420 100"/><path d="M180 0 L210 190"/><path d="M330 0 L300 190"/></g><g stroke="#fff" stroke-width="3" fill="none"><path d="M0 125 L420 145"/><path d="M90 0 L120 190"/><path d="M260 0 L250 190"/></g><g stroke="#f4c9a0" stroke-width="3" fill="none"><path d="M0 18 L420 40"/></g></svg>`;
+const bowl=`<svg viewBox="0 0 40 40"><circle cx="20" cy="21" r="12" fill="none" stroke="#27755B" stroke-width="5"/><g class="hashi"><path d="M4 12 L36 25 M4 17 L36 30" stroke="#E8AD45" stroke-width="3.2" stroke-linecap="round"/></g></svg>`;
+const rest=`<svg viewBox="0 0 20 6"><path d="M1 3c0-1.6 1.2-2.5 3-2.5 2 0 3.5 1.3 6 1.3S14 .5 16 .5c1.8 0 3 .9 3 2.5S17.8 5.5 16 5.5c-2 0-3.5-1.3-6-1.3S6 5.5 4 5.5C2.2 5.5 1 4.6 1 3z" fill="#1C1F1D"/></svg>`;
+const steam=`<svg class="steam" viewBox="0 0 22 18"><path d="M8 17c-3-3 3-5 0-8s2-5 0-8"/><path d="M14 17c-3-3 3-5 0-8s2-5 0-8"/></svg>`;
+const tabs=[["map","マップ"],["saved","保存"],null,["friends","友達"],["me","プロフィール"]];
+document.querySelectorAll('[data-v]').forEach(stage=>{
+  let h=mapSVG+'<div class="bar">';
+  tabs.forEach((t,i)=>{
+    if(!t){h+=`<div class="center" role="button" aria-label="評価を投稿"><div class="btn">${bowl}</div><div class="lbl">評価</div></div>`;return;}
+    h+=`<div class="tab${i===0?' on':''}"><span class="cloth"></span><div class="ico"><span class="lamp"></span>${steam}<svg><use href="#i-${t[0]}"/></svg></div><span class="label">${t[1]}</span><span class="rest">${rest}</span></div>`;
+  });
+  h+='</div><div class="home"></div>';
+  stage.innerHTML=h;
+  stage.querySelectorAll('.tab').forEach(el=>el.addEventListener('click',()=>{
+    stage.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    void el.offsetWidth; el.classList.add('on');
+  }));
+  const c=stage.querySelector('.center');
+  c.addEventListener('click',()=>{c.classList.remove('tap');void c.offsetWidth;c.classList.add('tap');});
+});
+</script>
+</body>
+</html>

@@ -44,13 +44,6 @@ struct WelcomeView: View {
                     }
                 }
                 .buttonStyle(PaperButtonStyle())
-
-                NavigationLink {
-                    DemoRecommendationsView()
-                } label: {
-                    Text("架空データで友達の評価を試す")
-                }
-                .buttonStyle(PaperButtonStyle(kind: .secondary))
             }
             .frame(maxWidth: 420)
             .padding(.horizontal, 24)

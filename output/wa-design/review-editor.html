@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>評価の画面 改善案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FFFFFF; --field:#F4F5F2; --hairline:#E3E5E2; --outline:#D5D8D4; --photo:#EADFCB;
+  --ink:#1C1F1D; --body:#4F5550; --sub:#6B716D;
+  --green:#27755B; --mint:#DDF0E4; --mint-ink:#1F6B4F;
+  --accent:#E8AD45; --mustard-soft:#FBEBC8; --mustard-ink:#7A5410;
+  --like:#E5577E; --like-soft:#FCE4EB; --like-ink:#A3254B;
+  --heading:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EEF0EC;color:var(--ink);font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;line-height:1.7;padding:0 16px 90px}
+.wrap{max-width:1100px;margin:0 auto}
+header{padding:48px 0 20px;border-bottom:1px solid var(--hairline)}
+header small{letter-spacing:.25em;color:var(--sub);font-size:12px}
+header h1{font-family:var(--heading);font-size:30px;font-weight:800;margin:4px 0 8px}
+header p{color:var(--body);max-width:860px}
+.grid{display:grid;grid-template-columns:330px 1fr;gap:34px;margin-top:30px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.list{background:#fff;border:1px solid var(--hairline);border-radius:14px;padding:16px 20px;font-size:14px;color:var(--body)}
+.list h3{font-family:var(--heading);font-size:17px;color:var(--ink);margin:8px 0 4px}
+.list li{margin:3px 0 3px 1.2em}
+.list b{color:var(--ink)}
+.phone{width:330px;height:700px;border-radius:48px;background:#111;padding:10px;box-shadow:0 18px 40px #0003;margin:0 auto}
+.screen{position:relative;width:100%;height:100%;border-radius:38px;overflow:hidden;background:#C9D3CC}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:46px;background:#fff;border-radius:24px 24px 0 0;display:flex;flex-direction:column}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--outline);margin:8px auto 0}
+.top{display:flex;align-items:center;justify-content:space-between;padding:6px 16px 0}
+.top span{font-size:14px;color:var(--green);font-weight:700}
+.top b{font-family:var(--heading);font-size:15px}
+.body{flex:1;overflow:auto;padding:10px 18px 0}
+.shop{display:flex;gap:12px;align-items:center}
+.ware{width:52px;height:52px;border-radius:12px;background:var(--photo);display:flex;align-items:center;justify-content:center;flex:none}
+.shop h4{font-family:var(--heading);font-weight:800;font-size:18px;line-height:1.3}
+.shop p{font-size:12px;color:var(--sub)}
+.rate{text-align:center;margin:18px 0 6px}
+.rate .q{font-family:var(--heading);font-weight:800;font-size:15px;color:var(--body)}
+.stars{display:flex;justify-content:center;gap:6px;margin-top:6px}
+.stars span{width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.stars svg{width:40px;height:40px}
+.score{font-family:var(--heading);font-weight:800;font-size:30px;color:var(--mustard-ink);line-height:1.2;min-height:36px}
+.score small{font-size:12px;font-family:inherit;font-weight:700;margin-right:4px}
+.hint{font-size:11px;color:var(--sub)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}
+.chip{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--outline);display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;background:#fff}
+.chip.on{border:2px solid var(--like);color:var(--like-ink);font-weight:700;background:var(--like-soft)}
+.chip.date.on{border-color:var(--green);color:var(--mint-ink);background:var(--mint)}
+.box{border:1px solid var(--hairline);border-radius:14px;padding:10px 12px;margin-top:10px;background:var(--field)}
+.box .lbl{font-size:12px;font-weight:700;color:var(--body);display:flex;justify-content:space-between}
+.box .lbl small{font-weight:400;color:var(--sub)}
+.box textarea{width:100%;border:0;background:transparent;font:inherit;font-size:14px;resize:none;height:78px;outline:none;margin-top:2px}
+.box input{width:100%;border:0;background:transparent;font:inherit;font-size:14px;outline:none}
+.photos{display:flex;gap:8px;margin-top:10px}
+.photos .ph{width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#F2C48D,#D9894B);display:flex;align-items:center;justify-content:center;font-size:26px}
+.photos .add{width:64px;height:64px;border-radius:12px;border:1.5px dashed var(--outline);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--sub)}
+.share{display:flex;gap:6px;align-items:flex-start;font-size:11px;color:var(--sub);margin:12px 0 14px;line-height:1.5}
+.foot{padding:10px 18px 24px;border-top:1px solid var(--hairline);background:#fff}
+.btn{height:52px;border-radius:14px;background:var(--green);color:#fff;font-family:var(--heading);font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.btn.off{opacity:.45}
+/* 判子 */
+.stampwrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:20}
+.stamp{width:132px;height:132px;border:5px solid #C9932F;border-radius:22px;color:#B07F22;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--heading);font-weight:800;background:#FFFDF6e6;transform:rotate(-6deg) scale(1.8);opacity:0;box-shadow:inset 0 0 0 3px #FFFDF6,inset 0 0 0 5px #C9932F55}
+.stamp b{font-size:48px;line-height:1}
+.stamp small{font-size:15px;letter-spacing:.2em}
+.stamp.go{animation:stamp .55s cubic-bezier(.3,1.4,.5,1) forwards}
+@keyframes stamp{0%{transform:rotate(-6deg) scale(1.8);opacity:0}55%{transform:rotate(-6deg) scale(.92);opacity:1}100%{transform:rotate(-6deg) scale(1);opacity:1}}
+.replay{display:inline-block;margin-top:10px;font-size:13px;color:var(--green);font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <small>MESHINOWA · REVIEW</small>
+  <h1>評価（ひとこと）の画面 改善案</h1>
+  <p>今は設定画面のような入力欄の並びで、星が小さく、お店の名前より「星の評価（必須）」の見出しが先に来ています。何を書く画面かが一目で分かり、星を付けるのが気持ちいい画面にします。保存する中身（星・ひとこと・おすすめ料理・また行きたい・来店日・写真）は今と同じです。</p>
+</header>
+
+<div class="grid">
+  <div>
+    <div class="phone"><div class="screen">
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="top"><span>キャンセル</span><b>評価する</b><span style="opacity:0">保存</span></div>
+        <div class="body">
+          <div class="shop"><div class="ware" id="ware"></div><div><h4>こもれび食堂</h4><p>洋食・丸の内1丁目</p></div></div>
+          <div class="rate">
+            <div class="q">どうだった？</div>
+            <div class="stars" id="stars"></div>
+            <div class="score" id="score"></div>
+            <div class="hint">同じ星をもう一度押すと 0.5 下がります</div>
+          </div>
+          <div class="chips">
+            <span class="chip" id="again">♡ また行きたい</span>
+            <span class="chip date" id="date">📅 来店日を記録</span>
+          </div>
+          <div class="box"><div class="lbl">ひとこと<small id="cnt">0 / 300</small></div><textarea id="comment" placeholder="どこがよかった？　友達に伝えるつもりで"></textarea></div>
+          <div class="box"><div class="lbl">おすすめ料理</div><input placeholder="例：デミグラスのオムライス"></div>
+          <div class="photos"><div class="ph">🍳</div><div class="add"><span style="font-size:20px;line-height:1">＋</span>写真</div></div>
+          <div class="share">👥 <span>星・ひとこと・おすすめ料理は友達に共有されます。写真と来店日はこの端末だけ。</span></div>
+        </div>
+        <div class="foot"><div class="btn off" id="save">記録する</div></div>
+      </div>
+      <div class="stampwrap"><div class="stamp" id="stamp"><b id="stampScore">4.5</b><small>記録</small></div></div>
+    </div></div>
+    <div style="text-align:center"><span class="replay" id="replay">↺ もう一度試す</span></div>
+  </div>
+
+  <div class="list">
+    <h3>変えるところ</h3>
+    <ul>
+      <li><b>お店を一番上に：</b>ジャンルの器の形・店名・場所。何の評価かがすぐ分かる。</li>
+      <li><b>星を大きく、真ん中に：</b>「どうだった？」の問いかけと、からし色の大きな点数（自分の評価の色）。±ボタンはやめて、同じ星をもう一度押すと0.5下がる今の操作に一本化。</li>
+      <li><b>また行きたい・来店日はチップに：</b>スイッチの並びをやめ、押すだけの札にする。来店日は押すと日付を選べる。</li>
+      <li><b>ひとことは淡いカードの中に：</b>「どこがよかった？ 友達に伝えるつもりで」と書く気になる言葉。文字数は右上に小さく。</li>
+      <li><b>写真は横に並べる：</b>正方形の写真と「＋写真」の枠。</li>
+      <li><b>共有の説明は1行に：</b>友達に見えるもの／端末だけのものを短く。</li>
+      <li><b>ボタンは「記録する」：</b>下に固定。星を付けるまでは薄く。</li>
+      <li><b>シートの背景を白に：</b>今は後ろの地図が透けて読みにくいので、白で塞ぐ。</li>
+    </ul>
+    <h3>和を入れるところ（選んだ瞬間だけ）</h3>
+    <ul>
+      <li><b>記録したら判子：</b>「記録する」を押すと、点数の入った判子がぽんと押され、触覚で返してから閉じる。色は自分の評価のからし色。左の画面で星を付けて「記録する」を押すと試せます。</li>
+    </ul>
+    <h3>星だけのシート（今の「行った？評価する」）</h3>
+    <ul>
+      <li>同じ見た目（お店・大きな星・からし色の点数）に揃え、「ひとことも書く」でこの画面に進む。記録したときの判子も同じ。</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<script>
+const STAR='<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.3L12 17.1l-5.7 3.1 1.2-6.3L2.8 9.5l6.4-.8z" fill="FILL" stroke="#E8AD45" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+const HALF='<svg viewBox="0 0 24 24"><defs><clipPath id="h"><rect width="12" height="24"/></clipPath></defs><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.3L12 17.1l-5.7 3.1 1.2-6.3L2.8 9.5l6.4-.8z" fill="#fff" stroke="#E8AD45" stroke-width="1.4"/><path clip-path="url(#h)" d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.3L12 17.1l-5.7 3.1 1.2-6.3L2.8 9.5l6.4-.8z" fill="#E8AD45"/></svg>';
+document.getElementById('ware').innerHTML='<svg width="34" height="32" viewBox="0 0 36 34"><path d="M5 24 C5 14 11 9 18 9 C25 9 31 14 31 24Z M2 24 H34 V27 C34 28.5 33 29.5 31.5 29.5 H4.5 C3 29.5 2 28.5 2 27Z" fill="#fff" stroke="#27755B" stroke-width="1.5"/><path d="M16 7.5 H20" stroke="#27755B" stroke-width="1.1"/></svg>';
+let rating=0;
+function draw(){
+  document.getElementById('stars').innerHTML=[1,2,3,4,5].map(v=>`<span data-v="${v}">${rating>=v?STAR.replace('FILL','#E8AD45'):(rating>=v-.5?HALF:STAR.replace('FILL','#fff'))}</span>`).join('');
+  document.querySelectorAll('#stars span').forEach(s=>s.onclick=()=>{const v=+s.dataset.v;rating=rating===v?v-.5:v;draw();});
+  document.getElementById('score').innerHTML=rating?`<small>あなたの評価</small>${rating.toFixed(1)}`:'';
+  document.getElementById('save').classList.toggle('off',rating<1);
+  document.getElementById('stampScore').textContent=rating.toFixed(1);
+}
+draw();
+['again','date'].forEach(id=>document.getElementById(id).onclick=e=>e.currentTarget.classList.toggle('on'));
+const c=document.getElementById('comment');c.oninput=()=>document.getElementById('cnt').textContent=`${c.value.length} / 300`;
+document.getElementById('save').onclick=()=>{if(rating<1)return;const s=document.getElementById('stamp');s.classList.remove('go');void s.offsetWidth;s.classList.add('go');};
+document.getElementById('replay').onclick=()=>{rating=0;draw();document.getElementById('stamp').classList.remove('go');};
+</script>
+</body>
+</html>

@@ -78,8 +78,8 @@ struct FriendDatasetReviewProvider: FriendReviewProvider {
                     updatedAt: review.updatedAt)
             }
             let item = restaurant.mapItem
-            // 店舗IDは既存の保存・レビューと同じ体系（店名＋丸めた座標）。実データは externalKey がそれにあたる。
-            let id = isDemo ? SavedRestaurant.identifier(for: item) : restaurant.id
+            // 店舗IDは友達レビューが指すID（externalKey）。既存の保存・レビューと同じ体系（Place ID か店名＋座標）。
+            let id = restaurant.id
             let address = data.area(for: restaurant)
             candidates.append(SwipeCandidate(
                 id: id, name: restaurant.name,

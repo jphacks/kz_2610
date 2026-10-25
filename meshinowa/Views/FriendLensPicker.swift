@@ -6,7 +6,7 @@ struct FriendLensPicker: View {
     private let dataset: FriendDataset
     @Environment(\.dismiss) private var dismiss
 
-    init(lens: Binding<FriendLens>, dataset: FriendDataset = DemoRecommendations.dataset) {
+    init(lens: Binding<FriendLens>, dataset: FriendDataset) {
         _lens = lens
         _draft = State(initialValue: lens.wrappedValue)
         self.dataset = dataset
@@ -27,10 +27,6 @@ struct FriendLensPicker: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("誰のおすすめで探す？")
                         .font(MeshinowaFont.text(24, weight: .black, relativeTo: .title2))
-                    if dataset.isDemo {
-                        Text("DEMO · 友達と評価はすべて架空です。")
-                            .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
-                    }
 
                     ForEach(FriendLens.Mode.allCases) { mode in
                         Button { draft.mode = mode } label: {
@@ -57,7 +53,7 @@ struct FriendLensPicker: View {
                             friendRow(friend)
                         }
                     } else if draft.mode == .favoriteFriends {
-                        Text((dataset.isDemo ? "デモのお気に入り：" : "お気に入りの友達：") + favoriteNames)
+                        Text("お気に入りの友達：" + favoriteNames)
                             .font(MeshinowaFont.text(14))
                     }
 

@@ -50,10 +50,25 @@ enum ReviewError: LocalizedError {
     }
 }
 
+struct ReviewSyncOperation: Codable, Identifiable {
+    let id: UUID
+    let restaurant: SavedRestaurant
+    let review: LocalReview?
+    init(restaurant: SavedRestaurant, review: LocalReview?) {
+        id = UUID(); self.restaurant = restaurant; self.review = review
+    }
+}
+
+private struct ReviewDocument: Codable {
+    var reviews: [LocalReview]
+    var pending: [ReviewSyncOperation]
+}
+
 @MainActor
 final class LocalReviewStore: ObservableObject {
     @Published private(set) var reviews: [LocalReview] = []
     @Published private(set) var loadError: String?
+    @Published private(set) var pending: [ReviewSyncOperation] = []
     /// 端末への書き込みが成功した後に呼ぶ。友達への共有はここから行う。
     var onSaved: ((LocalReview) -> Void)?
     var onDeleted: ((SavedRestaurant) -> Void)?
@@ -70,7 +85,14 @@ final class LocalReviewStore: ObservableObject {
     func reload() {
         do {
             if FileManager.default.fileExists(atPath: fileURL.path) {
-                let decoded = try JSONDecoder().decode([LocalReview].self, from: Data(contentsOf: fileURL))
+                let data = try Data(contentsOf: fileURL)
+                let document: ReviewDocument
+                if let current = try? JSONDecoder().decode(ReviewDocument.self, from: data) { document = current }
+                else {
+                    let old = try JSONDecoder().decode([LocalReview].self, from: data)
+                    document = ReviewDocument(reviews: old, pending: old.map { ReviewSyncOperation(restaurant: $0.restaurant, review: $0) })
+                }
+                let decoded = document.reviews
                 guard Set(decoded.map(\.id)).count == decoded.count else { throw CocoaError(.fileReadCorruptFile) }
                 for review in decoded {
                     try Self.validate(rating: review.rating, comment: review.comment)
@@ -80,7 +102,8 @@ final class LocalReviewStore: ObservableObject {
                     }
                 }
                 reviews = decoded.sorted { $0.updatedAt > $1.updatedAt }
-            } else { reviews = [] }
+                pending = document.pending
+            } else { reviews = []; pending = [] }
             loadError = nil
         } catch {
             loadError = "レビューを読み込めませんでした。元のデータは上書きしていません。"
@@ -88,7 +111,7 @@ final class LocalReviewStore: ObservableObject {
     }
 
     func review(for item: MKMapItem) -> LocalReview? {
-        reviews.first { $0.id == SavedRestaurant.identifier(for: item) }
+        reviews.first { $0.restaurant.matches(item) }
     }
 
     static func validate(rating: Double, comment: String) throws {
@@ -122,7 +145,7 @@ final class LocalReviewStore: ObservableObject {
                                     createdAt: old?.createdAt ?? .now, updatedAt: .now,
                                     dish: dish.trimmingCharacters(in: .whitespacesAndNewlines), wantAgain: wantAgain,
                                     visitedOn: visitedOn, photoFileNames: retained + added)
-            try persist([entry] + reviews.filter { $0.id != entry.id })
+            try persist([entry] + reviews.filter { $0.id != entry.id }, operation: ReviewSyncOperation(restaurant: entry.restaurant, review: entry))
             onSaved?(entry)
         } catch {
             removePhotos(added)
@@ -133,7 +156,7 @@ final class LocalReviewStore: ObservableObject {
 
     func delete(id: String) throws {
         let removed = reviews.first { $0.id == id }
-        try persist(reviews.filter { $0.id != id })
+        try persist(reviews.filter { $0.id != id }, operation: removed.map { ReviewSyncOperation(restaurant: $0.restaurant, review: nil) })
         removePhotos(removed?.photoFileNames ?? [])
         if let removed { onDeleted?(removed.restaurant) }
     }
@@ -149,11 +172,91 @@ final class LocalReviewStore: ObservableObject {
         }
     }
 
-    private func persist(_ updated: [LocalReview]) throws {
+    func clear() throws {
+        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode(ReviewDocument(reviews: [], pending: [])).write(to: fileURL, options: .atomic)
+        reviews = []; pending = []; loadError = nil
+        if FileManager.default.fileExists(atPath: photosDirectory.path) { try FileManager.default.removeItem(at: photosDirectory) }
+    }
+
+    func checkpoint() throws -> Data { try JSONEncoder().encode(ReviewDocument(reviews: reviews, pending: pending)) }
+
+    func restoreCheckpoint(_ data: Data) throws {
+        try data.write(to: fileURL, options: .atomic)
+        reload()
+        if loadError != nil { throw ReviewError.unreadableData }
+    }
+
+    func enqueueAllForSharing() throws {
+        let existing = Set(reviews.map(\.id))
+        let deletions = pending.filter { $0.review == nil && !existing.contains($0.restaurant.id) }
+        try write(reviews, pending: deletions + reviews.map { ReviewSyncOperation(restaurant: $0.restaurant, review: $0) })
+    }
+
+    func acknowledge(_ operation: ReviewSyncOperation) throws {
+        try write(reviews, pending: pending.filter { $0.id != operation.id })
+    }
+
+    func replace(with restored: [LocalReview], photos: [String: Data], queuesDeletes: Bool = true) throws {
+        try replace(with: restored, queuesDeletes: queuesDeletes) { name in
+            guard let data = photos[name] else { throw ReviewError.invalidPhoto }
+            return data
+        }
+    }
+
+    func replace(with restored: [LocalReview], queuesDeletes: Bool = true, photoData: (String) throws -> Data) throws {
+        guard Set(restored.map(\.id)).count == restored.count else { throw ReviewError.unreadableData }
+        for review in restored {
+            try Self.validate(rating: review.rating, comment: review.comment)
+            guard review.dish.count <= 100, review.photoFileNames.count <= 5,
+                  review.photoFileNames.allSatisfy(ReviewPhotoCodec.isSafeFilename),
+                  (-90...90).contains(review.restaurant.latitude), (-180...180).contains(review.restaurant.longitude) else { throw ReviewError.unreadableData }
+        }
+        // Use fresh file names so a failed restore never overwrites existing photos.
+        var mapping: [String: String] = [:]
+        var staged: [String] = []
+        do {
+            try FileManager.default.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
+            for name in Set(restored.flatMap(\.photoFileNames)) {
+                let clean = try ReviewPhotoCodec.sanitizedJPEG(from: photoData(name))
+                let fresh = UUID().uuidString + ".jpg"
+                mapping[name] = fresh; staged.append(fresh)
+                try clean.write(to: photosDirectory.appendingPathComponent(fresh), options: .atomic)
+            }
+            let freshReviews = restored.map {
+                LocalReview(restaurant: $0.restaurant, rating: $0.rating, comment: $0.comment,
+                            createdAt: $0.createdAt, updatedAt: $0.updatedAt, dish: $0.dish,
+                            wantAgain: $0.wantAgain, visitedOn: $0.visitedOn,
+                            photoFileNames: $0.photoFileNames.compactMap { mapping[$0] })
+            }
+            let deleted = queuesDeletes ? reviews.filter { old in !restored.contains { $0.id == old.id } } : []
+            let operations = deleted.map { ReviewSyncOperation(restaurant: $0.restaurant, review: nil) }
+                + freshReviews.map { ReviewSyncOperation(restaurant: $0.restaurant, review: $0) }
+            try write(freshReviews, pending: operations)
+        } catch { removePhotos(staged); throw error }
+    }
+
+    func removeUnusedPhotos() {
+        let used = Set(reviews.flatMap(\.photoFileNames))
+        guard let files = try? FileManager.default.contentsOfDirectory(atPath: photosDirectory.path) else { return }
+        removePhotos(files.filter { !used.contains($0) })
+    }
+
+    private func persist(_ updated: [LocalReview], operation: ReviewSyncOperation? = nil) throws {
+        var next = pending
+        if let operation {
+            next.removeAll { $0.restaurant.id == operation.restaurant.id }
+            next.append(operation)
+        }
+        try write(updated, pending: next)
+    }
+
+    private func write(_ updated: [LocalReview], pending next: [ReviewSyncOperation]) throws {
         guard loadError == nil else { throw ReviewError.unreadableData }
-        let data = try JSONEncoder().encode(updated)
+        let data = try JSONEncoder().encode(ReviewDocument(reviews: updated, pending: next))
         try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         try data.write(to: fileURL, options: .atomic)
         reviews = updated
+        pending = next
     }
 }

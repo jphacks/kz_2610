@@ -71,12 +71,12 @@ async function bytes(request, limit) {
   }
   return result;
 }
-async function body(request) {
+async function body(request, limit = 32768) {
   if (request.headers.get("Content-Type")?.split(";")[0] !== "application/json")
     fail(415, "json_required");
   try {
     const value = JSON.parse(
-      new TextDecoder().decode(await bytes(request, 32768)),
+      new TextDecoder().decode(await bytes(request, limit)),
     );
     if (!value || typeof value !== "object" || Array.isArray(value))
       fail(400, "invalid_body");
@@ -106,7 +106,16 @@ async function route(request, env) {
   // D1 bindings are private to this Worker. Never expose arbitrary table/SQL APIs.
   const db = env.DB;
   const stmt = (sql, ...args) => db.prepare(sql).bind(...args);
-  const all = async (sql, ...args) => (await stmt(sql, ...args).all()).results;
+  const all = async (sql, ...args) => {
+    if (sql.endsWith("limit 1000")) {
+      const limit = Number(url.searchParams.get("limit") ?? 1000);
+      const offset = Number(url.searchParams.get("offset") ?? 0);
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000 || !Number.isSafeInteger(offset) || offset < 0) fail(400, "invalid_page");
+      sql = sql.replace(/limit 1000$/, "limit ? offset ?");
+      args.push(limit, offset);
+    }
+    return (await stmt(sql, ...args).all()).results;
+  };
   const one = (sql, ...args) => stmt(sql, ...args).first();
   const run = (sql, ...args) => stmt(sql, ...args).run();
   const url = new URL(request.url),
@@ -119,6 +128,14 @@ async function route(request, env) {
     if (!result.success) fail(429, "rate_limited");
   }
   if (path === "/health" && method === "GET") return json({ status: "ok" });
+  // Development recovery is unavailable on deployed hosts, even if a local config was copied.
+  if (path === "/v1/auth/local-state" && method === "GET") {
+    if (env.LOCAL_DEVELOPMENT !== "true" || !["localhost","127.0.0.1","[::1]"].includes(url.hostname)) fail(404,"not_found");
+    await run("insert into maintenance_state(id,payload) values(2,?) on conflict(id) do nothing",crypto.randomUUID());
+    const state = await one("select payload from maintenance_state where id=2");
+    const users = await one("select count(*) as count from users");
+    return json({instance_id:state.payload,is_empty:users.count===0});
+  }
   if (path === "/v1/auth/guest" && method === "POST") {
     // Hackathon build: the session token is the only credential, so guests keep
     // the same account while the app keeps it in the Keychain.
@@ -166,6 +183,16 @@ async function route(request, env) {
       }
     }
   }
+  if (path === "/v1/auth/recover" && method === "POST") {
+    const b = await body(request);
+    const key = text(b.recovery_key, 64, 64);
+    if (!/^[a-f0-9]{64}$/.test(key)) fail(400, "invalid_key");
+    const account = await one("select user_id from recovery_keys where key_hash=?", await hash(key));
+    if (!account) fail(401, "authentication_required");
+    const token = randomToken(), expires = now() + 365 * 86400;
+    await run("insert into sessions(token_hash,user_id,expires_at) values(?,?,?)", await hash(token), account.user_id, expires);
+    return json({access_token:token, expires_at:expires, user_id:account.user_id});
+  }
   if (path === "/v1/restaurants" && method === "GET") {
     const bounds = parseBounds(url);
     return json(
@@ -196,22 +223,66 @@ async function route(request, env) {
   if (path === "/v1/me" && method === "GET")
     return json(
       await one(
-        "select id,display_name,handle,avatar_path,created_at from profiles where id=?",
+        "select id,display_name,handle,avatar_path,bio,avatar_symbol,created_at from profiles where id=?",
         actor,
       ),
     );
   if (path === "/v1/me" && method === "PATCH") {
     const b = await body(request);
-    const name = text(b.display_name, 40, 1),
+    const name = text(b.display_name, 40, 1).trim(),
       handle = text(b.handle, 40, 3);
-    if (!/^[a-z0-9_.]+$/.test(handle)) fail(400, "invalid_handle");
+    if (!name || !/^[a-z0-9_.]+$/.test(handle)) fail(400, "invalid_handle");
     await run(
-      "update profiles set display_name=?,handle=? where id=?",
+      "update profiles set display_name=?,handle=?,bio=coalesce(?,bio),avatar_symbol=coalesce(?,avatar_symbol) where id=?",
       name,
       handle,
+      b.bio === undefined ? null : text(b.bio, 160),
+      b.avatar_symbol === undefined ? null : avatar(b.avatar_symbol),
       actor,
     );
     return json({ ok: true });
+  }
+  if (path === "/v1/me" && method === "DELETE") {
+    // Revocation is immediate; inaccessible objects are removed by the scheduled sweep.
+    await run("delete from users where id=?", actor);
+    return json({ok:true});
+  }
+  if (path === "/v1/me/recovery-key" && method === "POST") {
+    const key = randomToken();
+    await run("insert into recovery_keys(user_id,key_hash) values(?,?) on conflict(user_id) do update set key_hash=excluded.key_hash", actor, await hash(key));
+    return json({recovery_key:key});
+  }
+  if (path === "/v1/library" && method === "GET") {
+    const row = await one("select version,payload,updated_at from library_backups where user_id=?", actor);
+    return json(row ? {version:row.version, snapshot:JSON.parse(row.payload), updated_at:row.updated_at} : {version:0, snapshot:null});
+  }
+  if (path === "/v1/library" && method === "PUT") {
+    const b = await body(request, 1_600_000);
+    if (!Number.isSafeInteger(b.version) || b.version < 0 || !b.snapshot || typeof b.snapshot !== "object" || Array.isArray(b.snapshot)) fail(400,"invalid_snapshot");
+    const snapshot = b.snapshot;
+    if (new TextEncoder().encode(JSON.stringify(snapshot)).length > 1_500_000) fail(413,"backup_too_large");
+    if (snapshot.schema !== 1 || !Array.isArray(snapshot.saved) || !Array.isArray(snapshot.reviews) || snapshot.saved.length > 10000 || snapshot.reviews.length > 10000) fail(400,"invalid_snapshot");
+    if (b.version !== 0 && !(await one("select 1 from library_backups where user_id=?",actor))) fail(409,"backup_conflict");
+    const result = await one("insert into library_backups(user_id,version,payload) values(?,1,?) on conflict(user_id) do update set version=version+1,payload=excluded.payload,updated_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') where version=? returning version", actor, JSON.stringify(snapshot), b.version);
+    if (!result) fail(409,"backup_conflict");
+    return json(result);
+  }
+  const backupPhoto = path.match(/^\/v1\/library\/photos\/([a-fA-F0-9-]{36}\.jpg)$/);
+  if (backupPhoto) {
+    if (!uuid(backupPhoto[1].slice(0,-4).toLowerCase())) fail(400,"invalid_photo");
+    const key = `backup/${actor}/${backupPhoto[1]}`;
+    if (method === "PUT") {
+      if (request.headers.get("Content-Type") !== "image/jpeg") fail(415,"jpeg_required");
+      const data = await bytes(request,MAX_PHOTO);
+      if (data.length < 4 || data[0]!==255 || data[1]!==216 || data.at(-2)!==255 || data.at(-1)!==217) fail(400,"invalid_jpeg");
+      await env.PHOTOS.put(key,data,{httpMetadata:{contentType:"image/jpeg"}});
+      return json({ok:true});
+    }
+    if (method === "GET") {
+      const object = await env.PHOTOS.get(key);
+      if (!object) fail(404,"not_found");
+      return new Response(object.body,{headers:{"Content-Type":"image/jpeg","Cache-Control":"private, no-store"}});
+    }
   }
   if (path === "/v1/preferences" && method === "GET")
     return json(
@@ -336,7 +407,7 @@ async function route(request, env) {
   if (path === "/v1/blocks" && method === "GET")
     return json(
       await all(
-        "select blocked_id from blocks where blocker_id=? order by blocked_id limit 1000",
+        "select b.blocked_id,p.display_name from blocks b join profiles p on p.id=b.blocked_id where b.blocker_id=? order by b.blocked_id limit 1000",
         actor,
       ),
     );
@@ -360,8 +431,13 @@ async function route(request, env) {
   }
   if (path === "/v1/restaurants" && method === "POST") {
     const b = await body(request);
+    const placeID = b.google_place_id == null ? null : text(b.google_place_id, 300, 1);
+    if (placeID) {
+      const existing = await one("select * from restaurants where google_place_id=? order by id limit 1",placeID);
+      if (existing) return json(existing,201);
+    }
     const result = await one(
-      "insert into restaurants(id,external_key,name,category,address,latitude,longitude) values(?,?,?,?,?,?,?) on conflict(external_key) do update set external_key=excluded.external_key returning *",
+      "insert into restaurants(id,external_key,name,category,address,latitude,longitude,google_place_id) values(?,?,?,?,?,?,?,?) on conflict(external_key) do update set google_place_id=coalesce(restaurants.google_place_id,excluded.google_place_id) on conflict(google_place_id) do update set google_place_id=excluded.google_place_id returning *",
       crypto.randomUUID(),
       text(b.external_key, 300, 1),
       text(b.name, 200, 1),
@@ -369,6 +445,7 @@ async function route(request, env) {
       text(b.address ?? "", 500),
       number(b.latitude, -90, 90),
       number(b.longitude, -180, 180),
+      placeID,
     );
     return json(result, 201);
   }
@@ -407,7 +484,7 @@ async function route(request, env) {
   if (path === "/v1/friend-reviews" && method === "GET")
     return json(
       await all(
-        `select r.id,r.user_id,p.display_name,r.rating,r.comment,r.dish,r.want_again,r.updated_at,s.id as restaurant_id,s.external_key,s.name,s.category,s.address,s.latitude,s.longitude from reviews r join profiles p on p.id=r.user_id join profile_preferences pref on pref.user_id=r.user_id join restaurants s on s.id=r.restaurant_id where r.user_id<>?1 and pref.include_in_friend_avg=1 and ${connected("?1", "r.user_id")} order by r.updated_at desc,r.id limit 1000`,
+        `select r.id,r.user_id,p.display_name,r.rating,r.comment,r.dish,r.want_again,r.updated_at,s.id as restaurant_id,s.external_key,s.google_place_id,s.name,s.category,s.address,s.latitude,s.longitude from reviews r join profiles p on p.id=r.user_id join profile_preferences pref on pref.user_id=r.user_id join restaurants s on s.id=r.restaurant_id where r.user_id<>?1 and pref.include_in_friend_avg=1 and ${connected("?1", "r.user_id")} order by r.updated_at desc,r.id limit 1000`,
         actor,
       ),
     );
@@ -646,7 +723,32 @@ function parseBounds(url) {
     fail(400, "invalid_bounds");
   return values;
 }
+function avatar(value) {
+  const symbols = ["person.fill","fork.knife","cup.and.saucer.fill","leaf.fill","fish.fill","carrot.fill","birthday.cake.fill","sun.max.fill"];
+  if (!symbols.includes(value)) fail(400,"invalid_avatar");
+  return value;
+}
+
+// Sweep a bounded page each run. Keep a cursor so large buckets eventually finish.
+export async function sweepOrphans(env) {
+  const state = await env.DB.prepare("select payload from maintenance_state where id=1").first();
+  const page = await env.PHOTOS.list({limit:100,cursor:state?.payload || undefined});
+  for (const object of page.objects) {
+    if (Date.now() - new Date(object.uploaded).getTime() < 86400000) continue;
+    let exists;
+    if (object.key.startsWith("backup/")) {
+      const [,owner,name] = object.key.split("/");
+      const row = await env.DB.prepare("select payload from library_backups where user_id=?").bind(owner).first();
+      exists = row && JSON.parse(row.payload).reviews?.some(r => r.photoFileNames?.includes(name));
+    } else {
+      exists = await env.DB.prepare("select 1 from review_photos where object_path=?").bind(object.key).first();
+    }
+    if (!exists) await env.PHOTOS.delete(object.key);
+  }
+  await env.DB.prepare("insert into maintenance_state(id,payload) values(1,?) on conflict(id) do update set payload=excluded.payload").bind(page.truncated ? page.cursor : "").run();
+}
 export default {
+  async scheduled(_event,env,ctx) { ctx.waitUntil(sweepOrphans(env)); },
   async fetch(request, env) {
     try {
       return await route(request, env);

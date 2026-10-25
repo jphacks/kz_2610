@@ -14,25 +14,18 @@ struct SwipeDiscoveryDependencies {
     /// 「行きたい」の一覧。
     let wantToGo: SwipeWantToGoStore?
 
-    /// サーバー接続時は友達の実データ、未接続は Friend Lens のデモ（友達タブと同じ切り替え）。
+    /// 友達タブと同じく、サーバーから取得した友達の実データだけを使う（アプリにデモデータはない）。
     static func make(friends: FriendStore, reviews: LocalReviewStore) -> SwipeDiscoveryDependencies {
-        let isDemo = !friends.isAvailable
         let mapItems = SwipeMapItemRegistry()
-        let provider = FriendDatasetReviewProvider(isDemo: isDemo, mapItems: mapItems) {
-            isDemo ? DemoRecommendations.dataset : friends.dataset
-        }
-        // デモの架空の店も端末の「行きたい」に入れる（サーバーには送らない）。
+        let provider = FriendDatasetReviewProvider(isDemo: false, mapItems: mapItems) { friends.dataset }
         let wantToGo = SwipeDiscoveryEntry.wantToGoStore
-        let savedShops: SavedShopsBridge = WantToGoShopsBridge(wantToGo: wantToGo, reviews: reviews, localOnly: isDemo)
-        // デモ（架空の店）と実データの判断記録は混ぜない。
-        let store = SwipeDecisionStore(fileURL: SwipeDecisionStore.defaultURL(
-            fileName: isDemo ? "swipe_decisions_demo.json" : "swipe_decisions.json"))
-        // 架空の店で実在店舗の写真を探さない。
-        let photos = SwipePlacePhotoCache(fetcher: isDemo ? nil : SwipeGoogleMapsBridge.placePhotoFetcher(mapItems: mapItems))
         return SwipeDiscoveryDependencies(
-            isDemo: isDemo, provider: provider, savedShops: savedShops, decisionStore: store,
+            isDemo: false, provider: provider,
+            savedShops: WantToGoShopsBridge(wantToGo: wantToGo, reviews: reviews),
+            decisionStore: SwipeDecisionStore(fileURL: SwipeDecisionStore.defaultURL()),
             guideStore: SwipeGuideStateStore(), location: SwipeLocationProvider(), mapItems: mapItems,
-            placePhotos: photos, wantToGo: wantToGo)
+            placePhotos: SwipePlacePhotoCache(fetcher: SwipeGoogleMapsBridge.placePhotoFetcher(mapItems: mapItems)),
+            wantToGo: wantToGo)
     }
 }
 

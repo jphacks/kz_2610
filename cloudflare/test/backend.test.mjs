@@ -2,7 +2,7 @@ import { before, after, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { Miniflare } from "miniflare";
-import worker from "../src/index.js";
+import worker, { sweepOrphans } from "../src/index.js";
 import { hash, now } from "../src/auth.js";
 
 // Synthetic identities only; ephemeral local D1 and R2, no production credentials.
@@ -40,9 +40,9 @@ async function data(actor, method, path, value, status = 200) {
   assert.equal(response.status, status, JSON.stringify(result));
   return result;
 }
-async function connect() {
-  const { id } = await data(A, "POST", "/requests", { target_id: B }, 201);
-  await data(B, "PATCH", `/requests/${id}`, { accept: true });
+async function connect(from = A, to = B) {
+  const { id } = await data(from, "POST", "/requests", { target_id: to }, 201);
+  await data(to, "PATCH", `/requests/${id}`, { accept: true });
   return id;
 }
 before(async () => {
@@ -66,7 +66,7 @@ before(async () => {
     .sort()) {
     const migration = await readFile(new URL(name, directory), "utf8");
     const statements = migration.match(
-      /create trigger[\s\S]*?\nend;|(?:--[^\n]*\n|\s)*(?:create table|create index|drop trigger|drop table|alter table)[\s\S]*?;/gi,
+      /create trigger[\s\S]*?\nend;|(?:--[^\n]*\n|\s)*(?:create table|create (?:unique )?index|drop trigger|drop table|alter table)[\s\S]*?;/gi,
     );
     assert.ok(statements?.length, `No SQL found in ${name}`);
     for (const statement of statements) await db.prepare(statement).run();
@@ -553,4 +553,105 @@ test("want-to-go rejects unknown restaurants, malformed IDs and anonymous caller
   await data(A, "PUT", "/want-to-go/not-a-uuid", undefined, 400);
   const anonymous = await api(null, "GET", "/want-to-go");
   assert.equal(anonymous.status, 401);
+});
+test("profiles persist bio and icon, reject invalid edits without replacing the profile", async () => {
+  const original = await data(A,"GET","/me");
+  await data(A,"PATCH","/me",{display_name:"食いしん坊",handle:original.handle,bio:"カレーが好き",avatar_symbol:"fish.fill"});
+  const profile = await data(A,"GET","/me");
+  assert.equal(profile.bio,"カレーが好き");
+  assert.equal(profile.avatar_symbol,"fish.fill");
+  await data(A,"PATCH","/me",{display_name:"変更",handle:original.handle,bio:"a".repeat(161)},400);
+  await data(A,"PATCH","/me",{display_name:"変更",handle:original.handle,avatar_symbol:"invalid"},400);
+  await data(A,"PATCH","/me",{display_name:"   ",handle:original.handle},400);
+  assert.equal((await data(A,"GET","/me")).display_name,"食いしん坊");
+});
+
+test("recovery codes rotate and restore the same identity; deleted accounts cannot recover",async () => {
+  const first = await data(A,"POST","/me/recovery-key",{});
+  const second = await data(A,"POST","/me/recovery-key",{});
+  await data(null,"POST","/auth/recover",first,401);
+  const session = await data(null,"POST","/auth/recover",second);
+  assert.equal(session.user_id,A);
+  assert.equal((await data(session.access_token,"GET","/me")).id,A);
+  assert.equal(await sql("select key_hash from recovery_keys where user_id=?",A).first("key_hash"),await hash(second.recovery_key));
+  await data(A,"DELETE","/me");
+  await data(session.access_token,"GET","/me",undefined,401);
+  await data(null,"POST","/auth/recover",second,401);
+});
+
+test("private backups use versions and do not expose snapshots or photos to friends",async () => {
+  await connect(A,B);
+  const snapshot = {schema:1,saved:[],reviews:[]};
+  assert.deepEqual(await data(A,"GET","/library"),{version:0,snapshot:null});
+  await data(A,"PUT","/library",{version:0,snapshot});
+  await data(A,"PUT","/library",{version:0,snapshot},409);
+  await data(A,"PUT","/library",{version:1,snapshot});
+  assert.equal((await data(A,"GET","/library")).version,2);
+  assert.equal((await data(B,"GET","/library")).snapshot,null);
+  const name = "00000000-0000-0000-0000-000000000099.jpg";
+  const bytes = new Uint8Array([255,216,255,217]);
+  assert.equal((await api(A,"PUT",`/library/photos/${name}`,bytes,{"Content-Type":"image/jpeg"})).status,200);
+  assert.equal((await api(A,"GET",`/library/photos/${name}`)).status,200);
+  assert.equal((await api(B,"GET",`/library/photos/${name}`)).status,404);
+  const race = await Promise.all([api(A,"PUT","/library",{version:2,snapshot}),api(A,"PUT","/library",{version:2,snapshot})]);
+  assert.deepEqual(race.map(x=>x.status).sort(),[200,409]);
+  await data(A,"DELETE","/me");
+  assert.equal(await sql("select 1 from library_backups where user_id=?",A).first(),null);
+});
+
+test("list pagination preserves all rows and rejects invalid pages",async () => {
+  await connect(A,B);
+  await sql("update profile_preferences set allow_id_search=1 where user_id=?",C).run();
+  await connect(A,C);
+  const full = await data(A,"GET","/friends");
+  const one = await data(A,"GET","/friends?limit=1&offset=0");
+  const two = await data(A,"GET","/friends?limit=1&offset=1");
+  assert.deepEqual([...one,...two],full);
+  assert.equal((await data(A,"GET","/friends?limit=1&offset=2")).length,0);
+  await data(A,"GET","/friends?offset=-1",undefined,400);
+  await data(A,"GET","/friends?limit=1001",undefined,400);
+});
+
+test("Google Place ID reuses a restaurant even after its name and coordinates change",async () => {
+  const original = {external_key:"old-key",name:"旧店名",latitude:35,longitude:139,google_place_id:"place-test"};
+  const first = await data(A,"POST","/restaurants",original,201);
+  const second = await data(B,"POST","/restaurants",{...original,external_key:"new-key",name:"新店名",latitude:35.01},201);
+  assert.equal(first.id,second.id);
+  assert.equal(second.name,"旧店名");
+});
+
+
+test("orphan sweep retains referenced and recent objects and advances its cursor",async () => {
+  const filename = "00000000-0000-0000-0000-000000000099.jpg";
+  const snapshot = {schema:1,saved:[],reviews:[{photoFileNames:[filename]}]};
+  await data(A,"PUT","/library",{version:0,snapshot});
+  const old = new Date(Date.now()-2*86400000);
+  const removed = [];
+  await sweepOrphans({DB:db,PHOTOS:{
+    list:async()=>({objects:[
+      {key:`backup/${A}/${filename}`,uploaded:old},
+      {key:`backup/${B}/${filename}`,uploaded:old},
+      {key:"orphan.jpg",uploaded:old},
+      {key:"fresh.jpg",uploaded:new Date()},
+    ],truncated:true,cursor:"next-page"}),
+    delete:async(key)=>removed.push(key),
+  }});
+  assert.deepEqual(removed,[`backup/${B}/${filename}`,"orphan.jpg"]);
+  assert.equal(await sql("select payload from maintenance_state where id=1").first("payload"),"next-page");
+});
+
+
+test("development recovery state is stable and inaccessible on deployed hosts",async () => {
+  const request = (host) => new Request(`http://${host}/v1/auth/local-state`);
+  assert.equal((await worker.fetch(request("localhost:8787"),env)).status,404);
+  const localEnv = {...env, LOCAL_DEVELOPMENT:"true"};
+  assert.equal((await worker.fetch(request("api.example.test"),localEnv)).status,404);
+  const first = await (await worker.fetch(request("localhost:8787"),localEnv)).json();
+  const second = await (await worker.fetch(request("localhost:8787"),localEnv)).json();
+  assert.equal(first.instance_id,second.instance_id);
+  assert.equal(first.is_empty,false);
+  await sql("delete from users").run();
+  const empty = await (await worker.fetch(request("localhost:8787"),localEnv)).json();
+  assert.equal(empty.instance_id,first.instance_id);
+  assert.equal(empty.is_empty,true);
 });

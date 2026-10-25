@@ -40,7 +40,9 @@ enum GoogleRestaurantSearch {
 
     static func request(term: String, region: MKCoordinateRegion, genre: RestaurantGenre,
                         nearby: Bool) -> SearchByTextRequest {
-        let types: [RestaurantGenre: PlaceType] = [.restaurant: .restaurant, .cafe: .cafe, .bakery: .bakery]
+        // カフェとパンは種類で絞る。ほかのジャンルは飲食店の中から言葉で探し、結果をジャンルの判定で絞る。
+        let types: [RestaurantGenre: PlaceType] = [.cafe: .cafe, .bakery: .bakery]
+        let includedType: PlaceType? = genre == .all ? nil : (types[genre] ?? .restaurant)
         let radius = min(50_000, max(100, region.span.latitudeDelta * 111_320 / 2))
         let bias = CircularCoordinateRegion(center: region.center, radius: radius)
         if nearby, let rectangle = RectangularCoordinateRegion(
@@ -49,12 +51,12 @@ enum GoogleRestaurantSearch {
             southWest: CLLocationCoordinate2D(latitude: max(-85, region.center.latitude - region.span.latitudeDelta / 2),
                                                longitude: max(-180, region.center.longitude - region.span.longitudeDelta / 2))) {
             return SearchByTextRequest(textQuery: term, placeProperties: properties,
-                                       locationRestriction: rectangle, includedType: types[genre], maxResultCount: 20,
+                                       locationRestriction: rectangle, includedType: includedType, maxResultCount: 20,
                                        isOpenNow: false, rankPreference: .relevance, regionCode: "JP",
                                        isStrictTypeFiltering: genre != .all)
         }
         return SearchByTextRequest(textQuery: term, placeProperties: properties, locationBias: bias,
-                                   includedType: types[genre], maxResultCount: 20, isOpenNow: false,
+                                   includedType: includedType, maxResultCount: 20, isOpenNow: false,
                                    rankPreference: .relevance, regionCode: "JP", isStrictTypeFiltering: genre != .all)
     }
 
@@ -63,8 +65,10 @@ enum GoogleRestaurantSearch {
         guard GooglePlacesService.isConfigured else { throw URLError(.userAuthenticationRequired) }
         let response = try await PlacesClient.shared.responseForSearchByText(
             with: request(term: term, region: region, genre: genre, nearby: nearby)).get()
-        return (response.places ?? []).map(mapItem).filter {
-            $0.pointOfInterestCategory != nil && genre.matches($0)
-        }
+        let items = (response.places ?? []).map(mapItem).filter { $0.pointOfInterestCategory != nil }
+        guard let wanted = genre.foodGenre else { return items }
+        // ジャンルで探して見つかったのに、店名や種類からはジャンルが分からないお店は、探したジャンルとして扱う。
+        for item in items where item.foodGenre == .other { item.searchedFoodGenre = wanted }
+        return items.filter { genre.matches($0) }
     }
 }

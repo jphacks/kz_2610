@@ -1,9 +1,10 @@
+@testable import meshinowa
 import Foundation
 import CoreLocation
 import MapKit
 
-/// デモ専用。実在店舗の検索・保存データとは結合しない。
-enum DemoRecommendations {
+/// 単体テスト専用。アプリ本体には含めない。
+enum TestRecommendations {
     static let favoriteFriendIDs: Set<String> = ["takuma", "saki", "mio"]
     static let friends = [
         FriendProfile(id: "takuma", name: "たくま"), FriendProfile(id: "yuki", name: "ゆうき"),
@@ -32,7 +33,7 @@ enum DemoRecommendations {
     ]
 
     static let dataset = FriendDataset(friends: friends, favoriteFriendIDs: favoriteFriendIDs,
-                                       restaurants: restaurants, reviews: reviews, isDemo: true)
+                                       restaurants: restaurants, reviews: reviews)
 
     static func summary(for restaurant: FriendRestaurant, friendIDs: Set<String>? = nil) -> FriendRatingSummary {
         FriendRatingSummary(restaurantID: restaurant.id, reviews: reviews, friendIDs: friendIDs)

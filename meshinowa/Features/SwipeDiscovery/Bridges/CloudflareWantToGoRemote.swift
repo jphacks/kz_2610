@@ -70,6 +70,8 @@ struct CloudflareWantToGoRemote: SwipeWantToGoRemote {
         ]
         // category は他の画面が MapKit のカテゴリ値として読むので、その形式の時だけ送る。
         if let genre = entry.genre, genre.hasPrefix("MKPOICategory") { body["category"] = String(genre.prefix(100)) }
+        // Place ID 形式の店舗IDなら、サーバーの店舗とも Place ID で照合する。
+        if entry.id.hasPrefix("google:") { body["google_place_id"] = String(entry.id.dropFirst("google:".count).prefix(300)) }
         let data = try JSONSerialization.data(withJSONObject: body)
         let created: Created = try await backend.request("/restaurants", method: "POST", accessToken: token, body: data)
         return created.id

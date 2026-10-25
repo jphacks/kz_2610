@@ -5,6 +5,8 @@ import MapKit
 struct FriendProfile: Identifiable {
     let id: String
     let name: String
+    var bio = ""
+    var avatarSymbol = "person.fill"
 }
 
 struct FriendRestaurant: Identifiable {
@@ -14,12 +16,14 @@ struct FriendRestaurant: Identifiable {
     let coordinate: CLLocationCoordinate2D
     var address = ""
     var category: String?
+    var googlePlaceID: String?
 
     /// 実店舗の詳細・保存・レビューに渡すための MapKit 表現。
     var mapItem: MKMapItem {
         let placemark = MKPlacemark(coordinate: coordinate, addressDictionary: ["Street": address])
         let item = MKMapItem(placemark: placemark)
         item.name = name
+        if let googlePlaceID { item.googleDetails = GoogleRestaurantDetails(placeID: googlePlaceID) }
         item.pointOfInterestCategory = category.map(MKPointOfInterestCategory.init(rawValue:))
         return item
     }
@@ -58,20 +62,25 @@ struct FriendRatingSummary {
     }
 }
 
-/// 友達のおすすめマップ・フィードが表示する一式。架空のデモとサーバーの実データで同じ画面を使う。
+/// サーバーから取得した、友達のおすすめマップ・フィードが表示する一式。
 struct FriendDataset {
     var friends: [FriendProfile]
     var favoriteFriendIDs: Set<String>
     var restaurants: [FriendRestaurant]
     var reviews: [FriendReview]
-    var isDemo: Bool
 
     func summary(for restaurant: FriendRestaurant, friendIDs: Set<String>? = nil) -> FriendRatingSummary {
         FriendRatingSummary(restaurantID: restaurant.id, reviews: reviews, friendIDs: friendIDs)
     }
 
+    /// 未評価や無効な評価のお店をおすすめ地図に混ぜない。
+    var ratedRestaurants: [FriendRestaurant] {
+        let friendIDs = Set(friends.map(\.id))
+        return restaurants.filter { summary(for: $0, friendIDs: friendIDs).count > 0 }
+    }
+
     func friendName(_ id: String) -> String {
-        friends.first { $0.id == id }?.name ?? (isDemo ? "デモの友達" : "友達")
+        friends.first { $0.id == id }?.name ?? "友達"
     }
 
     func restaurant(_ id: String) -> FriendRestaurant? {
@@ -91,7 +100,6 @@ struct FriendDataset {
     }
 
     func area(for restaurant: FriendRestaurant) -> String {
-        if isDemo { return DemoRecommendations.area(for: restaurant) }
         let address = restaurant.address.withoutPostalCode.replacingOccurrences(of: "\n", with: " ")
         return address.isEmpty ? "住所の情報がありません" : address
     }

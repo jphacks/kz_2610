@@ -57,7 +57,8 @@ struct SwipeShopMapView: View {
             GoogleMapCanvas(position: position, pins: [
                 GoogleMapPin(id: "shop", title: candidate.name,
                              coordinate: CLLocationCoordinate2D(latitude: candidate.latitude, longitude: candidate.longitude),
-                             symbol: SwipeTheme.symbol(for: candidate.category))
+                             symbol: SwipeTheme.symbol(for: candidate.category),
+                             genre: FoodGenre(rawValue: candidate.category == .pan ? "bread" : candidate.category.rawValue) ?? .other)
             ], selectedID: $selectedID)
             .allowsHitTesting(interactive)
         } else {

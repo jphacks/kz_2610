@@ -5,11 +5,12 @@ struct FriendsHomeView: View {
     /// タブが表示中のときだけ、申請や友達の評価を定期的に取り直す。
     var isActive = true
     @EnvironmentObject private var store: FriendStore
+    @Environment(\.scenePhase) private var scenePhase
     @State private var section: Section = .recommended
 
-    /// サーバー未設定ならデモのまま。接続できればゲストの実データを出す。
+    /// 接続状態にかかわらず、取得済みの実データだけを表示する。
     private var dataset: FriendDataset {
-        store.isAvailable ? store.dataset : DemoRecommendations.dataset
+        store.dataset
     }
 
     var body: some View {
@@ -41,8 +42,8 @@ struct FriendsHomeView: View {
             .padding(.bottom, 24)
         }
         .refreshable { await store.refresh() }
-        .task(id: isActive) {
-            guard isActive else { return }
+        .task(id: isActive && scenePhase == .active) {
+            guard isActive && scenePhase == .active else { return }
             while !Task.isCancelled {
                 await store.refresh()
                 try? await Task.sleep(for: .seconds(10))
@@ -67,12 +68,17 @@ struct FriendsHomeView: View {
 
     private var recommended: some View {
         VStack(alignment: .leading, spacing: 24) {
-            NavigationLink {
-                FriendMapScreen(isDemo: !store.isAvailable)
-            } label: {
+            VStack(spacing: 10) {
                 banner
+                if !dataset.ratedRestaurants.isEmpty {
+                    NavigationLink {
+                        FriendMapScreen()
+                    } label: {
+                        mapEntry
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            .buttonStyle(.plain)
             .padding(.horizontal, 20)
 
             if store.isAvailable && store.friends.isEmpty {
@@ -97,14 +103,13 @@ struct FriendsHomeView: View {
                     HStack(alignment: .firstTextBaseline) {
                         Text("友達の最近の記録")
                             .font(MeshinowaFont.heading(20))
-                        if dataset.isDemo { SoftTag(text: "架空", tone: .neutral, compact: true) }
                     }
                     .padding(.horizontal, 20)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
                             ForEach(dataset.latestReviews.prefix(6)) { review in
                                 NavigationLink {
-                                    FriendMapScreen(isDemo: dataset.isDemo, initialSelection: review.restaurantID)
+                                    FriendMapScreen(initialSelection: review.restaurantID)
                                 } label: {
                                     RecentReviewCard(review: review, dataset: dataset)
                                 }
@@ -116,56 +121,56 @@ struct FriendsHomeView: View {
                 }
             }
 
-            if store.isAvailable {
-                NavigationLink { DemoRecommendationsView() } label: {
-                    Label("架空データのデモを見る", systemImage: "sparkles")
-                        .font(MeshinowaFont.text(14, weight: .bold))
-                        .foregroundStyle(MeshinowaTheme.green)
-                }
-                .padding(.horizontal, 20)
-            } else {
-                Text("サーバーに接続していないため、ここに出る友達・店舗・レビューはすべて架空です。")
-                    .font(MeshinowaFont.text(12, relativeTo: .caption))
-                    .foregroundStyle(MeshinowaTheme.secondaryText)
+            if store.isAvailable && !store.friends.isEmpty && dataset.latestReviews.isEmpty {
+                Text("友達の評価はまだありません。友達がお店を評価すると、ここに表示されます。")
+                    .font(MeshinowaFont.text(14))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
                     .padding(.horizontal, 20)
             }
         }
         .padding(.top, 18)
     }
 
+    /// 小さな帯。友達の記録を上に見せるため、案内は短くする。
     private var banner: some View {
-        HStack(alignment: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("meshinowa")
-                    .font(MeshinowaFont.heading(14))
-                    .foregroundStyle(MeshinowaTheme.green)
-                Text("友達の「うまい」を\n地図に集めよう")
-                    .font(MeshinowaFont.heading(21, relativeTo: .title2))
+        HStack(spacing: 12) {
+            BowlMark(size: 44, holes: MeshinowaTheme.mint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("友達の「うまい」を地図に集めよう")
+                    .font(MeshinowaFont.heading(16))
                     .fixedSize(horizontal: false, vertical: true)
-                Text(dataset.isDemo ? "架空の友達の評価で試せます。"
-                     : "友達\(dataset.friends.count)人・\(dataset.restaurants.count)軒の評価")
+                Text(store.isAvailable ? "友達\(dataset.friends.count)人・\(dataset.restaurants.count)軒の評価"
+                     : "友達の機能は現在利用できません。")
                     .font(MeshinowaFont.text(13, relativeTo: .caption))
                     .foregroundStyle(MeshinowaTheme.bodyText)
-                HStack(spacing: 4) {
-                    Text(dataset.isDemo ? "架空データで試す" : "友達のおすすめマップ")
-                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold))
-                }
-                .font(MeshinowaFont.text(14, weight: .bold))
-                .foregroundStyle(MeshinowaTheme.green)
-                .padding(.top, 4)
             }
             Spacer(minLength: 0)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(alignment: .bottomTrailing) {
-            BowlMark(size: 150)
-                .opacity(0.9)
-                .offset(x: 34, y: 30)
-        }
-        .background(MeshinowaTheme.mint)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .combine)
+    }
+
+    /// 友達のおすすめマップへの入口。1行で目立たせる。
+    private var mapEntry: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "map")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(MeshinowaTheme.green)
+                .frame(width: 36, height: 36)
+                .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            Text("友達のおすすめを地図で見る")
+                .font(MeshinowaFont.text(15, weight: .bold))
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MeshinowaTheme.secondaryText)
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: 56)
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(MeshinowaTheme.hairline))
+        .contentShape(Rectangle())
         .accessibilityHint("友達の評価マップを開きます")
     }
 
@@ -180,12 +185,11 @@ struct FriendsHomeView: View {
 
 /// 友達のおすすめマップ。実データは開いている間も最新の状態を反映する。
 private struct FriendMapScreen: View {
-    let isDemo: Bool
     var initialSelection: String? = nil
     @EnvironmentObject private var store: FriendStore
 
     var body: some View {
-        DemoRecommendationsView(dataset: isDemo ? DemoRecommendations.dataset : store.dataset,
+        FriendRecommendationsView(dataset: store.dataset,
                                 initialSelection: initialSelection)
     }
 }
@@ -199,6 +203,8 @@ private struct FriendConnectionsSection: View {
     @State private var editsName = false
     @State private var name = ""
     @State private var removing: FriendStore.Friend?
+    @State private var blockingID: String?
+    @State private var selectedProfile: FriendStore.Friend?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -215,6 +221,7 @@ private struct FriendConnectionsSection: View {
                                     .buttonStyle(PillButtonStyle(isOn: true))
                             }
                         }
+                        .contextMenu { Button("ブロック", role: .destructive) { blockingID = request.fromId } }
                     }
                 }
             }
@@ -236,7 +243,7 @@ private struct FriendConnectionsSection: View {
                 }
                 ForEach(store.friends) { friend in
                     let isFavorite = friend.isFavorite != 0
-                    personRow(name: friend.displayName, handle: friend.handle) {
+                    personRow(name: friend.displayName, handle: friend.handle, symbol: friend.avatarSymbol) {
                         Button {
                             Task { await store.setFavorite(friend, !isFavorite) }
                         } label: {
@@ -249,7 +256,10 @@ private struct FriendConnectionsSection: View {
                         .accessibilityLabel("お気に入りの友達")
                         .accessibilityValue(isFavorite ? "登録済み" : "未登録")
                     }
+                    .onTapGesture { selectedProfile = friend }
                     .contextMenu {
+                        Button("プロフィールを見る") { selectedProfile = friend }
+                        Button("ブロック", role: .destructive) { blockingID = friend.id }
                         Button("友達を解除", role: .destructive) { removing = friend }
                     }
                 }
@@ -257,6 +267,25 @@ private struct FriendConnectionsSection: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 18)
+        .sheet(item: $selectedProfile) { friend in
+            NavigationStack {
+                VStack(spacing: 18) {
+                    ProfileIcon(symbol: friend.avatarSymbol ?? "person.fill", size: 88)
+                    Text(friend.displayName).font(MeshinowaFont.heading(26))
+                    Text("ID: \(friend.handle)").font(MeshinowaFont.text(14))
+                    Text(friend.bio ?? "").font(MeshinowaFont.text(16)).multilineTextAlignment(.center)
+                    Spacer()
+                }.padding(24).frame(maxWidth: .infinity).background(MeshinowaTheme.paper)
+                    .navigationTitle("友達のプロフィール").navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { selectedProfile = nil } } }
+            }.presentationDetents([.medium, .large])
+        }
+        .confirmationDialog("この人をブロックしますか？", isPresented: Binding(get: { blockingID != nil }, set: { if !$0 { blockingID = nil } }), titleVisibility: .visible) {
+            Button("ブロックする", role: .destructive) {
+                if let id = blockingID { Task { await store.block(id) } }
+                blockingID = nil
+            }
+        } message: { Text("お互いのプロフィールと評価が見えなくなり、友達関係と申請は解除されます。") }
         .alert("名前を変更", isPresented: $editsName) {
             TextField("表示名", text: $name)
             Button("キャンセル", role: .cancel) {}
@@ -273,9 +302,9 @@ private struct FriendConnectionsSection: View {
     private var myCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                FriendAvatar(name: store.me?.displayName ?? "ゲスト", size: 48)
+                FriendAvatar(name: store.me?.displayName ?? "ゲスト", size: 48, symbol: store.me?.avatarSymbol)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(store.me?.displayName ?? "接続中…")
+                    Text(store.me?.displayName ?? store.connectionLabel)
                         .font(MeshinowaFont.heading(18))
                     Text(store.me.map { "ID: \($0.handle)" } ?? "")
                         .font(MeshinowaFont.number(15, relativeTo: .body))
@@ -361,10 +390,10 @@ private struct FriendConnectionsSection: View {
         }
     }
 
-    private func personRow<Trailing: View>(name: String, handle: String,
+    private func personRow<Trailing: View>(name: String, handle: String, symbol: String? = nil,
                                             @ViewBuilder trailing: () -> Trailing) -> some View {
         HStack(spacing: 12) {
-            FriendAvatar(name: name, size: 40)
+            FriendAvatar(name: name, size: 40, symbol: symbol)
             VStack(alignment: .leading, spacing: 2) {
                 Text(name).font(MeshinowaFont.text(15, weight: .bold))
                 Text("ID: \(handle)")
@@ -387,9 +416,10 @@ private struct RecentReviewCard: View {
         let restaurant = dataset.restaurant(review.restaurantID)
         let name = dataset.friendName(review.friendID)
         VStack(alignment: .leading, spacing: 8) {
-            PhotoPlaceholder(symbol: restaurant.map { DemoRecommendations.symbol(for: $0) } ?? "fork.knife",
-                             tint: restaurant.map { DemoRecommendations.photoTint(for: $0) } ?? MeshinowaTheme.photo)
+            // 写真の代わりに、ジャンルの器の形（地図のピンと同じ）を出す。
+            FoodGenreMark(genre: FoodGenre.infer(name: restaurant.map { "\($0.name) \($0.genre)" }, category: restaurant?.category), size: 56)
                 .frame(width: 200, height: 120)
+                .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(alignment: .topLeading) {
                     HStack(spacing: 6) {
                         FriendAvatar(name: name, size: 22)

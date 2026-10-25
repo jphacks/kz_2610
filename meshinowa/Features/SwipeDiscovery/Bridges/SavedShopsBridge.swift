@@ -97,6 +97,10 @@ extension SwipeWantToGoEntry {
         if let genre, genre.hasPrefix("MKPOICategory") {
             item.pointOfInterestCategory = MKPointOfInterestCategory(rawValue: genre)
         }
+        // 店舗IDが Place ID 形式なら、同じIDになるよう Place ID を付ける。
+        if id.hasPrefix("google:") {
+            item.googleDetails = GoogleRestaurantDetails(placeID: String(id.dropFirst("google:".count)))
+        }
         return SavedRestaurant(item: item, savedAt: addedAt, isLiked: false)
     }
 }

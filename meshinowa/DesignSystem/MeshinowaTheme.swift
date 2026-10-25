@@ -19,6 +19,11 @@ enum MeshinowaTheme {
     static let green = hex(0x27755B)
     static let mint = hex(0xDDF0E4)
     static let mintInk = hex(0x1F6B4F)
+    /// 緑の上に置くロゴの輪。
+    static let cream = hex(0xFDF8EE)
+    /// タブバーで選んだタブの後ろにともる、提灯の灯り。
+    static let lanternLight = hex(0xFBEBC8)
+    static let lanternGlow = hex(0xF2B65A)
     /// 自分の評価だけに使う。
     static let accent = hex(0xE8AD45)
     static let mustardSoft = hex(0xFBEBC8)

@@ -31,4 +31,30 @@ final class RestaurantGenreTests: XCTestCase {
         XCTAssertEqual(items.filter { RestaurantGenre.bakery.matches($0) }.count, 1)
         XCTAssertEqual(items.filter { RestaurantGenre.all.matches($0) }.count, 4)
     }
+
+    func testGenreTabsMatchByName() {
+        let ramen = item(.restaurant)
+        ramen.name = "中華そば ひだまり"
+        XCTAssertTrue(RestaurantGenre.noodle.matches(ramen))
+        XCTAssertFalse(RestaurantGenre.sushi.matches(ramen))
+    }
+
+    func testSearchedGenreCoversUnknownNames() {
+        let place = item(.restaurant)
+        place.name = "牛ひとつ"
+        XCTAssertFalse(RestaurantGenre.yakiniku.matches(place))
+        place.searchedFoodGenre = .yakiniku
+        XCTAssertTrue(RestaurantGenre.yakiniku.matches(place))
+        XCTAssertEqual(place.foodGenre, .yakiniku)
+    }
+
+    func testSearchTermUsesGenreWhenKeywordIsEmpty() {
+        XCTAssertEqual(RestaurantGenre.sushi.searchTerm(for: " \n "), "寿司")
+        XCTAssertEqual(RestaurantGenre.all.searchTerm(for: ""), "飲食店")
+    }
+
+    func testSearchTermKeepsKeywordWithoutDuplicatingGenre() {
+        XCTAssertEqual(RestaurantGenre.noodle.searchTerm(for: " ラーメン "), "ラーメン")
+        XCTAssertEqual(RestaurantGenre.all.searchTerm(for: " ラーメン "), "ラーメン")
+    }
 }

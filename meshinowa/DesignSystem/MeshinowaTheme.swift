@@ -1,11 +1,36 @@
 import SwiftUI
 
-/// 「紙の地図」デザインの共通色。
+/// 白地に写真とカードを並べる v3 デザインの共通色。
 enum MeshinowaTheme {
-    static let paper = Color(red: 243 / 255, green: 236 / 255, blue: 220 / 255)
-    static let card = Color(red: 255 / 255, green: 251 / 255, blue: 241 / 255)
-    static let ink = Color(red: 24 / 255, green: 62 / 255, blue: 49 / 255)
-    static let green = Color(red: 39 / 255, green: 117 / 255, blue: 91 / 255)
-    static let accent = Color(red: 232 / 255, green: 173 / 255, blue: 69 / 255)
-    static let secondaryText = Color(red: 106 / 255, green: 97 / 255, blue: 80 / 255)
+    // 面
+    static let paper = Color.white
+    static let card = Color.white
+    static let field = hex(0xF4F5F2)
+    static let hairline = hex(0xE3E5E2)
+    static let outline = hex(0xD5D8D4)
+    static let photo = hex(0xEADFCB)
+
+    // 文字
+    static let ink = hex(0x1C1F1D)
+    static let bodyText = hex(0x4F5550)
+    static let secondaryText = hex(0x6B716D)
+
+    // ブランド
+    static let green = hex(0x27755B)
+    static let mint = hex(0xDDF0E4)
+    static let mintInk = hex(0x1F6B4F)
+    /// 自分の評価だけに使う。
+    static let accent = hex(0xE8AD45)
+    static let mustardSoft = hex(0xFBEBC8)
+    static let mustardInk = hex(0x7A5410)
+    /// 「いいね」だけに使うピンク。
+    static let like = hex(0xE5577E)
+    static let likeSoft = hex(0xFCE4EB)
+    static let likeInk = hex(0xA3254B)
+
+    private static func hex(_ value: UInt32) -> Color {
+        Color(red: Double((value >> 16) & 0xFF) / 255,
+              green: Double((value >> 8) & 0xFF) / 255,
+              blue: Double(value & 0xFF) / 255)
+    }
 }

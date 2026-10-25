@@ -44,7 +44,7 @@ struct RestaurantPreview: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { showsDetails = true }
-            RestaurantPhotoView(item: item, isActive: loadsPhoto)
+            RestaurantPhotoView(item: item, isActive: loadsPhoto, showsGoogleAttribution: false)
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(.horizontal, 16)

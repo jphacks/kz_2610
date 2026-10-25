@@ -7,6 +7,7 @@ struct RestaurantPhotoView: View {
     let item: MKMapItem
     var isActive = true
     var expanded = false
+    var showsGoogleAttribution = true
     @State private var photo: UIImage?
     @State private var metadata: Photo?
     @State private var placeAttributions: AttributedString?
@@ -15,6 +16,15 @@ struct RestaurantPhotoView: View {
     @State private var retry = 0
 
     private var identity: String { item.googleDetails?.placeID ?? SavedRestaurant.identifier(for: item) }
+
+    /// The SDK can return the same linked credit in both fields. Display it once.
+    private func needsSeparateCredit(_ author: AuthorAttribution) -> Bool {
+        guard let credits = metadata?.attributions else { return true }
+        return !credits.runs.contains { run in
+            String(credits[run.range].characters).contains(author.displayName)
+                && run.link == author.url
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
@@ -39,13 +49,13 @@ struct RestaurantPhotoView: View {
             if photo != nil {
                 // Google attribution is required on detail/list screens without a visible Google map.
                 HStack(alignment: .top, spacing: 6) {
-                    Text("Google Maps").font(.system(size: 12))
+                    if showsGoogleAttribution { Text("Google Maps").font(.system(size: 12)) }
                     Spacer(minLength: 0)
                     if let credits = metadata?.attributions { Text(credits).font(.system(size: 11)) }
                 }
                 if let credits = placeAttributions { Text(credits).font(.system(size: 11)) }
                 if let metadata {
-                    ForEach(Array(metadata.authorAttributions.enumerated()), id: \.offset) { _, author in
+                    ForEach(Array(metadata.authorAttributions.filter(needsSeparateCredit).enumerated()), id: \.offset) { _, author in
                         if let url = author.url {
                             Link("写真：" + author.displayName, destination: url)
                                 .font(.system(size: 11)).tint(MeshinowaTheme.green)

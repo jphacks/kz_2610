@@ -67,12 +67,15 @@ struct FriendsHomeView: View {
 
     private var recommended: some View {
         VStack(alignment: .leading, spacing: 24) {
-            NavigationLink {
-                FriendMapScreen(isDemo: !store.isAvailable)
-            } label: {
+            VStack(spacing: 10) {
                 banner
+                NavigationLink {
+                    FriendMapScreen(isDemo: !store.isAvailable)
+                } label: {
+                    mapEntry
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
             .padding(.horizontal, 20)
 
             if store.isAvailable && store.friends.isEmpty {
@@ -124,7 +127,7 @@ struct FriendsHomeView: View {
                 }
                 .padding(.horizontal, 20)
             } else {
-                Text("サーバーに接続していないため、ここに出る友達・店舗・レビューはすべて架空です。")
+                Text("ここに出る友達・お店・レビューは架空です。")
                     .font(MeshinowaFont.text(12, relativeTo: .caption))
                     .foregroundStyle(MeshinowaTheme.secondaryText)
                     .padding(.horizontal, 20)
@@ -133,39 +136,46 @@ struct FriendsHomeView: View {
         .padding(.top, 18)
     }
 
+    /// 小さな帯。友達の記録を上に見せるため、案内は短くする。
     private var banner: some View {
-        HStack(alignment: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("meshinowa")
-                    .font(MeshinowaFont.heading(14))
-                    .foregroundStyle(MeshinowaTheme.green)
-                Text("友達の「うまい」を\n地図に集めよう")
-                    .font(MeshinowaFont.heading(21, relativeTo: .title2))
+        HStack(spacing: 12) {
+            BowlMark(size: 44, holes: MeshinowaTheme.mint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("友達の「うまい」を地図に集めよう")
+                    .font(MeshinowaFont.heading(16))
                     .fixedSize(horizontal: false, vertical: true)
                 Text(dataset.isDemo ? "架空の友達の評価で試せます。"
                      : "友達\(dataset.friends.count)人・\(dataset.restaurants.count)軒の評価")
                     .font(MeshinowaFont.text(13, relativeTo: .caption))
                     .foregroundStyle(MeshinowaTheme.bodyText)
-                HStack(spacing: 4) {
-                    Text(dataset.isDemo ? "架空データで試す" : "友達のおすすめマップ")
-                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold))
-                }
-                .font(MeshinowaFont.text(14, weight: .bold))
-                .foregroundStyle(MeshinowaTheme.green)
-                .padding(.top, 4)
             }
             Spacer(minLength: 0)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(alignment: .bottomTrailing) {
-            BowlMark(size: 150, holes: MeshinowaTheme.mint)
-                .opacity(0.9)
-                .offset(x: 34, y: 30)
-        }
-        .background(MeshinowaTheme.mint)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .combine)
+    }
+
+    /// 友達のおすすめマップへの入口。1行で目立たせる。
+    private var mapEntry: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "map")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(MeshinowaTheme.green)
+                .frame(width: 36, height: 36)
+                .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            Text(dataset.isDemo ? "架空データのおすすめを地図で見る" : "友達のおすすめを地図で見る")
+                .font(MeshinowaFont.text(15, weight: .bold))
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(MeshinowaTheme.secondaryText)
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: 56)
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(MeshinowaTheme.hairline))
+        .contentShape(Rectangle())
         .accessibilityHint("友達の評価マップを開きます")
     }
 
@@ -430,9 +440,10 @@ private struct RecentReviewCard: View {
         let restaurant = dataset.restaurant(review.restaurantID)
         let name = dataset.friendName(review.friendID)
         VStack(alignment: .leading, spacing: 8) {
-            PhotoPlaceholder(symbol: restaurant.map { DemoRecommendations.symbol(for: $0) } ?? "fork.knife",
-                             tint: restaurant.map { DemoRecommendations.photoTint(for: $0) } ?? MeshinowaTheme.photo)
+            // 写真の代わりに、ジャンルの器の形（地図のピンと同じ）を出す。
+            FoodGenreMark(genre: FoodGenre.infer(name: restaurant.map { "\($0.name) \($0.genre)" }, category: restaurant?.category), size: 56)
                 .frame(width: 200, height: 120)
+                .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(alignment: .topLeading) {
                     HStack(spacing: 6) {
                         FriendAvatar(name: name, size: 22)

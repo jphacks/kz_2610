@@ -1,6 +1,6 @@
 import { before, after, beforeEach, test, mock } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { Miniflare } from "miniflare";
 import { generateKeyPair, exportJWK, SignJWT } from "jose";
 import worker from "../src/index.js";
@@ -62,14 +62,17 @@ before(async () => {
     AUTH_RATE_LIMITER: { limit: async () => ({ success: true }) },
   };
   // exec() splits lines; prepare().run() supports complete triggers with semicolons.
-  const migration = await readFile(
-    new URL("../migrations/0001_initial.sql", import.meta.url),
-    "utf8",
-  );
-  const statements = migration.match(
-    /create trigger[\s\S]*?\nend;|(?:--[^\n]*\n|\s)*(?:create table|create index)[\s\S]*?;/gi,
-  );
-  for (const statement of statements) await db.prepare(statement).run();
+  const directory = new URL("../migrations/", import.meta.url);
+  for (const name of (await readdir(directory))
+    .filter((name) => name.endsWith(".sql"))
+    .sort()) {
+    const migration = await readFile(new URL(name, directory), "utf8");
+    const statements = migration.match(
+      /create trigger[\s\S]*?\nend;|(?:--[^\n]*\n|\s)*(?:create table|create index|drop trigger)[\s\S]*?;/gi,
+    );
+    assert.ok(statements?.length, `No SQL found in ${name}`);
+    for (const statement of statements) await db.prepare(statement).run();
+  }
 });
 after(async () => {
   await mf?.dispose();
@@ -531,5 +534,33 @@ test("Apple exchange consumes challenge once, stores only hashed session and ret
     );
   } finally {
     fetchMock.mock.restore();
+  }
+});
+
+test("pending profiles stay visible after search opt-out; new hidden requests stay forbidden", async () => {
+  const request = await data(A, "POST", "/requests", { target_id: B }, 201);
+  await data(B, "PUT", "/preferences", {
+    allow_id_search: false,
+    show_visit_date: true,
+    include_in_friend_avg: true,
+  });
+  assert.equal((await data(A, "GET", `/profiles/${B}`)).id, B);
+  const retry = await data(A, "POST", "/requests", { target_id: B }, 201);
+  assert.equal(retry.id, request.id);
+  await data(C, "POST", "/requests", { target_id: B }, 409);
+  await data(B, "PATCH", `/requests/${request.id}`, { accept: true });
+  assert.equal((await data(A, "GET", "/friends")).length, 1);
+});
+test("auth rate limit rejects requests before creating challenges", async () => {
+  const previous = env.AUTH_RATE_LIMITER;
+  env.AUTH_RATE_LIMITER = { limit: async () => ({ success: false }) };
+  try {
+    await data(null, "POST", "/auth/challenge", undefined, 429);
+    assert.equal(
+      (await sql("select * from auth_challenges").all()).results.length,
+      0,
+    );
+  } finally {
+    env.AUTH_RATE_LIMITER = previous;
   }
 });

@@ -26,6 +26,8 @@ targets:
         CFBundleLocalizations:
           - ja
         CloudflareAPIURL: $(CLOUDFLARE_API_URL)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false

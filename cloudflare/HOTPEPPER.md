@@ -11,6 +11,7 @@ MapKitで見つけた店舗に、ホットペッパーグルメの掲載写真�
 3. `npm run dev --prefix cloudflare`でWorkerを起動します。
 4. iOS側の`Config/Cloudflare.xcconfig.local`で`CLOUDFLARE_API_URL`をそのWorkerのoriginに設定します。
    シミュレータは`http:/$()/localhost:8787`、実機はHTTPSの開発用Workerを使用してください。
+   アプリは`NSAllowsLocalNetworking`を有効にしています。接続先の検証で外部HTTPは引き続き拒否します。
 5. 本番は`cd cloudflare`の後、`npx wrangler secret put HOTPEPPER_API_KEY --config wrangler.production.jsonc`で登録します。
    既存の本番設定へ`wrangler.local.jsonc`と同じ`PHOTO_RATE_LIMITER`バインディングも追加してデプロイします。
 

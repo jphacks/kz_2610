@@ -1,3 +1,4 @@
+import Network
 import XCTest
 @testable import meshinowa
 
@@ -32,6 +33,41 @@ final class CloudflareBackendTests: XCTestCase {
             return (200, Data("{}".utf8))
         }
         _ = try await backend.data("/me", accessToken: String(repeating: "a", count: 64))
+    }
+
+    func testLoopbackPhotoAPIUsesRealHTTP() async throws {
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+        let listener = try NWListener(using: parameters)
+        defer { listener.cancel() }
+        let ready = expectation(description: "local fixture ready")
+        let queue = DispatchQueue(label: "meshinowa.tests.loopback")
+        listener.stateUpdateHandler = { state in
+            switch state {
+            case .ready: ready.fulfill()
+            case .failed: XCTFail("Local fixture failed to start"); ready.fulfill()
+            default: break
+            }
+        }
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: queue)
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 32768) { _, _, _, _ in
+                let body = "{\"error\":\"photo_unavailable\"}"
+                let response = "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n" + body
+                connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in connection.cancel() })
+            }
+        }
+        listener.start(queue: queue)
+        await fulfillment(of: [ready], timeout: 3)
+        let port = try XCTUnwrap(listener.port)
+        let backend = CloudflareBackend(configuration: BackendConfiguration(url: URL(string: "http://127.0.0.1:\(port.rawValue)")!),
+                                         session: URLSession(configuration: .ephemeral))
+        do {
+            _ = try await backend.data("/restaurant-photo", method: "POST", body: Data("{}".utf8))
+            XCTFail("Expected fixture's HTTP 503")
+        } catch CloudflareBackend.BackendError.http(let status) {
+            XCTAssertEqual(status, 503)
+        }
     }
 
     func testInvalidPathsAndTokensFailBeforeSending() async {

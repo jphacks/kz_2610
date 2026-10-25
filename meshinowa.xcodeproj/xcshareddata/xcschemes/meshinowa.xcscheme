@@ -50,6 +50,17 @@
                ReferencedContainer = "container:meshinowa.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "484E656937F328563BCCC5D9"
+               BuildableName = "meshinowaUITests.xctest"
+               BlueprintName = "meshinowaUITests"
+               ReferencedContainer = "container:meshinowa.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

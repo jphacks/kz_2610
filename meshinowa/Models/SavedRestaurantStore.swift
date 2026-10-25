@@ -6,6 +6,7 @@ import MapKit
 final class SavedRestaurantStore: ObservableObject {
     @Published private(set) var restaurants: [SavedRestaurant] = []
     @Published var errorMessage: String?
+    var onChanged: (() -> Void)?
     private let fileURL: URL
     private var canWrite = false
 
@@ -41,12 +42,11 @@ final class SavedRestaurantStore: ObservableObject {
     }
 
     func contains(_ item: MKMapItem) -> Bool {
-        let id = SavedRestaurant.identifier(for: item)
-        return restaurants.contains { $0.id == id }
+        restaurants.contains { $0.matches(item) }
     }
 
     func restaurant(for item: MKMapItem) -> SavedRestaurant? {
-        restaurants.first { $0.id == SavedRestaurant.identifier(for: item) }
+        restaurants.first { $0.matches(item) }
     }
 
     @discardableResult func setLiked(_ item: MKMapItem, isLiked: Bool) -> Bool {
@@ -62,6 +62,20 @@ final class SavedRestaurantStore: ObservableObject {
         return persist(updated)
     }
 
+    func clear() throws {
+        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try JSONEncoder().encode([SavedRestaurant]()).write(to: fileURL, options: .atomic)
+        restaurants = []; canWrite = true; errorMessage = nil
+    }
+
+    func replace(with restaurants: [SavedRestaurant]) throws {
+        guard Set(restaurants.map(\.id)).count == restaurants.count,
+              restaurants.allSatisfy({ (-90...90).contains($0.latitude) && (-180...180).contains($0.longitude) }) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        guard persist(restaurants) else { throw CocoaError(.fileWriteUnknown) }
+    }
+
     private func persist(_ updated: [SavedRestaurant]) -> Bool {
         guard canWrite else {
             errorMessage = "保存データを読み込めていないため、変更できません。再読み込みをお試しください。"
@@ -73,6 +87,7 @@ final class SavedRestaurantStore: ObservableObject {
             try data.write(to: fileURL, options: .atomic)
             // 書き込み成功後に表示を更新する。失敗時は保存済みに見せない。
             restaurants = updated
+            onChanged?()
             errorMessage = nil
             return true
         } catch {

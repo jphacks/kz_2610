@@ -18,4 +18,14 @@ final class BackendConfigurationTests: XCTestCase {
             XCTAssertThrowsError(try BackendConfiguration.load(info: ["CloudflareAPIURL": url]))
         }
     }
+    func testBonjourHTTPIsLimitedToDevelopmentBuilds() throws {
+        let info = ["CloudflareAPIURL":"http://dev-mac.local:8788"]
+        #if DEBUG
+        XCTAssertTrue(try XCTUnwrap(BackendConfiguration.load(info:info)).isDevelopmentHost)
+        #else
+        XCTAssertThrowsError(try BackendConfiguration.load(info:info))
+        #endif
+        XCTAssertThrowsError(try BackendConfiguration.load(info:["CloudflareAPIURL":"http://dev-mac.local.example.test:8788"]))
+    }
+
 }

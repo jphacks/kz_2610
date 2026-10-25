@@ -111,6 +111,7 @@ struct FriendAvatar: View {
     let name: String
     var size: CGFloat = 26
     var ringed = false
+    var symbol: String? = nil
 
     private static let tones: [Color] = [
         Color(red: 0.95, green: 0.79, blue: 0.66), Color(red: 0.75, green: 0.85, blue: 0.93),
@@ -120,7 +121,10 @@ struct FriendAvatar: View {
 
     var body: some View {
         let index = name.unicodeScalars.reduce(0) { $0 + Int($1.value) } % Self.tones.count
-        Text(String(name.prefix(1)))
+        Group {
+            if let symbol { Image(systemName: symbol) }
+            else { Text(String(name.prefix(1))) }
+        }
             .font(.system(size: size * 0.46, weight: .bold))
             .foregroundStyle(MeshinowaTheme.ink)
             .frame(width: size, height: size)

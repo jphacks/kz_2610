@@ -61,7 +61,7 @@ struct FriendRecommendationsView: View {
             if let id = selectedID, !ids.contains(id) { selectedID = rated.first?.id }
         }
         .sheet(item: $detail) { restaurant in
-            RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends)
+            RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends, friendIDs: includedIDs)
         }
         .sheet(isPresented: $showsLens) {
             FriendLensPicker(lens: $lens, dataset: dataset)

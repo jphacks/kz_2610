@@ -5,6 +5,8 @@ import MapKit
 struct FriendProfile: Identifiable {
     let id: String
     let name: String
+    var bio = ""
+    var avatarSymbol = "person.fill"
 }
 
 struct FriendRestaurant: Identifiable {
@@ -14,12 +16,14 @@ struct FriendRestaurant: Identifiable {
     let coordinate: CLLocationCoordinate2D
     var address = ""
     var category: String?
+    var googlePlaceID: String?
 
     /// 実店舗の詳細・保存・レビューに渡すための MapKit 表現。
     var mapItem: MKMapItem {
         let placemark = MKPlacemark(coordinate: coordinate, addressDictionary: ["Street": address])
         let item = MKMapItem(placemark: placemark)
         item.name = name
+        if let googlePlaceID { item.googleDetails = GoogleRestaurantDetails(placeID: googlePlaceID) }
         item.pointOfInterestCategory = category.map(MKPointOfInterestCategory.init(rawValue:))
         return item
     }

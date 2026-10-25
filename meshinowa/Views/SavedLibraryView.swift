@@ -3,8 +3,9 @@ import SwiftUI
 
 struct SavedRestaurantsView: View {
     @EnvironmentObject private var saved: SavedRestaurantStore
-    @EnvironmentObject private var reviews: LocalReviewStore
     @EnvironmentObject private var friends: FriendStore
+    @EnvironmentObject private var location: LocationStore
+    @EnvironmentObject private var reviews: LocalReviewStore
     @Environment(\.dismiss) private var dismiss
     var onFindRestaurants: (() -> Void)? = nil
     @State private var selected: SavedRestaurant?
@@ -24,6 +25,12 @@ struct SavedRestaurantsView: View {
 
     private var visibleRestaurants: [SavedRestaurant] {
         SavedCollectionQuery.results(library, collection: .liked, search: query, sort: sort, ratings: ratings,
+                                     friendRatings: Dictionary(uniqueKeysWithValues: library.compactMap { entry in
+                                         friends.summary(for: entry.mapItem).average.map { (entry.id, $0) }
+                                     }),
+                                     distances: Dictionary(uniqueKeysWithValues: library.compactMap { entry in
+                                         location.location.map { (entry.id, $0.distance(from: CLLocation(latitude: entry.latitude, longitude: entry.longitude))) }
+                                     }),
                                      unreviewedOnly: unreviewedOnly)
     }
 
@@ -59,7 +66,10 @@ struct SavedRestaurantsView: View {
                     .accessibilityAddTraits(unreviewedOnly ? .isSelected : [])
                     Menu {
                         Picker("並び替え", selection: $sort) {
-                            ForEach(SavedSort.allCases) { Text($0.title).tag($0) }
+                            ForEach(SavedSort.allCases) { option in
+                                Text(option.title).tag(option)
+                                    .disabled(option == .friendRating && !friends.isAvailable)
+                            }
                         }
                     } label: {
                         Label(sort.title, systemImage: "arrow.up.arrow.down")
@@ -69,6 +79,11 @@ struct SavedRestaurantsView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
+
+                if sort == .distance, location.location == nil {
+                    Text(location.error ?? "現在地を取得すると距離順で表示します。")
+                        .font(MeshinowaFont.text(13)).padding(.horizontal, 20).padding(.top, 8)
+                }
 
                 if let error = saved.errorMessage {
                     VStack(alignment: .leading, spacing: 10) {
@@ -114,6 +129,9 @@ struct SavedRestaurantsView: View {
             .padding(.top, 8)
         }
         .scrollDismissesKeyboard(.immediately)
+        .onChange(of: sort) { _, value in
+            if value == .distance { location.request() }
+        }
         .background(MeshinowaTheme.paper)
         .foregroundStyle(MeshinowaTheme.ink)
         .toolbar(onFindRestaurants == nil ? .visible : .hidden, for: .navigationBar)

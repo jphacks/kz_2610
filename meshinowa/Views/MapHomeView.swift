@@ -10,6 +10,7 @@ struct MapHomeView: View {
     @State private var searchesAllPlaces = true
     @State private var friendResults: [RestaurantSearchResult] = []
     @EnvironmentObject private var saved: SavedRestaurantStore
+    @EnvironmentObject private var location: LocationStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @Environment(\.floatingTabBarSpace) private var tabBarSpace
     @Environment(\.reportsMapSelection) private var reportsMapSelection
@@ -179,7 +180,9 @@ struct MapHomeView: View {
             selectedID = nil
             searchedRegion = nil
             adoptsNextCamera = false
-            notice = visibleResults.isEmpty && !results.isEmpty ? "このジャンルのお店は見つかっていません" : nil
+            notice = nil
+            // 前のジャンルの結果だけでは判断せず、今の表示エリアで選んだジャンルを探し直す。
+            beginSearch(nearby: true)
         }
         .onChange(of: visibleResults.map(\.id)) { _, _ in
             carouselItems = Self.nearestChain(visibleResults)
@@ -223,6 +226,12 @@ struct MapHomeView: View {
             try? await Task.sleep(for: .seconds(4))
             if !Task.isCancelled { notice = nil }
         }
+        .onChange(of: location.location) { _, value in
+            guard let value else { return }
+            camera = .region(MKCoordinateRegion(center: value.coordinate, latitudinalMeters: 2000, longitudinalMeters: 2000))
+            searchedRegion = nil
+        }
+        .onChange(of: location.error) { _, value in if let value { notice = value } }
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showsResults) {
             SearchResultsView(results: visibleResults, filterDescription: genre.title) { result in
@@ -252,7 +261,14 @@ struct MapHomeView: View {
     private var searchHeader: some View {
         VStack(spacing: 3) {
             mapScopePicker
-            searchField
+            HStack(spacing: 8) {
+                searchField
+                Button { location.request() } label: {
+                    Image(systemName: "location.fill").frame(width: 44, height: 44)
+                }.buttonStyle(.plain).foregroundStyle(MeshinowaTheme.green)
+                    .background(MeshinowaTheme.card, in: Circle())
+                    .disabled(location.isRequesting).accessibilityLabel("現在地の周辺を探す")
+            }
             NorenTabs(items: RestaurantGenre.allCases, selection: $genre)
                 .disabled(isSearching)
             if !searchesAllPlaces && visibleResults.isEmpty {
@@ -420,7 +436,7 @@ struct MapHomeView: View {
         .buttonStyle(.plain)
         // 検索中も薄くせず、そのまま進み具合を見せる。
         .allowsHitTesting(!isSearching)
-        .accessibilityLabel(isSearching ? "検索中" : "このエリアの\(genre.searchTerm)を検索")
+        .accessibilityLabel(isSearching ? "検索中" : "このエリアの\(genre.searchTerm(for: query))を検索")
     }
 
     @ViewBuilder private var bottomCard: some View {
@@ -531,7 +547,7 @@ struct MapHomeView: View {
 
     private func beginSearch(nearby: Bool = false) {
         guard searchesAllPlaces else { isSearchFocused = false; return }
-        let term = nearby ? genre.searchTerm : query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let term = genre.searchTerm(for: query)
         guard !isSearching, !term.isEmpty else { return }
         isSearchFocused = false
         isSearching = true
@@ -574,5 +590,6 @@ private struct CarouselSlot: Hashable {
         .preferredColorScheme(.light)
         .environmentObject(SavedRestaurantStore())
         .environmentObject(LocalReviewStore())
+        .environmentObject(LocationStore())
         .environmentObject(FriendStore(backend: nil))
 }

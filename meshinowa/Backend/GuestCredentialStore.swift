@@ -3,7 +3,13 @@ import Security
 
 /// ゲストのセッショントークンをKeychainに置く。UserDefaultsやログには出さない。
 /// このトークンがゲストアカウントの唯一の鍵なので、消すと同じアカウントには戻れない。
-struct GuestCredentialStore {
+protocol GuestCredentials {
+    func load() -> String?
+    func save(_ token: String) -> Bool
+    func delete()
+}
+
+struct GuestCredentialStore: GuestCredentials {
     var service = "jp.meshinowa.app.guest"
     private let account = "access_token"
 
@@ -18,9 +24,12 @@ struct GuestCredentialStore {
     }
 
     func save(_ token: String) -> Bool {
-        delete()
+        let data = Data(token.utf8)
+        let update = SecItemUpdate(baseQuery as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if update == errSecSuccess { return true }
+        guard update == errSecItemNotFound else { return false }
         var query = baseQuery
-        query[kSecValueData as String] = Data(token.utf8)
+        query[kSecValueData as String] = data
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         return SecItemAdd(query as CFDictionary, nil) == errSecSuccess
     }

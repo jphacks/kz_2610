@@ -200,13 +200,15 @@ struct RestaurantInformationView: View {
     @EnvironmentObject private var friends: FriendStore
     @State private var section: Section
 
-    init(item: MKMapItem, initialSection: Section = .mine) {
+    init(item: MKMapItem, initialSection: Section = .mine, friendIDs: Set<String>? = nil) {
         self.item = item
+        self.friendIDs = friendIDs
         _section = State(initialValue: initialSection)
     }
     @State private var showsError = false
 
-    private var friendSummary: FriendRatingSummary { friends.summary(for: item) }
+    let friendIDs: Set<String>?
+    private var friendSummary: FriendRatingSummary { friends.summary(for: item, friendIDs: friendIDs) }
 
     var body: some View {
         let isLiked = saved.restaurant(for: item)?.isLiked == true
@@ -242,7 +244,7 @@ struct RestaurantInformationView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     InfoRow(symbol: "mappin.and.ellipse", text: item.placemark.title ?? "住所の情報がありません")
                     InfoRow(symbol: "fork.knife", text: item.restaurantCategory)
-                    InfoRow(symbol: "person.2", text: friends.ratingText(for: item))
+                    InfoRow(symbol: "person.2", text: friendSummary.average.map { "友達\(friendSummary.count)人の評価 " + $0.formatted(.number.precision(.fractionLength(1))) } ?? "この条件の友達の評価はまだありません")
                 }
 
                 RestaurantCollectionControls(item: item)

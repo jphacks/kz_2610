@@ -4,6 +4,8 @@
   "main": "src/index.js",
   "compatibility_date": "2026-10-24",
   "workers_dev": false,
+  "vars": { "LOCAL_DEVELOPMENT": "true" },
+  "triggers": { "crons": ["0 * * * *"] },
   "observability": {
     "enabled": false,
   },

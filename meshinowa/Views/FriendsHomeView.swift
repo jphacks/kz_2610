@@ -5,6 +5,7 @@ struct FriendsHomeView: View {
     /// タブが表示中のときだけ、申請や友達の評価を定期的に取り直す。
     var isActive = true
     @EnvironmentObject private var store: FriendStore
+    @Environment(\.scenePhase) private var scenePhase
     @State private var section: Section = .recommended
 
     /// 接続状態にかかわらず、取得済みの実データだけを表示する。
@@ -41,8 +42,8 @@ struct FriendsHomeView: View {
             .padding(.bottom, 24)
         }
         .refreshable { await store.refresh() }
-        .task(id: isActive) {
-            guard isActive else { return }
+        .task(id: isActive && scenePhase == .active) {
+            guard isActive && scenePhase == .active else { return }
             while !Task.isCancelled {
                 await store.refresh()
                 try? await Task.sleep(for: .seconds(10))
@@ -194,7 +195,7 @@ struct FriendsHomeView: View {
                     FriendMapScreen(initialSelection: review.restaurantID)
                 } label: {
                     HStack(alignment: .top, spacing: 12) {
-                        FriendAvatar(name: name, size: 40)
+                        FriendAvatar(name: name, size: 40, symbol: dataset.friends.first { $0.id == review.friendID }?.avatarSymbol)
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Text("\(name)が評価")
@@ -245,6 +246,8 @@ private struct FriendConnectionsSection: View {
     @State private var editsName = false
     @State private var name = ""
     @State private var removing: FriendStore.Friend?
+    @State private var blockingID: String?
+    @State private var selectedProfile: FriendStore.Friend?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
@@ -261,6 +264,7 @@ private struct FriendConnectionsSection: View {
                                     .buttonStyle(PillButtonStyle(isOn: true))
                             }
                         }
+                        .contextMenu { Button("ブロック", role: .destructive) { blockingID = request.fromId } }
                     }
                 }
             }
@@ -282,7 +286,7 @@ private struct FriendConnectionsSection: View {
                 }
                 ForEach(store.friends) { friend in
                     let isFavorite = friend.isFavorite != 0
-                    personRow(name: friend.displayName, handle: friend.handle) {
+                    personRow(name: friend.displayName, handle: friend.handle, symbol: friend.avatarSymbol) {
                         Button {
                             Task { await store.setFavorite(friend, !isFavorite) }
                         } label: {
@@ -295,7 +299,10 @@ private struct FriendConnectionsSection: View {
                         .accessibilityLabel("お気に入りの友達")
                         .accessibilityValue(isFavorite ? "登録済み" : "未登録")
                     }
+                    .onTapGesture { selectedProfile = friend }
                     .contextMenu {
+                        Button("プロフィールを見る") { selectedProfile = friend }
+                        Button("ブロック", role: .destructive) { blockingID = friend.id }
                         Button("友達を解除", role: .destructive) { removing = friend }
                     }
                 }
@@ -303,6 +310,25 @@ private struct FriendConnectionsSection: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 18)
+        .sheet(item: $selectedProfile) { friend in
+            NavigationStack {
+                VStack(spacing: 18) {
+                    ProfileIcon(symbol: friend.avatarSymbol ?? "person.fill", size: 88)
+                    Text(friend.displayName).font(MeshinowaFont.heading(26))
+                    Text("ID: \(friend.handle)").font(MeshinowaFont.text(14))
+                    Text(friend.bio ?? "").font(MeshinowaFont.text(16)).multilineTextAlignment(.center)
+                    Spacer()
+                }.padding(24).frame(maxWidth: .infinity).background(MeshinowaTheme.paper)
+                    .navigationTitle("友達のプロフィール").navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { selectedProfile = nil } } }
+            }.presentationDetents([.medium, .large])
+        }
+        .confirmationDialog("この人をブロックしますか？", isPresented: Binding(get: { blockingID != nil }, set: { if !$0 { blockingID = nil } }), titleVisibility: .visible) {
+            Button("ブロックする", role: .destructive) {
+                if let id = blockingID { Task { await store.block(id) } }
+                blockingID = nil
+            }
+        } message: { Text("お互いのプロフィールと評価が見えなくなり、友達関係と申請は解除されます。") }
         .alert("名前を変更", isPresented: $editsName) {
             TextField("表示名", text: $name)
             Button("キャンセル", role: .cancel) {}
@@ -319,9 +345,9 @@ private struct FriendConnectionsSection: View {
     private var myCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                FriendAvatar(name: store.me?.displayName ?? "ゲスト", size: 48)
+                FriendAvatar(name: store.me?.displayName ?? "ゲスト", size: 48, symbol: store.me?.avatarSymbol)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(store.me?.displayName ?? "接続中…")
+                    Text(store.me?.displayName ?? store.connectionLabel)
                         .font(MeshinowaFont.heading(18))
                     Text(store.me.map { "ID: \($0.handle)" } ?? "")
                         .font(MeshinowaFont.number(15, relativeTo: .body))
@@ -407,10 +433,10 @@ private struct FriendConnectionsSection: View {
         }
     }
 
-    private func personRow<Trailing: View>(name: String, handle: String,
+    private func personRow<Trailing: View>(name: String, handle: String, symbol: String? = nil,
                                             @ViewBuilder trailing: () -> Trailing) -> some View {
         HStack(spacing: 12) {
-            FriendAvatar(name: name, size: 40)
+            FriendAvatar(name: name, size: 40, symbol: symbol)
             VStack(alignment: .leading, spacing: 2) {
                 Text(name).font(MeshinowaFont.text(15, weight: .bold))
                 Text("ID: \(handle)")

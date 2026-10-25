@@ -65,6 +65,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
         map.settings.tiltGestures = false
         map.settings.compassButton = true
         map.isBuildingsEnabled = false
+        map.isMyLocationEnabled = true
         // App markers remain selectable without unrelated built-in POI pins.
         map.mapStyle = try? GMSMapStyle(jsonString: "[{\"featureType\":\"poi\",\"elementType\":\"labels\",\"stylers\":[{\"visibility\":\"off\"}]}]")
         return map

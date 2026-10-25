@@ -1,3 +1,4 @@
+import GoogleMaps
 import MapKit
 import SwiftUI
 
@@ -6,16 +7,17 @@ struct MapHomeView: View {
     var showsSavedShortcut = true
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
+    @Environment(\.floatingTabBarSpace) private var tabBarSpace
 
     private static let initialRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
         latitudinalMeters: 2000, longitudinalMeters: 2000
     )
 
-    @State private var camera: MapCameraPosition = .region(initialRegion)
+    @State private var camera: GoogleMapPosition = .region(initialRegion)
     @State private var visibleRegion = initialRegion
     /// 今の地図のカメラ。お店を追うときに拡大率を変えずに動かすのに使う。
-    @State private var lastCamera: MapCamera?
+    @State private var lastCamera: GMSCameraPosition?
     @State private var query = ""
     @State private var results: [RestaurantSearchResult] = []
     @State private var showsResults = false
@@ -34,6 +36,8 @@ struct MapHomeView: View {
     @State private var carouselPosition: CarouselSlot?
     /// 地図の大きさ。ピンが画面上で重なるかを測るのに使う。
     @State private var mapSize: CGSize = .zero
+    @State private var cardHeight: CGFloat = 0
+    @State private var headerHeight: CGFloat = 0
     @FocusState private var isSearchFocused: Bool
 
     private var pinOrder: [RestaurantSearchResult] {
@@ -95,35 +99,32 @@ struct MapHomeView: View {
     }
 
     var body: some View {
-        Map(position: $camera, selection: $selectedID) {
-            // 自分の記録があるお店と選んだお店を後に描いて、ほかのピンに隠れないようにする。
-            ForEach(pinOrder) { result in
-                let entry = saved.restaurant(for: result.item)
-                let review = reviews.review(for: result.item)
-                Annotation(result.item.name ?? "飲食店", coordinate: result.item.placemark.coordinate, anchor: .bottom) {
-                    PlacePin(symbol: Self.symbol(for: result.item),
-                             mark: review.map { .reviewed($0.rating) } ?? (entry?.isLiked == true ? .liked : .none),
-                             showsLikeBadge: review != nil && entry?.isLiked == true,
-                             isSelected: selectedID == result.id)
-                }
-                .annotationTitles(.hidden)
-                .tag(result.id)
+        GoogleMapCanvas(position: camera, pins: pinOrder.map { result in
+            let entry = saved.restaurant(for: result.item)
+            let review = reviews.review(for: result.item)
+            return GoogleMapPin(id: result.id.uuidString, title: result.item.name ?? "飲食店",
+                                coordinate: result.item.placemark.coordinate,
+                                symbol: Self.symbol(for: result.item),
+                                mark: review.map { .reviewed($0.rating) } ?? (entry?.isLiked == true ? .liked : .none),
+                                showsLikeBadge: review != nil && entry?.isLiked == true)
+        }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),
+                        topPadding: headerHeight,
+                        bottomPadding: tabBarSpace + (selectedResult == nil ? 0 : cardHeight)) { region, position in
+            visibleRegion = region
+            lastCamera = position
+            if adoptsNextCamera {
+                searchedRegion = region
+                adoptsNextCamera = false
             }
         }
-        .mapStyle(.standard(emphasis: .muted, pointsOfInterest: .excludingAll))
+        // Extend the native map beneath the search panel, status area and floating tabs.
+        // Keep overlays inside the safe area; only the map paints edge to edge.
+        .ignoresSafeArea(.container)
         .background {
             GeometryReader { proxy in
                 Color.clear
                     .onAppear { mapSize = proxy.size }
                     .onChange(of: proxy.size) { _, size in mapSize = size }
-            }
-        }
-        .onMapCameraChange(frequency: .onEnd) { context in
-            visibleRegion = context.region
-            lastCamera = context.camera
-            if adoptsNextCamera {
-                searchedRegion = context.region
-                adoptsNextCamera = false
             }
         }
         .onChange(of: genre) { _, _ in
@@ -144,6 +145,10 @@ struct MapHomeView: View {
         .onChange(of: carouselPosition) { _, slot in
             if let slot, slot.id != selectedID { selectedID = slot.id }
         }
+        .task(id: selectedID) {
+            guard let index = carouselItems.firstIndex(where: { $0.id == selectedID }) else { return }
+            await RestaurantPhotoStore.shared.prepareCarousel(items: carouselItems.map(\.item), selectedIndex: index)
+        }
         // スワイプが止まってから、端の周にいれば真ん中の周の同じカードへ見た目を変えずに戻す。
         .task(id: carouselPosition) {
             guard let slot = carouselPosition, slot.lap != 1 else { return }
@@ -153,9 +158,12 @@ struct MapHomeView: View {
             transaction.disablesAnimations = true
             withTransaction(transaction) { carouselPosition = CarouselSlot(lap: 1, id: slot.id) }
         }
-        // 上のパネルは高さが変わらないので余白として確保する。出たり消えたりするボタンやカードは
-        // 重ねるだけにして、地図の余白が変わって中身がずれないようにする。
-        .safeAreaInset(edge: .top, spacing: 0) { searchHeader }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            searchHeader.background(GeometryReader { proxy in
+                Color.clear.onAppear { headerHeight = proxy.size.height }
+                    .onChange(of: proxy.size.height) { _, height in headerHeight = height }
+            })
+        }
         .overlay(alignment: .bottom) { bottomCard }
         // 知らせは数秒で消し、地図の Legal 表記を隠したままにしない。
         .task(id: notice) {
@@ -316,6 +324,10 @@ struct MapHomeView: View {
         if selectedResult != nil {
             carousel
                 .padding(.bottom, 10)
+                .background(GeometryReader { proxy in
+                    Color.clear.onAppear { cardHeight = proxy.size.height }
+                        .onChange(of: proxy.size.height) { _, height in cardHeight = height }
+                })
                 .transition(.move(edge: .bottom).combined(with: .opacity))
         } else if let notice {
             Text(notice)
@@ -339,7 +351,8 @@ struct MapHomeView: View {
                 // お店が2軒以上なら3周分並べ、端まで行っても続けてスワイプできるようにする。
                 ForEach(0..<(carouselItems.count > 1 ? 3 : 1), id: \.self) { lap in
                     ForEach(carouselItems) { result in
-                        RestaurantPreview(item: result.item)
+                        let slot = CarouselSlot(lap: carouselItems.count > 1 ? lap : 1, id: result.id)
+                        RestaurantPreview(item: result.item, loadsPhoto: carouselPosition == slot)
                             .containerRelativeFrame(.horizontal) { width, _ in width - 40 }
                             .id(CarouselSlot(lap: carouselItems.count > 1 ? lap : 1, id: result.id))
                     }
@@ -371,8 +384,8 @@ struct MapHomeView: View {
                                             longitude: coordinate.longitude)
         withAnimation(.easeInOut(duration: 0.35)) {
             if let lastCamera {
-                camera = .camera(MapCamera(centerCoordinate: center, distance: lastCamera.distance,
-                                           heading: lastCamera.heading, pitch: lastCamera.pitch))
+                camera = .camera(GMSCameraPosition(target: center, zoom: lastCamera.zoom,
+                                                 bearing: lastCamera.bearing, viewingAngle: lastCamera.viewingAngle))
             } else {
                 camera = .region(MKCoordinateRegion(center: center, span: region.span))
             }
@@ -408,94 +421,33 @@ struct MapHomeView: View {
         notice = nil
 
         let region = visibleRegion
-        let categories = genre.categories
-
+        let selectedGenre = genre
         Task { @MainActor in
             defer { isSearching = false }
             do {
-                if nearby {
-                    // 表示中の範囲のお店だけを出し、地図は動かさない。
-                    let found = try await Self.searchArea(region, categories: categories, term: term)
-                    results = found.items.map { RestaurantSearchResult(item: $0) }
-                    searchedRegion = region
-                    if results.isEmpty {
-                        notice = "この範囲にお店が見つかりませんでした。地図を動かしてみてください"
-                    } else if found.isWide {
-                        notice = "広い範囲なので主なお店だけを出しています。拡大するともっと見つかります"
-                    }
-                } else {
-                    let request = MKLocalSearch.Request()
-                    request.naturalLanguageQuery = term
-                    request.region = region
-                    request.resultTypes = .pointOfInterest
-                    request.pointOfInterestFilter = MKPointOfInterestFilter(including: categories)
-                    let response = try await MKLocalSearch(request: request).start()
-                    results = response.mapItems.map { RestaurantSearchResult(item: $0) }
-                    if results.isEmpty {
-                        searchedRegion = region
-                        notice = "お店が見つかりませんでした。地図を動かすか、言葉を変えてみてください"
-                    } else {
-                        // 店名検索は離れた場所の店も出るので、結果に合わせて地図を動かす。
-                        searchedRegion = response.boundingRegion
-                        adoptsNextCamera = true
-                        camera = .region(response.boundingRegion)
-                    }
+                let found = try await GoogleRestaurantSearch.search(term: term, region: region,
+                                                                    genre: selectedGenre, nearby: nearby)
+                results = found.map { RestaurantSearchResult(item: $0) }
+                searchedRegion = region
+                if results.isEmpty {
+                    notice = "お店が見つかりませんでした。地図を動かすか、言葉を変えてみてください"
+                } else if !nearby {
+                    adoptsNextCamera = true
+                    camera = .fit(found.map { $0.placemark.coordinate })
                 }
             } catch {
-                notice = "検索できませんでした。通信環境を確認してください"
+                notice = GooglePlacesService.isConfigured
+                    ? "検索できませんでした。通信環境とGoogle Placesの設定を確認してください"
+                    : "Google MapsのAPIキーを設定してください"
             }
         }
     }
 
-    /// 範囲内のお店を探す。言葉での検索（評判の高い順）と場所での検索（中心に近い順）を合わせ、範囲の外を除く。
-    /// 幅が15kmを超える広い範囲では、場所での検索は意味が薄いので言葉での検索の上位だけにする。
-    private static func searchArea(_ region: MKCoordinateRegion,
-                                   categories: [MKPointOfInterestCategory],
-                                   term: String) async throws -> (items: [MKMapItem], isWide: Bool) {
-        let filter = MKPointOfInterestFilter(including: categories)
-        let isWide = region.widthInMeters > 15_000
-
-        async let named: [MKMapItem]? = {
-            let request = MKLocalSearch.Request()
-            request.naturalLanguageQuery = term
-            request.region = region
-            request.resultTypes = .pointOfInterest
-            request.pointOfInterestFilter = filter
-            return try? await MKLocalSearch(request: request).start().mapItems
-        }()
-        async let nearby: [MKMapItem]? = {
-            guard !isWide else { return nil }
-            let request = MKLocalPointsOfInterestRequest(coordinateRegion: region)
-            request.pointOfInterestFilter = filter
-            return try? await MKLocalSearch(request: request).start().mapItems
-        }()
-        let (namedItems, nearbyItems) = await (named, nearby)
-        guard namedItems != nil || nearbyItems != nil else { throw URLError(.cannotLoadFromNetwork) }
-
-        var seen = Set<String>()
-        let items = ((namedItems ?? []) + (nearbyItems ?? [])).filter { item in
-            let c = item.placemark.coordinate
-            let key = "\(item.name ?? "")|\((c.latitude * 10_000).rounded())|\((c.longitude * 10_000).rounded())"
-            return region.contains(c) && seen.insert(key).inserted
-        }
-        return (isWide ? Array(items.prefix(20)) : items, isWide)
-    }
 }
 
 private struct CarouselSlot: Hashable {
     let lap: Int
     let id: UUID
-}
-
-private extension MKCoordinateRegion {
-    var widthInMeters: CLLocationDistance {
-        span.longitudeDelta * 111_320 * cos(center.latitude * .pi / 180)
-    }
-
-    func contains(_ coordinate: CLLocationCoordinate2D) -> Bool {
-        abs(coordinate.latitude - center.latitude) <= span.latitudeDelta / 2
-            && abs(coordinate.longitude - center.longitude) <= span.longitudeDelta / 2
-    }
 }
 
 #Preview {

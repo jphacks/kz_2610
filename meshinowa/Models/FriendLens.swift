@@ -19,7 +19,7 @@ struct FriendLens {
     var mode: Mode = .allFriends
     var selectedFriendIDs: Set<String> = []
 
-    func includedFriendIDs(friends: [DemoFriend], favorites: Set<String>) -> Set<String> {
+    func includedFriendIDs(friends: [FriendProfile], favorites: Set<String>) -> Set<String> {
         let knownIDs = Set(friends.map(\.id))
         switch mode {
         case .allFriends: return knownIDs

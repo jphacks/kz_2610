@@ -1,4 +1,7 @@
-// Publishable key only. No server secret or service_role key belongs in an app.
-SUPABASE_URL =
-SUPABASE_PUBLISHABLE_KEY =
-#include? "Supabase.xcconfig.local"
+// API origin only. Never embed Cloudflare management credentials in the app.
+CLOUDFLARE_API_URL =
+#include? "Cloudflare.xcconfig.local"
+
+// iOS-restricted Maps / Places key. Never put a server/management key here.
+GOOGLE_PLACES_IOS_API_KEY =
+#include? "GooglePlaces.xcconfig.local"

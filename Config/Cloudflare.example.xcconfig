@@ -1,0 +1,4 @@
+// Copy to Cloudflare.xcconfig.local (ignored by Git).
+// xcconfig requires this spelling to prevent // from starting a comment.
+CLOUDFLARE_API_URL = https:/$()/REPLACE_ME.workers.dev
+// Local simulator: http:/$()/127.0.0.1:8787

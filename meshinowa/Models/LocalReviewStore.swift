@@ -54,6 +54,9 @@ enum ReviewError: LocalizedError {
 final class LocalReviewStore: ObservableObject {
     @Published private(set) var reviews: [LocalReview] = []
     @Published private(set) var loadError: String?
+    /// 端末への書き込みが成功した後に呼ぶ。友達への共有はここから行う。
+    var onSaved: ((LocalReview) -> Void)?
+    var onDeleted: ((SavedRestaurant) -> Void)?
     private let fileURL: URL
 
     init(fileURL: URL? = nil) {
@@ -120,6 +123,7 @@ final class LocalReviewStore: ObservableObject {
                                     dish: dish.trimmingCharacters(in: .whitespacesAndNewlines), wantAgain: wantAgain,
                                     visitedOn: visitedOn, photoFileNames: retained + added)
             try persist([entry] + reviews.filter { $0.id != entry.id })
+            onSaved?(entry)
         } catch {
             removePhotos(added)
             throw error
@@ -128,9 +132,10 @@ final class LocalReviewStore: ObservableObject {
     }
 
     func delete(id: String) throws {
-        let photos = reviews.first { $0.id == id }?.photoFileNames ?? []
+        let removed = reviews.first { $0.id == id }
         try persist(reviews.filter { $0.id != id })
-        removePhotos(photos)
+        removePhotos(removed?.photoFileNames ?? [])
+        if let removed { onDeleted?(removed.restaurant) }
     }
 
     private var photosDirectory: URL { fileURL.deletingLastPathComponent().appendingPathComponent("review-photos", isDirectory: true) }

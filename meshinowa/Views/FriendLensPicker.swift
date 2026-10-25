@@ -3,16 +3,22 @@ import SwiftUI
 struct FriendLensPicker: View {
     @Binding private var lens: FriendLens
     @State private var draft: FriendLens
+    private let dataset: FriendDataset
     @Environment(\.dismiss) private var dismiss
 
-    init(lens: Binding<FriendLens>) {
+    init(lens: Binding<FriendLens>, dataset: FriendDataset = DemoRecommendations.dataset) {
         _lens = lens
         _draft = State(initialValue: lens.wrappedValue)
+        self.dataset = dataset
     }
 
     private var count: Int {
-        draft.includedFriendIDs(friends: DemoRecommendations.friends,
-                                favorites: DemoRecommendations.favoriteFriendIDs).count
+        draft.includedFriendIDs(friends: dataset.friends, favorites: dataset.favoriteFriendIDs).count
+    }
+
+    private var favoriteNames: String {
+        let names = dataset.friends.filter { dataset.favoriteFriendIDs.contains($0.id) }.map(\.name)
+        return names.isEmpty ? "まだいません。友達タブの☆で選べます。" : names.joined(separator: "・")
     }
 
     var body: some View {
@@ -21,8 +27,10 @@ struct FriendLensPicker: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("誰のおすすめで探す？")
                         .font(MeshinowaFont.text(24, weight: .black, relativeTo: .title2))
-                    Text("DEMO · 友達と評価はすべて架空です。")
-                        .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
+                    if dataset.isDemo {
+                        Text("DEMO · 友達と評価はすべて架空です。")
+                            .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
+                    }
 
                     ForEach(FriendLens.Mode.allCases) { mode in
                         Button { draft.mode = mode } label: {
@@ -45,15 +53,15 @@ struct FriendLensPicker: View {
                     if draft.mode == .selectedFriends {
                         Text("友達を選択（複数選択できます）")
                             .font(MeshinowaFont.text(14, weight: .black))
-                        ForEach(DemoRecommendations.friends) { friend in
+                        ForEach(dataset.friends) { friend in
                             friendRow(friend)
                         }
                     } else if draft.mode == .favoriteFriends {
-                        Text("デモのお気に入り：たくま・さき・みお")
+                        Text((dataset.isDemo ? "デモのお気に入り：" : "お気に入りの友達：") + favoriteNames)
                             .font(MeshinowaFont.text(14))
                     }
 
-                    Text("現在地は取得・共有しません。選択はこのデモを開いている間だけ有効です。0人でも適用でき、その場合は未評価として表示します。")
+                    Text("現在地は取得・共有しません。選択はこの地図を開いている間だけ有効です。0人でも適用でき、その場合は未評価として表示します。")
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.secondaryText)
                 }
@@ -80,7 +88,7 @@ struct FriendLensPicker: View {
         }
     }
 
-    private func friendRow(_ friend: DemoFriend) -> some View {
+    private func friendRow(_ friend: FriendProfile) -> some View {
         let isSelected = draft.selectedFriendIDs.contains(friend.id)
         return Button {
             if isSelected {

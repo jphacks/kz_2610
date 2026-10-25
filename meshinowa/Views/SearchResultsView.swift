@@ -23,24 +23,27 @@ struct SearchResultsView: View {
                                 onSelect(result)
                                 dismiss()
                             } label: {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(result.item.name ?? "飲食店")
-                                        .font(MeshinowaFont.text(18, weight: .black, relativeTo: .headline))
-                                    Text(result.item.restaurantCategory)
-                                        .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
-                                    if let address = result.item.placemark.title {
-                                        Text(address)
-                                            .font(MeshinowaFont.text(12, relativeTo: .caption))
-                                            .foregroundStyle(MeshinowaTheme.secondaryText)
+                                HStack(alignment: .top, spacing: 12) {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text(result.item.name ?? "飲食店")
+                                            .font(MeshinowaFont.text(18, weight: .black, relativeTo: .headline))
+                                        Text(result.item.restaurantCategory)
+                                            .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
+                                        if let address = result.item.placemark.title {
+                                            Text(address)
+                                                .font(MeshinowaFont.text(12, relativeTo: .caption))
+                                                .foregroundStyle(MeshinowaTheme.secondaryText)
+                                        }
+                                        Label("マップで見る", systemImage: "map")
+                                            .font(MeshinowaFont.text(14, weight: .bold))
+                                            .foregroundStyle(MeshinowaTheme.green)
                                     }
-                                    Label("マップで見る", systemImage: "map")
-                                        .font(MeshinowaFont.text(14, weight: .bold))
-                                        .foregroundStyle(MeshinowaTheme.green)
                                 }
                                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            RestaurantPhotoView(item: result.item)
                             SaveRestaurantButton(item: result.item)
                         }
                         .padding(16)

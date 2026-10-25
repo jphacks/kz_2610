@@ -14,7 +14,7 @@ struct RestaurantCollectionControls: View {
                 Label("レビューを編集（★\(review.rating.formatted(.number.precision(.fractionLength(1)))))",
                       systemImage: "square.and.pencil")
             } else {
-                Label("行ったらレビューを書く", systemImage: "star")
+                Label("レビューを書く", systemImage: "star")
             }
         }
         .buttonStyle(PaperButtonStyle(kind: review == nil ? .primary : .secondary))

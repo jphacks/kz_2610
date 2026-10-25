@@ -6,6 +6,7 @@ struct ReviewEditor: View {
     let item: MKMapItem
     let existing: LocalReview?
     @EnvironmentObject private var reviews: LocalReviewStore
+    @EnvironmentObject private var friends: FriendStore
     @Environment(\.dismiss) private var dismiss
     @State private var rating: Double
     @State private var comment: String
@@ -70,7 +71,9 @@ struct ReviewEditor: View {
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
                 }
                 Section {
-                    Text("今はこの端末だけに保存されます。友達への共有はまだ行いません。位置情報も自動では付きません。")
+                    Text(friends.isAvailable
+                         ? "評価・ひとこと・おすすめ料理は友達に共有されます。写真と来店日はこの端末だけに保存します。位置情報は自動では付きません。"
+                         : "サーバーに接続していないため、この端末だけに保存されます。位置情報は自動では付きません。")
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
                 }
                 if existing != nil {

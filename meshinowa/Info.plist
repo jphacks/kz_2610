@@ -24,10 +24,15 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>SupabasePublishableKey</key>
-	<string>$(SUPABASE_PUBLISHABLE_KEY)</string>
-	<key>SupabaseURL</key>
-	<string>$(SUPABASE_URL)</string>
+	<key>CloudflareAPIURL</key>
+	<string>$(CLOUDFLARE_API_URL)</string>
+	<key>GooglePlacesAPIKey</key>
+	<string>$(GOOGLE_PLACES_IOS_API_KEY)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>UIAppFonts</key>
 	<array>
 		<string>ZenMaruGothic-Medium.ttf</string>

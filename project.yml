@@ -8,9 +8,12 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
 packages:
-  Supabase:
-    url: https://github.com/supabase/supabase-swift
-    exactVersion: 2.55.4
+  GoogleMaps:
+    url: https://github.com/googlemaps/ios-maps-sdk
+    exactVersion: 11.2.0
+  GooglePlaces:
+    url: https://github.com/googlemaps/ios-places-sdk
+    exactVersion: 11.2.0
 targets:
   meshinowa:
     type: application
@@ -19,8 +22,10 @@ targets:
       Debug: Config/Base.xcconfig
       Release: Config/Base.xcconfig
     dependencies:
-      - package: Supabase
-        product: Supabase
+      - package: GoogleMaps
+        product: GoogleMaps
+      - package: GooglePlaces
+        product: GooglePlacesSwift
     sources:
       - path: meshinowa
     info:
@@ -32,8 +37,10 @@ targets:
         CFBundleDevelopmentRegion: ja
         CFBundleLocalizations:
           - ja
-        SupabaseURL: $(SUPABASE_URL)
-        SupabasePublishableKey: $(SUPABASE_PUBLISHABLE_KEY)
+        CloudflareAPIURL: $(CLOUDFLARE_API_URL)
+        GooglePlacesAPIKey: $(GOOGLE_PLACES_IOS_API_KEY)
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         UILaunchScreen: {}
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
@@ -47,6 +54,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app
+        OTHER_LDFLAGS: $(inherited) -ObjC
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"

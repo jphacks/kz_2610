@@ -12,6 +12,7 @@ struct SavedRestaurant: Codable, Identifiable {
     let longitude: Double
     let category: String?
     let phoneNumber: String?
+    let googlePlaceID: String?
     let savedAt: Date
     /// いいね（保存して行きたい）。行ったかどうかはレビューがあるかで決まり、ここには持たない。
     var isLiked: Bool
@@ -24,6 +25,7 @@ struct SavedRestaurant: Codable, Identifiable {
         longitude = item.placemark.coordinate.longitude
         category = item.pointOfInterestCategory?.rawValue
         phoneNumber = item.phoneNumber
+        googlePlaceID = item.googleDetails?.placeID
         self.savedAt = savedAt
         self.isLiked = isLiked
     }
@@ -31,7 +33,7 @@ struct SavedRestaurant: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, name, address, latitude, longitude, category, phoneNumber, savedAt, isLiked, isVisited
         // 以前の形式のキー。
-        case status, isFavorite
+        case status, isFavorite, googlePlaceID
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -42,6 +44,7 @@ struct SavedRestaurant: Codable, Identifiable {
         longitude = try c.decode(Double.self, forKey: .longitude)
         category = try c.decodeIfPresent(String.self, forKey: .category)
         phoneNumber = try c.decodeIfPresent(String.self, forKey: .phoneNumber)
+        googlePlaceID = try c.decodeIfPresent(String.self, forKey: .googlePlaceID)
         savedAt = try c.decode(Date.self, forKey: .savedAt)
         if c.contains(.isLiked) || c.contains(.isVisited) {
             // 「行った」だけが付いていたお店は、記録を失わないようにいいねへ移す。
@@ -60,6 +63,7 @@ struct SavedRestaurant: Codable, Identifiable {
         try c.encode(id, forKey: .id); try c.encode(name, forKey: .name); try c.encode(address, forKey: .address)
         try c.encode(latitude, forKey: .latitude); try c.encode(longitude, forKey: .longitude)
         try c.encodeIfPresent(category, forKey: .category); try c.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        try c.encodeIfPresent(googlePlaceID, forKey: .googlePlaceID)
         try c.encode(savedAt, forKey: .savedAt)
         try c.encode(isLiked, forKey: .isLiked)
     }
@@ -80,6 +84,7 @@ struct SavedRestaurant: Codable, Identifiable {
         item.name = name
         item.phoneNumber = phoneNumber
         item.pointOfInterestCategory = category.map(MKPointOfInterestCategory.init(rawValue:))
+        if let googlePlaceID { item.googleDetails = GoogleRestaurantDetails(placeID: googlePlaceID) }
         return item
     }
 }

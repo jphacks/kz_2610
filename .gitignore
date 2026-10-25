@@ -17,3 +17,19 @@ node_modules/
 supabase/.temp/
 supabase/.branches/
 .supabase/
+
+# Cloudflare state, credentials, personal data and deployment configuration
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+wrangler.production.jsonc
+cloudflare/data/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+*.dump
+*.sql.gz
+*.pem
+*.key

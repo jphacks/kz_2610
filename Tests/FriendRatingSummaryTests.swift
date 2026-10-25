@@ -3,8 +3,8 @@ import XCTest
 
 final class FriendRatingSummaryTests: XCTestCase {
     private func review(_ id: String, friend: String = "a", restaurant: String = "shop",
-                        rating: Double, time: Double = 1) -> DemoReview {
-        DemoReview(id: id, friendID: friend, restaurantID: restaurant, rating: rating,
+                        rating: Double, time: Double = 1) -> FriendReview {
+        FriendReview(id: id, friendID: friend, restaurantID: restaurant, rating: rating,
                    comment: "架空のレビュー", updatedAt: Date(timeIntervalSince1970: time))
     }
 

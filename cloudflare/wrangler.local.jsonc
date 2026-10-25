@@ -21,9 +21,6 @@
       "bucket_name": "meshinowa-review-photos",
     },
   ],
-  "vars": {
-    "APPLE_CLIENT_ID": "jp.meshinowa.app",
-  },
   "ratelimits": [
     {
       "name": "AUTH_RATE_LIMITER",

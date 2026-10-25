@@ -15,17 +15,17 @@ final class CloudflareBackendTests: XCTestCase {
         super.tearDown()
     }
 
-    func testChallengeAndAuthenticatedRequestUseVersionedAPI() async throws {
+    func testGuestSignInAndAuthenticatedRequestUseVersionedAPI() async throws {
         BackendURLProtocol.handler = { request in
-            XCTAssertEqual(request.url?.path, "/v1/auth/challenge")
+            XCTAssertEqual(request.url?.path, "/v1/auth/guest")
             XCTAssertEqual(request.httpMethod, "POST")
             XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
-            return (200, Data("{\"nonce\":\"fixture\",\"nonce_hash\":\"hash\",\"expires_in\":600}".utf8))
+            let body = "{\"access_token\":\"\(String(repeating: "b", count: 64))\",\"expires_at\":1,\"user_id\":\"00000000-0000-0000-0000-000000000001\"}"
+            return (201, Data(body.utf8))
         }
         let backend = client()
-        let challenge = try await backend.authChallenge()
-        XCTAssertEqual(challenge.expiresIn, 600)
-        XCTAssertEqual(challenge.nonceHash, "hash")
+        let guest = try await backend.signInAsGuest(displayName: "ゲスト")
+        XCTAssertEqual(guest.accessToken, String(repeating: "b", count: 64))
         BackendURLProtocol.handler = { request in
             XCTAssertEqual(request.url?.path, "/v1/me")
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer " + String(repeating: "a", count: 64))
@@ -87,12 +87,12 @@ final class CloudflareBackendTests: XCTestCase {
         do { _ = try await backend.data("/me"); XCTFail("Expected HTTP error") }
         catch { XCTAssertFalse(error.localizedDescription.contains("sensitive")) }
         BackendURLProtocol.handler = { _ in (200, Data("invalid sensitive response".utf8)) }
-        do { let _: CloudflareBackend.AuthChallenge = try await backend.request("/auth/challenge"); XCTFail("Expected decode error") }
+        do { let _: CloudflareBackend.GuestSession = try await backend.request("/auth/guest"); XCTFail("Expected decode error") }
         catch { XCTAssertFalse(error.localizedDescription.contains("sensitive")) }
     }
 }
 
-private final class BackendURLProtocol: URLProtocol {
+final class BackendURLProtocol: URLProtocol {
     static var handler: ((URLRequest) throws -> (Int, Data))?
     override class func canInit(with request: URLRequest) -> Bool { true }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }

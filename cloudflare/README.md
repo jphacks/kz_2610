@@ -2,7 +2,7 @@
 
 WorkersがHTTP API・認証・認可を担当し、D1にアプリデータ、非公開R2にレビュー写真を保存します。
 Swift側は`URLSession`を使い、Cloudflare管理トークン・R2アクセスキーをアプリへ配布しません。
-画面のログイン・端末内データの同期は従来と同じく未接続です。URL設定だけでは端末内データを送信しません。
+URLを設定するとアプリはゲストアカウントを作り、レビューの評価・ひとこと・おすすめ料理を友達に共有します。写真・来店日・保存一覧は送信しません。
 
 ## ローカル開発
 
@@ -29,21 +29,19 @@ iOS側は`Config/Cloudflare.example.xcconfig`を`Config/Cloudflare.xcconfig.loca
 写真はiOSアプリのGoogle公式Places UI Kitで表示します。
 [設定手順](../docs/GOOGLE_PLACES.md)を参照してください。Cloudflareには写真検索・写真プロキシAPIを設けていません。
 
-## 認証
+## 認証（ゲスト）
 
-1. `POST /v1/auth/challenge`で`nonce`と`nonce_hash`を受け取る。有効期限は10分。
-2. Sign in with Appleのリクエストに`nonce_hash`を設定する。
-3. `POST /v1/auth/apple`に`{"identity_token":"…","nonce":"…"}`を送る。
-4. WorkerがAppleの公開鍵でRS256署名・issuer・audience・発行時刻・期限・nonceを検証する。
-5. 検証成功時にプロフィール・既定設定・30日セッションを生成する。challenge消費とセッション生成は同じD1トランザクション。
-6. 以後`Authorization: Bearer <access_token>`を送る。`DELETE /v1/auth/session`でそのセッションを失効する。
+ハッカソン版のため、ログイン画面とSign in with Appleは使いません。
 
-`APPLE_CLIENT_ID`はAppleでSign in with Appleを有効にしたアプリのBundle IDに一致させます。
-Appleからメール・実名を取り込まず、本人識別には検証済み`sub`だけを使用します。
-D1にはセッショントークンのSHA-256のみを保存します。iOSでセッションを永続化するときはKeychainを使用します。
-認証POSTにはCloudflare Rate Limitingを使用します（IP・拠点ごとに20回/分、概算）。
-challengeは認証POST時、期限切れセッションはログイン成功時に掃除します。
-Appleのアカウント状態変更通知・アカウント削除画面・ログイン画面は別途実装が必要です。
+1. アプリの初回起動時に`POST /v1/auth/guest`へ`{"display_name":"…"}`（省略時は「ゲスト」）を送る。
+2. Workerがユーザー・プロフィール・既定設定・365日セッションを生成し、`access_token`を返す。
+   IDは紛らわしい文字を除いた英小文字・数字7文字で、友達がIDで見つけられるよう`allow_id_search`を有効にする。
+3. 以後`Authorization: Bearer <access_token>`を送る。`DELETE /v1/auth/session`でそのセッションを失効する。
+
+トークンがゲストアカウントの唯一の鍵です。iOSはKeychain（この端末のみ）に保存し、失うと同じアカウントには戻れません。
+端末間の引き継ぎ・アカウント削除画面はありません。
+D1にはセッショントークンのSHA-256のみを保存します。
+ゲスト作成には今までの認証POSTと同じCloudflare Rate Limitingを使用します（IP・拠点ごとに20回/分、概算）。
 
 ## データとアクセス制御
 
@@ -72,15 +70,14 @@ JSONのキーはsnake_case。特記のないAPIは認証必須です。書き込
 | メソッド・パス | 入力・用途 |
 | --- | --- |
 | `GET /health` | 認証不要のプロセス生存確認。DB/R2の疎通確認ではない |
-| `POST /v1/auth/challenge` | 認証不要。Apple認証用nonce発行 |
-| `POST /v1/auth/apple` | 認証不要。`identity_token, nonce` |
+| `POST /v1/auth/guest` | 認証不要。`display_name?`でゲストアカウントとセッションを作成 |
 | `DELETE /v1/auth/session` | 現在のセッションを失効 |
 | `GET, PATCH /v1/me` | 本人のプロフィール。更新は`display_name, handle` |
 | `GET, PUT /v1/preferences` | 更新は`allow_id_search, show_visit_date, include_in_friend_avg`（全てboolean） |
 | `GET /v1/profiles?handle=…` | handleの完全一致検索 |
 | `GET /v1/profiles/:id` | 閲覧可能なプロフィール |
 | `GET /v1/friends` | 友達と本人の`is_favorite` |
-| `GET, POST /v1/requests` | 申請一覧／送信。作成は`target_id` |
+| `GET, POST /v1/requests` | 申請一覧（双方の表示名・ID付き）／送信。作成は`target_id` |
 | `PATCH, DELETE /v1/requests/:id` | 受信者が`accept`で回答／送信者がpendingを取消 |
 | `DELETE /v1/friends/:id` | 友達を解除 |
 | `PUT, DELETE /v1/friends/:id/favorite` | お気に入りの友達を追加・削除 |
@@ -90,6 +87,7 @@ JSONのキーはsnake_case。特記のないAPIは認証必須です。書き込
 | `POST /v1/restaurants` | `external_key, name, latitude, longitude, category?, address?` |
 | `GET /v1/ratings` | 範囲と任意の`friend_ids`（カンマ区切り）。省略で全員、空文字で0人 |
 | `GET /v1/reviews?restaurant_id=…` | 本人と友達のレビュー。来店日は設定に従う |
+| `GET /v1/friend-reviews` | 友達のレビューを店舗情報・投稿者名付きで新しい順に返す（平均に含めない設定の友達は除く） |
 | `GET /v1/me/reviews` | 本人のレビュー一覧 |
 | `PUT /v1/reviews` | `restaurant_id, rating, comment?, dish?, want_again?, visited_on?`。省略来店日は削除 |
 | `DELETE /v1/reviews/:id` | 本人のレビューを削除 |
@@ -132,7 +130,7 @@ npx wrangler r2 bucket create meshinowa-review-photos
 cp wrangler.local.jsonc wrangler.production.jsonc
 ```
 
-コピーした設定のDB IDを作成結果へ置き換え、`APPLE_CLIENT_ID`を確認します。
+コピーした設定のDB IDを作成結果へ置き換えます。
 専用APIのカスタムドメインを設定するか、開発用に`workers_dev: true`を明示します。
 `observability.enabled: false`を維持し、認証情報を含むログを有効にしないでください。
 
@@ -142,7 +140,7 @@ npx wrangler deploy --dry-run --config wrangler.production.jsonc
 npx wrangler deploy --config wrangler.production.jsonc
 ```
 
-デプロイ後、HTTPS originをローカルxcconfigへ設定し、別々の実アカウントでApple認証・承認・解除・ブロック・写真アクセス失効を確認します。
+デプロイ後、HTTPS originをローカルxcconfigへ設定し、2台の端末（またはシミュレータ）のゲストで申請・承認・解除・ブロックを確認します。
 管理トークンはWranglerの認証情報またはCIのsecret管理に置き、`.dev.vars`やチャット、コミットへ貼り付けません。
 
 既存Supabaseに実データがある場合は、新規ユーザーで置き換える前に[移行手順](MIGRATION.md)を確認してください。
@@ -151,11 +149,10 @@ npx wrangler deploy --config wrangler.production.jsonc
 
 `npm test`は一時D1/R2をMiniflareで起動し、NodeからWorkerハンドラーを実行します。
 本番用migrationを適用し、権限・同時操作・写真転送・JWT署名検証・セッション発行を検証します。
-Appleの鍵はテスト内生成のRSA鍵に差し替え、ネットワークや実アカウントを使用しません。
 認証の頻度制限は単体テストではstubに置き換えます。
 `db:local`でWrangler経由のmigration適用、`deploy:check`でWorkers用bundleを確認できます。
 iOS側はURLProtocolを使い、設定・送信先・認証ヘッダー・エラーの秘匿を検証します。
-Apple実サービスとのログインや本番Cloudflare設定・実機の疎通はこれらのテストに含まれません。
+本番Cloudflare設定・実機の疎通はこれらのテストに含まれません。
 
 ## 公式資料
 
@@ -163,4 +160,3 @@ Apple実サービスとのログインや本番Cloudflare設定・実機の疎�
 - [D1の外部キー](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)
 - [R2 Workers API](https://developers.cloudflare.com/r2/api/workers/workers-api-reference/)
 - [Workers Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
-- [Appleのユーザー検証](https://developer.apple.com/documentation/signinwithapple/verifying-a-user)

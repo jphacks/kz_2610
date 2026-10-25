@@ -4,6 +4,7 @@ struct ProfileView: View {
     var onFindRestaurants: () -> Void
     @EnvironmentObject private var reviews: LocalReviewStore
     @EnvironmentObject private var saved: SavedRestaurantStore
+    @EnvironmentObject private var friends: FriendStore
     @State private var editing: LocalReview?
 
     var body: some View {
@@ -60,7 +61,9 @@ struct ProfileView: View {
                         LocalReviewRow(review: review) { editing = review }
                     }
                 }
-                Text("ログイン・アカウント設定は準備中です。記録は友達に公開されず、アプリを削除すると端末内のデータも消えます。")
+                Text(friends.isAvailable
+                     ? "ゲストとして利用中です。評価・ひとこと・おすすめ料理は友達に共有され、写真と来店日はこの端末だけに保存します。"
+                     : "サーバーに接続していないため、記録はこの端末だけに保存されます。アプリを削除すると端末内のデータも消えます。")
                     .font(MeshinowaFont.text(12, relativeTo: .caption))
                     .foregroundStyle(MeshinowaTheme.secondaryText)
             }

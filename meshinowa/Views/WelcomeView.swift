@@ -25,7 +25,7 @@ struct WelcomeView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     point("map", "地図でお店を探して、気になる店にいいね")
                     point("star.bubble", "行ったお店は星とひとことで記録")
-                    point("person.2", "友達の評価だけで点数を出す（準備中）")
+                    point("person.2", "友達の評価だけで点数を出す")
                 }
                 .padding(.top, 28)
             }

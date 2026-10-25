@@ -75,6 +75,9 @@ final class FriendStore: ObservableObject {
     @Published private(set) var preferences: Preferences?
     @Published private(set) var blockedProfiles: [BlockedProfile] = []
     private var tokenTask: Task<String, Error>?
+    /// Keychainに保存できなかったときは、利用者が明示的に再試行するまでゲストを作り直さない。
+    private var guestCreationBlocked = false
+    struct CredentialStorageError: Error {}
     private var localRecoveryTask: Task<String, Error>?
     private let environmentStore: UserDefaults
     private var recordedLocalEnvironment = false
@@ -309,11 +312,14 @@ final class FriendStore: ObservableObject {
     private func createGuestToken() async throws -> String {
         guard !needsLocalReset, let backend else { throw CloudflareBackend.BackendError.invalidSession }
         if let task = tokenTask { return try await task.value }
+        guard !guestCreationBlocked else { throw CredentialStorageError() }
         let task = Task { @MainActor in
             let guest = try await backend.signInAsGuest(displayName: environmentStore.string(forKey: "profile.name") ?? "ゲスト")
             guard credentials.save(guest.accessToken) else {
-                try? await backend.signOut(accessToken: guest.accessToken)
-                throw CocoaError(.fileWriteNoPermission)
+                // 端末に残せないアカウントはサーバーにも残さない。定期更新で作り直さないよう止める。
+                guestCreationBlocked = true
+                await discardUnsavedGuest(guest.accessToken, backend: backend)
+                throw CredentialStorageError()
             }
             return guest.accessToken
         }
@@ -322,6 +328,20 @@ final class FriendStore: ObservableObject {
         let value = try await task.value
         token = value
         return value
+    }
+
+    private func discardUnsavedGuest(_ accessToken: String, backend: CloudflareBackend) async {
+        do {
+            let _: [String: Bool] = try await backend.request("/me", method: "DELETE", accessToken: accessToken)
+        } catch {
+            try? await backend.signOut(accessToken: accessToken)
+        }
+    }
+
+    /// 利用者の再読み込み操作。Keychainへの保存失敗で止めたゲスト作成を1回だけ再試行する。
+    func retryConnection() async {
+        guestCreationBlocked = false
+        await refresh()
     }
 
     /// A deployed account is never replaced on a 401. Development DB resets must be proven first.
@@ -371,6 +391,9 @@ final class FriendStore: ObservableObject {
     }
 
     private func connectionMessage(for error: Error) -> String {
+        if error is CredentialStorageError {
+            return "認証情報をこの端末に保存できなかったため、アカウントを作成していません。端末の設定を確認してから再読み込みしてください。端末内の記録は保持しています。"
+        }
         if case CloudflareBackend.BackendError.http(401) = error {
             return "認証情報を確認できませんでした。設定の引き継ぎコードで復旧してください。端末内の記録は保持しています。"
         }
@@ -460,6 +483,7 @@ final class FriendStore: ObservableObject {
     func restoreCredential(_ value: String?) throws {
         if let value {
             guard credentials.save(value) else { throw CocoaError(.fileWriteNoPermission) }
+            guestCreationBlocked = false
         } else { credentials.delete() }
         identityGeneration += 1
         token = value
@@ -480,6 +504,7 @@ final class FriendStore: ObservableObject {
         }
         needsLocalReset = false
         suspendsReviewSync = false
+        guestCreationBlocked = false
     }
 
     private static func date(_ value: String) -> Date {

@@ -146,12 +146,12 @@ final class FriendStoreTests: XCTestCase {
 
     func testCredentialWriteFailureDoesNotExposeAnUnpersistedAccount() async throws {
         credentials.rejectsWrites = true
-        var revokeCalls = 0
+        var deleteCalls = 0
         BackendURLProtocol.handler = { [token] request in
             if request.url?.path == "/v1/auth/guest" {
                 return (201, Data("{\"access_token\":\"\(token)\",\"expires_at\":1,\"user_id\":\"00000000-0000-0000-0000-000000000001\"}".utf8))
             }
-            if request.url?.path == "/v1/auth/session" { revokeCalls += 1; return (200, Data("{}".utf8)) }
+            if request.url?.path == "/v1/me", request.httpMethod == "DELETE" { deleteCalls += 1; return (200, Data("{\"ok\":true}".utf8)) }
             XCTFail("Must not use the unpersisted session")
             return (500, Data("{}".utf8))
         }
@@ -159,7 +159,46 @@ final class FriendStoreTests: XCTestCase {
         await store.start(sharing: [])
         XCTAssertNil(store.me)
         XCTAssertNil(credentials.load())
+        XCTAssertEqual(deleteCalls, 1)
+    }
+
+    func testCredentialWriteFailureStopsAutomaticGuestCreationUntilUserRetries() async throws {
+        credentials.rejectsWrites = true
+        var guestCalls = 0
+        var revokeCalls = 0
+        var sessionSaved = false
+        BackendURLProtocol.handler = { [token] request in
+            switch request.url?.path ?? "" {
+            case "/v1/auth/guest":
+                guestCalls += 1
+                return (201, Data("{\"access_token\":\"\(token)\",\"expires_at\":1,\"user_id\":\"00000000-0000-0000-0000-000000000001\"}".utf8))
+            case "/v1/me" where request.httpMethod == "DELETE":
+                return (500, Data("{}".utf8))  // 削除できなくても、少なくともセッションは失効させる
+            case "/v1/auth/session":
+                revokeCalls += 1
+                return (200, Data("{}".utf8))
+            default:
+                if !sessionSaved { XCTFail("Must not use the unpersisted session") }
+                return (500, Data("{}".utf8))
+            }
+        }
+        let store = store()
+        await store.start(sharing: [])
+        for _ in 0..<3 { await store.refresh() }  // 10秒ごとの定期更新に相当
+        XCTAssertEqual(guestCalls, 1)
         XCTAssertEqual(revokeCalls, 1)
+        guard case .failed(let message) = store.status else { return XCTFail("Expected explicit failure") }
+        XCTAssertTrue(message.contains("保存できなかった"))
+
+        await store.retryConnection()
+        XCTAssertEqual(guestCalls, 2)
+        XCTAssertNil(credentials.load())
+
+        credentials.rejectsWrites = false
+        sessionSaved = true
+        await store.retryConnection()
+        XCTAssertEqual(guestCalls, 3)
+        XCTAssertEqual(credentials.load(), token)
     }
 
     func testDeletedAccountCannotUploadOldDataBeforeLocalResetCompletes() async throws {

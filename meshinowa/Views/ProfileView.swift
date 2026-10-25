@@ -51,7 +51,7 @@ struct ProfileView: View {
                 if case .failed(let message) = friends.status {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(message).font(MeshinowaFont.text(14))
-                        Button("再読み込み") { Task { await friends.refresh() } }
+                        Button("再読み込み") { Task { await friends.retryConnection() } }
                             .buttonStyle(PaperButtonStyle(kind: .secondary))
                     }.padding(16).paperCard()
                 }
@@ -105,7 +105,7 @@ struct ProfileView: View {
                     .font(MeshinowaFont.text(12, relativeTo: .caption)).foregroundStyle(MeshinowaTheme.secondaryText)
             }.padding(20)
         }
-        .refreshable { await friends.refresh() }
+        .refreshable { await friends.retryConnection() }
         .background(MeshinowaTheme.paper).foregroundStyle(MeshinowaTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $editing) { ReviewEditor(item: $0.restaurant.mapItem, existing: $0) }

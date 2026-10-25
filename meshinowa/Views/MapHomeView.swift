@@ -128,6 +128,8 @@ struct MapHomeView: View {
         }
         .onChange(of: genre) { _, _ in
             selectedID = nil
+            searchedRegion = nil
+            adoptsNextCamera = false
             notice = visibleResults.isEmpty && !results.isEmpty ? "このジャンルのお店は見つかっていません" : nil
         }
         .onChange(of: visibleResults.map(\.id)) { _, _ in

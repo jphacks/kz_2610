@@ -142,52 +142,33 @@ struct QuickRatingSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var rating: Double = 0
     @State private var showsEditor = false
+    @State private var showsSeal = false
     @State private var error: String?
 
     var body: some View {
         let existing = reviews.review(for: item)
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(existing == nil ? "行った？評価する" : "評価を変える")
-                    .font(MeshinowaFont.heading(20, relativeTo: .title3))
-                Text(item.name ?? "飲食店")
-                    .font(MeshinowaFont.text(14))
+        VStack(alignment: .leading, spacing: 14) {
+            ReviewShopHeader(item: item)
+            VStack(spacing: 4) {
+                Text(existing == nil ? "行った？どうだった？" : "評価を変える")
+                    .font(MeshinowaFont.heading(16))
                     .foregroundStyle(MeshinowaTheme.bodyText)
-                    .lineLimit(1)
+                BigStarRating(rating: $rating)
             }
-            HStack(spacing: 6) {
-                ForEach(1...5, id: \.self) { value in
-                    Button {
-                        // 同じ星をもう一度押すと0.5点下げる。
-                        rating = rating == Double(value) ? Double(value) - 0.5 : Double(value)
-                    } label: {
-                        Image(systemName: rating >= Double(value) ? "star.fill"
-                              : (rating >= Double(value) - 0.5 ? "star.leadinghalf.filled" : "star"))
-                            .font(.system(size: 34))
-                            .foregroundStyle(MeshinowaTheme.accent)
-                            .frame(maxWidth: .infinity, minHeight: 48)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(value)点")
-                }
-            }
-            .sensoryFeedback(.selection, trigger: rating)
-            Text(rating == 0 ? "星を選んでください（もう一度押すと0.5点下がります）"
-                 : "あなたの評価：" + rating.formatted(.number.precision(.fractionLength(1))))
-                .font(MeshinowaFont.text(13, relativeTo: .caption))
-                .foregroundStyle(MeshinowaTheme.secondaryText)
             HStack(spacing: 10) {
                 Button("ひとことも書く") { showsEditor = true }
                     .buttonStyle(PaperButtonStyle(kind: .secondary))
                 Button(existing == nil ? "記録する" : "更新する") { save(existing: existing) }
                     .buttonStyle(PaperButtonStyle())
-                    .disabled(rating < 1)
+                    .disabled(rating < 1 || showsSeal)
             }
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(20)
-        .presentationDetents([.height(300)])
+        .ratingSealOnSave(rating: rating, isPresented: $showsSeal) { dismiss() }
+        .presentationDetents([.height(380)])
         .presentationDragIndicator(.visible)
+        .presentationBackground(MeshinowaTheme.paper)
         .onAppear { rating = existing?.rating ?? 0 }
         .sheet(isPresented: $showsEditor, onDismiss: {
             if reviews.review(for: item) != nil { dismiss() }
@@ -205,7 +186,7 @@ struct QuickRatingSheet: View {
             try reviews.save(item: item, rating: rating, comment: existing?.comment ?? "",
                              dish: existing?.dish ?? "", wantAgain: existing?.wantAgain ?? false,
                              visitedOn: existing?.visitedOn)
-            dismiss()
+            showsSeal = true
         } catch { self.error = error.localizedDescription }
     }
 }

@@ -24,6 +24,11 @@ iOS側は`Config/Cloudflare.example.xcconfig`を`Config/Cloudflare.xcconfig.loca
 `CLOUDFLARE_API_URL`にAPIのoriginを設定します。未設定なら端末内モードです。
 シミュレータ用HTTPはlocalhost・loopbackだけ許可します。実機はHTTPSの開発用APIを使用します。
 
+## 店舗の掲載写真
+
+ホットペッパーグルメAPIの画像取得・設定・検証手順は [HOTPEPPER.md](HOTPEPPER.md) を参照してください。
+`HOTPEPPER_API_KEY`はWorkerのsecretに設定します。アプリへは配布しません。
+
 ## 認証
 
 1. `POST /v1/auth/challenge`で`nonce`と`nonce_hash`を受け取る。有効期限は10分。
@@ -66,6 +71,7 @@ JSONのキーはsnake_case。特記のないAPIは認証必須です。書き込
 
 | メソッド・パス | 入力・用途 |
 | --- | --- |
+| `POST /v1/restaurant-photo` | 認証不要。`name, latitude, longitude`でホットペッパーの掲載写真を照合 |
 | `GET /health` | 認証不要のプロセス生存確認。DB/R2の疎通確認ではない |
 | `POST /v1/auth/challenge` | 認証不要。Apple認証用nonce発行 |
 | `POST /v1/auth/apple` | 認証不要。`identity_token, nonce` |

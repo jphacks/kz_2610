@@ -1,3 +1,4 @@
+import { findRestaurantPhoto, HotPepperError } from "./hotpepper.js";
 import { hash, now, randomToken, verifyAppleIdentity } from "./auth.js";
 
 const MAX_PHOTO = 5 * 1024 * 1024;
@@ -109,6 +110,28 @@ async function route(request, env) {
       key: request.headers.get("CF-Connecting-IP") ?? "local",
     });
     if (!result.success) fail(429, "rate_limited");
+  }
+  if (path === "/v1/restaurant-photo" && method === "POST") {
+    const b = await body(request);
+    const query = {
+      name: text(b.name, 200, 1).trim(),
+      latitude: number(b.latitude, -90, 90),
+      longitude: number(b.longitude, -180, 180),
+    };
+    if (!query.name) fail(400, "invalid_name");
+    const limit = await env.PHOTO_RATE_LIMITER.limit({
+      key: request.headers.get("CF-Connecting-IP") ?? "local",
+    });
+    if (!limit.success) fail(429, "rate_limited");
+    if (!env.HOTPEPPER_API_KEY?.trim()) fail(503, "photo_unavailable");
+    try {
+      return json({
+        photo: await findRestaurantPhoto(query, env.HOTPEPPER_API_KEY),
+      });
+    } catch (error) {
+      if (error instanceof HotPepperError) fail(502, "photo_unavailable");
+      throw error;
+    }
   }
   if (path === "/health" && method === "GET") return json({ status: "ok" });
   if (path === "/v1/auth/challenge" && method === "POST") {

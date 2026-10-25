@@ -339,7 +339,8 @@ struct MapHomeView: View {
                 // お店が2軒以上なら3周分並べ、端まで行っても続けてスワイプできるようにする。
                 ForEach(0..<(carouselItems.count > 1 ? 3 : 1), id: \.self) { lap in
                     ForEach(carouselItems) { result in
-                        RestaurantPreview(item: result.item)
+                        let slot = CarouselSlot(lap: carouselItems.count > 1 ? lap : 1, id: result.id)
+                        RestaurantPreview(item: result.item, loadsGoogleCard: carouselPosition == slot)
                             .containerRelativeFrame(.horizontal) { width, _ in width - 40 }
                             .id(CarouselSlot(lap: carouselItems.count > 1 ? lap : 1, id: result.id))
                     }

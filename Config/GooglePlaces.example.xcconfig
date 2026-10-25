@@ -1,0 +1,3 @@
+// Copy to GooglePlaces.xcconfig.local (ignored by Git).
+// Restrict the key to iOS bundle jp.meshinowa.app and Places UI Kit API.
+GOOGLE_PLACES_IOS_API_KEY =

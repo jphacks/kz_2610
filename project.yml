@@ -7,6 +7,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+packages:
+  GooglePlaces:
+    url: https://github.com/googlemaps/ios-places-sdk
+    exactVersion: 11.2.0
 targets:
   meshinowa:
     type: application
@@ -14,6 +18,9 @@ targets:
     configFiles:
       Debug: Config/Base.xcconfig
       Release: Config/Base.xcconfig
+    dependencies:
+      - package: GooglePlaces
+        product: GooglePlacesSwift
     sources:
       - path: meshinowa
     info:
@@ -26,6 +33,7 @@ targets:
         CFBundleLocalizations:
           - ja
         CloudflareAPIURL: $(CLOUDFLARE_API_URL)
+        GooglePlacesAPIKey: $(GOOGLE_PLACES_IOS_API_KEY)
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         UILaunchScreen: {}
@@ -41,6 +49,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app
+        OTHER_LDFLAGS: $(inherited) -ObjC
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"

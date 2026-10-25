@@ -1,9 +1,10 @@
 import MapKit
 import SwiftUI
 
-/// 地図の下に横並びで出るお店のカード。左に写真、右に種類・評価・住所を並べる。
+/// 地図の下に並ぶ店舗カード。自分の記録とGoogle提供の店舗カードを分けて表示する。
 struct RestaurantPreview: View {
     let item: MKMapItem
+    var loadsGoogleCard = true
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @State private var showsDetails = false
@@ -14,10 +15,13 @@ struct RestaurantPreview: View {
         let isLiked = saved.restaurant(for: item)?.isLiked == true
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 4) {
-                Text(item.name ?? "飲食店")
-                    .font(MeshinowaFont.heading(18, relativeTo: .headline))
-                    .lineLimit(1)
-                    .accessibilityAddTraits(.isHeader)
+                Button { showsDetails = true } label: {
+                    Text(item.name ?? "飲食店")
+                        .font(MeshinowaFont.heading(18, relativeTo: .headline))
+                        .lineLimit(1)
+                        .accessibilityAddTraits(.isHeader)
+                }
+                .buttonStyle(.plain)
                 Spacer(minLength: 8)
                 reviewButton
                 Rectangle()
@@ -30,7 +34,6 @@ struct RestaurantPreview: View {
             }
 
             HStack(alignment: .top, spacing: 12) {
-                RestaurantPhotoView(item: item, width: 84, height: 84, cornerRadius: 8)
                 VStack(alignment: .leading, spacing: 8) {
                     detailLine(symbol: MapHomeView.symbol(for: item), text: item.restaurantCategory)
                     detailLine(symbol: "person.2", text: "友達の評価は準備中")
@@ -39,7 +42,9 @@ struct RestaurantPreview: View {
                                    ?? "住所の情報がありません")
                 }
             }
-            HotPepperServiceCredit()
+            .contentShape(Rectangle())
+            .onTapGesture { showsDetails = true }
+            GooglePlaceCard(item: item, isActive: loadsGoogleCard)
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(.horizontal, 16)
@@ -48,7 +53,6 @@ struct RestaurantPreview: View {
             .fill(MeshinowaTheme.card)
             .shadow(color: .black.opacity(0.16), radius: 8, y: 2))
         .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .onTapGesture { showsDetails = true }
         .accessibilityElement(children: .contain)
         .accessibilityAction(named: "お店の情報を開く") { showsDetails = true }
         .sheet(isPresented: $showsDetails) {
@@ -246,7 +250,7 @@ struct RestaurantInformationView: View {
                     InfoRow(symbol: "person.2", text: "友達の評価は準備中です")
                 }
 
-                RestaurantPhotoView(item: item)
+                GooglePlaceCard(item: item, expanded: true)
 
                 RestaurantCollectionControls(item: item)
 

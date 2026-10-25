@@ -24,7 +24,6 @@ struct SearchResultsView: View {
                                 dismiss()
                             } label: {
                                 HStack(alignment: .top, spacing: 12) {
-                                    RestaurantPhotoView(item: result.item, width: 84, height: 84, cornerRadius: 8)
                                     VStack(alignment: .leading, spacing: 8) {
                                         Text(result.item.name ?? "飲食店")
                                             .font(MeshinowaFont.text(18, weight: .black, relativeTo: .headline))
@@ -44,12 +43,12 @@ struct SearchResultsView: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
+                            GooglePlaceCard(item: result.item)
                             SaveRestaurantButton(item: result.item)
                         }
                         .padding(16)
                         .paperCard()
                     }
-                    HotPepperServiceCredit()
                 }
                 .padding(20)
             }

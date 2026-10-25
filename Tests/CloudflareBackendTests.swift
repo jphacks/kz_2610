@@ -35,7 +35,7 @@ final class CloudflareBackendTests: XCTestCase {
         _ = try await backend.data("/me", accessToken: String(repeating: "a", count: 64))
     }
 
-    func testLoopbackPhotoAPIUsesRealHTTP() async throws {
+    func testLoopbackAPIUsesRealHTTP() async throws {
         let parameters = NWParameters.tcp
         parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
         let listener = try NWListener(using: parameters)
@@ -52,7 +52,7 @@ final class CloudflareBackendTests: XCTestCase {
         listener.newConnectionHandler = { connection in
             connection.start(queue: queue)
             connection.receive(minimumIncompleteLength: 1, maximumLength: 32768) { _, _, _, _ in
-                let body = "{\"error\":\"photo_unavailable\"}"
+                let body = "{\"error\":\"temporarily_unavailable\"}"
                 let response = "HTTP/1.1 503 Service Unavailable\r\nContent-Type: application/json\r\nContent-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n" + body
                 connection.send(content: Data(response.utf8), completion: .contentProcessed { _ in connection.cancel() })
             }
@@ -63,7 +63,7 @@ final class CloudflareBackendTests: XCTestCase {
         let backend = CloudflareBackend(configuration: BackendConfiguration(url: URL(string: "http://127.0.0.1:\(port.rawValue)")!),
                                          session: URLSession(configuration: .ephemeral))
         do {
-            _ = try await backend.data("/restaurant-photo", method: "POST", body: Data("{}".utf8))
+            _ = try await backend.data("/health")
             XCTFail("Expected fixture's HTTP 503")
         } catch CloudflareBackend.BackendError.http(let status) {
             XCTAssertEqual(status, 503)

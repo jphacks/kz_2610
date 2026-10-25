@@ -107,19 +107,20 @@ struct SavedRestaurantsView: View {
                 } else {
                     LazyVStack(spacing: 0) {
                         ForEach(visibleRestaurants) { restaurant in
-                            Button { selected = restaurant } label: {
-                                SavedRow(restaurant: restaurant,
-                                         rating: reviews.review(for: restaurant.mapItem)?.rating)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Button { selected = restaurant } label: {
+                                    SavedRow(restaurant: restaurant,
+                                             rating: reviews.review(for: restaurant.mapItem)?.rating)
+                                }
+                                .buttonStyle(.plain)
+                                GooglePlaceCard(item: restaurant.mapItem)
                             }
-                            .buttonStyle(.plain)
+                            .padding(.bottom, 12)
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 6)
                 }
-
-                HotPepperServiceCredit()
-                    .padding(.horizontal, 20)
 
                 Text("この端末に保存しています。\(visibleRestaurants.count)件を表示中。")
                     .font(MeshinowaFont.text(12, relativeTo: .caption))
@@ -170,7 +171,6 @@ private struct SavedRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
-            RestaurantPhotoView(item: restaurant.mapItem, width: 84, height: 84, cornerRadius: 12)
             VStack(alignment: .leading, spacing: 3) {
                 Text(restaurant.name)
                     .font(MeshinowaFont.heading(17))

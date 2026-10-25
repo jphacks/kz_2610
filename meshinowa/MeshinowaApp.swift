@@ -5,6 +5,8 @@ struct MeshinowaApp: App {
     @StateObject private var saved = SavedRestaurantStore()
     @StateObject private var reviews = LocalReviewStore()
     @AppStorage("hasOpenedMeshinowa") private var hasOpened = false
+    init() { GooglePlacesService.configure() }
+
     var body: some Scene {
         WindowGroup {
             Group {

@@ -53,22 +53,42 @@ final class FriendStore: ObservableObject {
     @Published private(set) var requests: [Request] = []
     @Published private(set) var friendReviews: [RemoteReview] = []
 
+    @Published private var presentationData: FriendDataset?
     private let backend: CloudflareBackend?
     private let credentials: GuestCredentialStore
     private var token: String?
 
     init(backend: CloudflareBackend? = try? CloudflareBackend.makeClient(),
-         credentials: GuestCredentialStore = GuestCredentialStore()) {
-        self.backend = backend
+         credentials: GuestCredentialStore = GuestCredentialStore(), presentation: FriendDataset? = nil) {
+        self.presentationData = presentation
+        self.backend = presentation == nil ? backend : nil
         self.credentials = credentials
-        status = backend == nil ? .unavailable : .connecting
+        status = presentation != nil ? .ready : (backend == nil ? .unavailable : .connecting)
+        if let presentation { loadPresentation(presentation) }
     }
 
-    var isAvailable: Bool { backend != nil }
+    private func loadPresentation(_ data: FriendDataset) {
+        presentationData = data
+        me = Profile(id: "demo-me", displayName: "発表ユーザー", handle: "kit_demo")
+        friends = data.friends.map {
+            Friend(id: $0.id, displayName: $0.name, handle: $0.id.replacingOccurrences(of: "-", with: "_"),
+                   isFavorite: data.favoriteFriendIDs.contains($0.id) ? 1 : 0)
+        }
+        status = .ready
+    }
+
+    func resetPresentation() {
+        guard isPresentation, let data = PresentationDemo.dataset else { return }
+        loadPresentation(data)
+    }
+
+    var isAvailable: Bool { backend != nil || presentationData != nil }
+    var isPresentation: Bool { presentationData != nil }
     var incomingRequests: [Request] { requests.filter { $0.status == "pending" && $0.toId == me?.id } }
     var outgoingRequests: [Request] { requests.filter { $0.status == "pending" && $0.fromId == me?.id } }
 
     var dataset: FriendDataset {
+        if let presentationData { return presentationData }
         var restaurants: [String: FriendRestaurant] = [:]
         for review in friendReviews where restaurants[review.externalKey] == nil {
             let category = MKMapItem()
@@ -122,6 +142,7 @@ final class FriendStore: ObservableObject {
 
     /// 相手のIDで申請する。見つからない・申請できないときは理由を返す。
     func sendRequest(handle raw: String) async -> String? {
+        if isPresentation { return "発表デモでは、用意された6人の友達でお試しください。" }
         let handle = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             .replacingOccurrences(of: "@", with: "")
         guard (3...40).contains(handle.count), handle.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == ".") }) else {
@@ -150,16 +171,38 @@ final class FriendStore: ObservableObject {
     }
 
     func setFavorite(_ friend: Friend, _ isFavorite: Bool) async {
+        if var data = presentationData {
+            if isFavorite { data.favoriteFriendIDs.insert(friend.id) }
+            else { data.favoriteFriendIDs.remove(friend.id) }
+            presentationData = data
+            if let index = friends.firstIndex(where: { $0.id == friend.id }) {
+                friends[index] = Friend(id: friend.id, displayName: friend.displayName, handle: friend.handle, isFavorite: isFavorite ? 1 : 0)
+            }
+            return
+        }
         await perform("/friends/\(friend.id)/favorite", method: isFavorite ? "PUT" : "DELETE")
     }
 
     func remove(_ friend: Friend) async {
+        if var data = presentationData {
+            data.friends.removeAll { $0.id == friend.id }
+            data.favoriteFriendIDs.remove(friend.id)
+            data.reviews.removeAll { $0.friendID == friend.id }
+            data.restaurants.removeAll { shop in !data.reviews.contains { $0.restaurantID == shop.id } }
+            presentationData = data
+            friends.removeAll { $0.id == friend.id }
+            return
+        }
         await perform("/friends/\(friend.id)", method: "DELETE")
     }
 
     func rename(_ displayName: String) async -> Bool {
         let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let me, (1...40).contains(name.count) else { return false }
+        if isPresentation {
+            self.me = Profile(id: me.id, displayName: name, handle: me.handle)
+            return true
+        }
         do {
             let _: [String: Bool] = try await call("/me", method: "PATCH", json: ["display_name": name, "handle": me.handle])
             await refresh()
@@ -200,6 +243,7 @@ final class FriendStore: ObservableObject {
     }
 
     private func perform(_ path: String, method: String, json: [String: Any]? = nil) async {
+        guard !isPresentation else { return }
         do {
             let _: [String: Bool] = try await call(path, method: method, json: json)
         } catch {

@@ -14,7 +14,7 @@ struct ReviewTargetPicker: View {
     @State private var isSearching = false
     @State private var searchMessage: String?
 
-    private static let defaultRegion = MKCoordinateRegion(
+    private static let defaultRegion = PresentationDemo.isEnabled ? PresentationDemo.initialRegion : MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
         latitudinalMeters: 20_000, longitudinalMeters: 20_000
     )
@@ -123,7 +123,7 @@ struct ReviewTargetPicker: View {
     private func search() {
         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !term.isEmpty, !isSearching else { return }
-        guard GooglePlacesService.isConfigured else {
+        guard GooglePlacesService.isConfigured || PresentationDemo.isEnabled else {
             searchMessage = "店名で探すには、Google Places の設定が必要です。"
             return
         }

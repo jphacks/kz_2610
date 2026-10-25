@@ -79,6 +79,7 @@ extension MKMapItem {
     }
 
     var foodGenre: FoodGenre {
+        if let searchedFoodGenre { return searchedFoodGenre }
         let inferred = FoodGenre.infer(name: name, category: pointOfInterestCategory?.rawValue,
                                        placeTypes: googleDetails?.place?.types.map(\.rawValue) ?? [])
         return inferred == .other ? (searchedFoodGenre ?? .other) : inferred
@@ -86,5 +87,7 @@ extension MKMapItem {
 }
 
 extension SavedRestaurant {
-    var foodGenre: FoodGenre { FoodGenre.infer(name: name, category: category) }
+    var foodGenre: FoodGenre {
+        PresentationDemo.foodGenreHint(for: id) ?? FoodGenre.infer(name: name, category: category)
+    }
 }

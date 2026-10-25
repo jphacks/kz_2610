@@ -14,7 +14,7 @@ struct MapHomeView: View {
     @Environment(\.floatingTabBarSpace) private var tabBarSpace
     @Environment(\.reportsMapSelection) private var reportsMapSelection
 
-    private static let initialRegion = MKCoordinateRegion(
+    private static let initialRegion = PresentationDemo.isEnabled ? PresentationDemo.initialRegion : MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
         latitudinalMeters: 2000, longitudinalMeters: 2000
     )
@@ -147,7 +147,7 @@ struct MapHomeView: View {
         }
         .task(id: isActive) {
             guard isActive else { return }
-            if searchesAllPlaces && results.isEmpty && searchedRegion == nil && GooglePlacesService.isConfigured {
+            if searchesAllPlaces && results.isEmpty && searchedRegion == nil && (GooglePlacesService.isConfigured || PresentationDemo.isEnabled) {
                 beginSearch(nearby: true)
             }
             while !Task.isCancelled {
@@ -273,7 +273,8 @@ struct MapHomeView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
             }
         }
-        .padding(.top, 4)
+        // 地図はsafe areaの外まで描くため、発表用の案内帯の高さをここでも空ける。
+        .padding(.top, PresentationDemo.isEnabled ? 36 : 4)
         .padding(.bottom, 8)
     }
 

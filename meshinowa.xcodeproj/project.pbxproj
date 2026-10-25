@@ -51,6 +51,7 @@
 		9788929DEAFCB21D7624D6BA /* GooglePlacesConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8775E0D2B4F5F645040C5037 /* GooglePlacesConfigurationTests.swift */; };
 		9B3975C7775DF1578BD649F5 /* RestaurantPhotoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AEC086805668086191414F9 /* RestaurantPhotoStoreTests.swift */; };
 		9DA43F7000D4C1FDD787E227 /* ZenMaruGothic-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9B65E1E0933983489CB95551 /* ZenMaruGothic-Black.ttf */; };
+		9FF7B5C690BD3999FC604B84 /* PresentationDemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68245A6ABE1D4F107401E1BE /* PresentationDemoTests.swift */; };
 		A1AA46CB482784B0C9BCAE27 /* MPLUSRounded1c-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0C81B7B273326BB543505ADB /* MPLUSRounded1c-ExtraBold.ttf */; };
 		A1DC742042F979A4B3647D96 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 29F1BD9083BF65B7F222751D /* README.md */; };
 		A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB6FF03D8BFECB5FCCC34906 /* PaperCard.swift */; };
@@ -78,6 +79,7 @@
 		E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC586D38E56B95D55CF0F629 /* RatingStamp.swift */; };
 		E8658718CE6B5A35030063C9 /* PaperButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E0C2D0227B0ECA57AB21F4 /* PaperButtonStyle.swift */; };
 		EE5DE494558883EA03123F4F /* MeshinowaFont.swift in Sources */ = {isa = PBXBuildFile; fileRef = 458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */; };
+		FAE30B7ABFDDB33419533E73 /* PresentationDemo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FA030A4CB563DCADE5EC4DC /* PresentationDemo.swift */; };
 		FF52D1EE63E7D8D22F4EBDAF /* LocalReviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0CC997E863934F3A2CD935 /* LocalReviewStore.swift */; };
 /* End PBXBuildFile section */
 
@@ -112,6 +114,7 @@
 		3B81A1FC735B0AE97C9F9025 /* SavedRestaurantStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRestaurantStore.swift; sourceTree = "<group>"; };
 		3BC927BC40D6C3D5E48E6FB5 /* FriendRecommendationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendRecommendationsView.swift; sourceTree = "<group>"; };
 		3D47C9B0C6921A9A6D9003C0 /* SaveRestaurantButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveRestaurantButton.swift; sourceTree = "<group>"; };
+		3FA030A4CB563DCADE5EC4DC /* PresentationDemo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationDemo.swift; sourceTree = "<group>"; };
 		458BF2B0BFBD2398FABDD380 /* MeshinowaFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshinowaFont.swift; sourceTree = "<group>"; };
 		5306E590F0306302A10B6E0D /* NorenTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorenTabs.swift; sourceTree = "<group>"; };
 		5560E05FAC17103CF456F811 /* meshinowa.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = meshinowa.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -122,6 +125,7 @@
 		5FC13D4587A4B4ECF3CC50A4 /* ZenMaruGothic-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ZenMaruGothic-OFL.txt"; sourceTree = "<group>"; };
 		61E95A7DC1FF0B8E365727EA /* FriendsHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsHomeView.swift; sourceTree = "<group>"; };
 		66EF4AF3CC92EDAB17294136 /* MPLUSRounded1c-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "MPLUSRounded1c-Bold.ttf"; sourceTree = "<group>"; };
+		68245A6ABE1D4F107401E1BE /* PresentationDemoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationDemoTests.swift; sourceTree = "<group>"; };
 		723E3AA40667C070AA41E2BD /* MPLUSRounded1c-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "MPLUSRounded1c-OFL.txt"; sourceTree = "<group>"; };
 		77790088FF35C81509B62FA9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		78547210CCC61EAD05DD939F /* MapHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapHomeView.swift; sourceTree = "<group>"; };
@@ -260,6 +264,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		B7F1027D5EB31F6A3C15E57A /* Presentation */ = {
+			isa = PBXGroup;
+			children = (
+				3FA030A4CB563DCADE5EC4DC /* PresentationDemo.swift */,
+			);
+			path = Presentation;
+			sourceTree = "<group>";
+		};
 		BC0DFA885E1CA6BE23F20ACF = {
 			isa = PBXGroup;
 			children = (
@@ -279,6 +291,7 @@
 				0FCC808ABDBCB372E988996F /* Backend */,
 				57467B0690964F270C77FF7E /* DesignSystem */,
 				A6FB7F146545F3F034F1C344 /* Models */,
+				B7F1027D5EB31F6A3C15E57A /* Presentation */,
 				F07664E93D5D198EA767EFFD /* Resources */,
 				D5EE1A628518B74651808996 /* Views */,
 			);
@@ -350,6 +363,7 @@
 				2AD6BD7A0704BF5D1296EF4A /* GoogleRestaurantSearchTests.swift */,
 				B6ACCCCC66DD63E97793E31C /* LocalReviewStoreTests.swift */,
 				F737A0BE945FA884ED98BAA2 /* PersonalLibraryTests.swift */,
+				68245A6ABE1D4F107401E1BE /* PresentationDemoTests.swift */,
 				981EE49B9C6084A8A446750C /* RestaurantGenreTests.swift */,
 				5AEC086805668086191414F9 /* RestaurantPhotoStoreTests.swift */,
 				814F4A29C7CB515BA282140E /* SavedRestaurantStoreTests.swift */,
@@ -471,6 +485,7 @@
 				1100715A94E49D2356FD0C0E /* GoogleRestaurantSearchTests.swift in Sources */,
 				14D65948F42B952666E17633 /* LocalReviewStoreTests.swift in Sources */,
 				AD66B39032A83EB63D516C98 /* PersonalLibraryTests.swift in Sources */,
+				9FF7B5C690BD3999FC604B84 /* PresentationDemoTests.swift in Sources */,
 				D146A4AB7356AAB2EB2E5888 /* RestaurantGenreTests.swift in Sources */,
 				9B3975C7775DF1578BD649F5 /* RestaurantPhotoStoreTests.swift in Sources */,
 				47ABC580A8EDEB39D39DB752 /* SavedRestaurantStoreTests.swift in Sources */,
@@ -506,6 +521,7 @@
 				E8658718CE6B5A35030063C9 /* PaperButtonStyle.swift in Sources */,
 				A7A63F84456FDE2D314F5B3C /* PaperCard.swift in Sources */,
 				6EF334B703ABC4F9BF0BFD13 /* PersonalLibrary.swift in Sources */,
+				FAE30B7ABFDDB33419533E73 /* PresentationDemo.swift in Sources */,
 				327EFDEFD26A7768EED9E9F0 /* ProfileView.swift in Sources */,
 				643456A90B9CE870169CE59F /* RatingInput.swift in Sources */,
 				E13BBB6A2E560734C11F9273 /* RatingStamp.swift in Sources */,
@@ -620,6 +636,27 @@
 			};
 			name = Debug;
 		};
+		80EDBCF82F7CF5D7A100819C /* Presentation */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = D3130AD03FDF4268E2C852DE /* Base.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = meshinowa/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				MESHINOWA_DISPLAY_NAME = "meshinowa デモ";
+				OTHER_LDFLAGS = "$(inherited) -ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app.presentation;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Presentation;
+		};
 		A01ADB9523B0DB8DBCD25B13 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D3130AD03FDF4268E2C852DE /* Base.xcconfig */;
@@ -633,6 +670,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
+				MESHINOWA_DISPLAY_NAME = meshinowa;
 				OTHER_LDFLAGS = "$(inherited) -ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app;
 				SDKROOT = iphoneos;
@@ -696,6 +734,23 @@
 			};
 			name = Release;
 		};
+		E3E83933E4CB8B1F282EC183 /* Presentation */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/meshinowa.app/meshinowa";
+			};
+			name = Presentation;
+		};
 		E41CD39627979548849B3FD1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = D3130AD03FDF4268E2C852DE /* Base.xcconfig */;
@@ -709,6 +764,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.1.0;
+				MESHINOWA_DISPLAY_NAME = meshinowa;
 				OTHER_LDFLAGS = "$(inherited) -ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = jp.meshinowa.app;
 				SDKROOT = iphoneos;
@@ -733,6 +789,69 @@
 			};
 			name = Debug;
 		};
+		EABAE1B2699CFF1346FF31F8 /* Presentation */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG PRESENTATION_DEMO";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Presentation;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -740,6 +859,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				EA862B9969977C1C5CDA4B7A /* Debug */,
+				E3E83933E4CB8B1F282EC183 /* Presentation */,
 				33F35BEC7B6EC3463E8F9565 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -749,6 +869,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A01ADB9523B0DB8DBCD25B13 /* Debug */,
+				80EDBCF82F7CF5D7A100819C /* Presentation */,
 				E41CD39627979548849B3FD1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -758,6 +879,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				6FE42CE45D024E4251937813 /* Debug */,
+				EABAE1B2699CFF1346FF31F8 /* Presentation */,
 				DC4D8CB655C983297D95ED5F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;

@@ -4,7 +4,14 @@ options:
     iOS: "17.0"
   createIntermediateGroups: true
   developmentLanguage: ja
+configs:
+  Debug: debug
+  Release: release
+  Presentation: debug
 settings:
+  configs:
+    Presentation:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DEBUG PRESENTATION_DEMO"
   base:
     SWIFT_VERSION: "5.0"
 packages:
@@ -21,6 +28,7 @@ targets:
     configFiles:
       Debug: Config/Base.xcconfig
       Release: Config/Base.xcconfig
+      Presentation: Config/Base.xcconfig
     dependencies:
       - package: GoogleMaps
         product: GoogleMaps
@@ -33,7 +41,7 @@ targets:
       properties:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        CFBundleDisplayName: meshinowa
+        CFBundleDisplayName: $(MESHINOWA_DISPLAY_NAME)
         CFBundleDevelopmentRegion: ja
         CFBundleLocalizations:
           - ja
@@ -52,8 +60,13 @@ targets:
           - MPLUSRounded1c-ExtraBold.ttf
           - MPLUSRounded1c-Black.ttf
     settings:
+      configs:
+        Presentation:
+          PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app.presentation
+          MESHINOWA_DISPLAY_NAME: meshinowa デモ
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app
+        MESHINOWA_DISPLAY_NAME: meshinowa
         OTHER_LDFLAGS: $(inherited) -ObjC
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1.0"
@@ -80,3 +93,15 @@ schemes:
     test:
       targets:
         - meshinowaTests
+  meshinowa-Presentation:
+    build:
+      targets:
+        meshinowa: all
+    run:
+      config: Presentation
+    test:
+      config: Presentation
+      targets:
+        - meshinowaTests
+    archive:
+      config: Presentation

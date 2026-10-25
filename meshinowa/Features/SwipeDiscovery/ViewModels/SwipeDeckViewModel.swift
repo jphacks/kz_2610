@@ -25,6 +25,8 @@ final class SwipeDeckViewModel: ObservableObject {
     @Published private(set) var guideState: SwipeGuideState
     @Published private(set) var usesDefaultArea = false
     @Published private(set) var isProcessing = false
+    /// 「現在地で探す」で位置を取っている間。
+    @Published private(set) var isLocating = false
     @Published var radius: Double = 1000
     @Published var category: SwipeCategory?
     @Published var lens: SwipeFriendLens = .all
@@ -131,6 +133,19 @@ final class SwipeDeckViewModel: ObservableObject {
         await reconcile()
         if Set(decisions.map(\.id)) != before, phase != .loading, !lastCandidates.isEmpty {
             await rebuild()
+        }
+    }
+
+    /// 「現在地で探す」。必要なら位置情報の許可を求め、取れたら現在地の周りでデッキを作り直す。
+    func useCurrentLocation() async {
+        guard !isLocating else { return }
+        isLocating = true
+        defer { isLocating = false }
+        switch await dependencies.location.requestCurrentLocation() {
+        case .success:
+            await reload()
+        case .failure(let error):
+            errorMessage = error.message
         }
     }
 

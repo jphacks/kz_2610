@@ -48,6 +48,9 @@ struct MockFriendReviewProvider: FriendReviewProvider {
 /// 位置は常に既定エリア。
 struct MockLocationProvider: SwipeLocationProviding {
     func currentLocation() async -> CLLocationCoordinate2D? { nil }
+    func requestCurrentLocation() async -> Result<CLLocationCoordinate2D, SwipeLocationError> {
+        .failure(SwipeLocationError(message: "位置情報を使えません（テスト）"))
+    }
 }
 
 /// 「行きたい」のモック。

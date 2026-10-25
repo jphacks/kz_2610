@@ -24,6 +24,9 @@ iOS側は`Config/Cloudflare.example.xcconfig`を`Config/Cloudflare.xcconfig.loca
 `CLOUDFLARE_API_URL`にAPIのoriginを設定します。未設定なら端末内モードです。
 HTTPはlocalhost・loopback、またはDebugビルドの`.local`ホストだけ許可します。実機用の同一Wi-Fi中継は末尾の手順を参照してください。公開ホストにはHTTPSを使用します。
 
+お店スワイプの確認用のダミーデータ（架空の友達・お店・レビュー）は `npm run seed:local --prefix cloudflare` で入れられます。
+手順は [docs/SWIPE_DISCOVERY.md](../docs/SWIPE_DISCOVERY.md) の「ローカルのダミーデータで確認する」を参照してください。
+
 ## iOSの店舗カード
 
 写真はGoogle Places公式SDKで取得し、iOSアプリ独自の画像枠と必須クレジットで表示します。

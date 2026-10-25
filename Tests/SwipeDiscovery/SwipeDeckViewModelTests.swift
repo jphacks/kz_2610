@@ -99,4 +99,13 @@ final class SwipeDeckViewModelTests: XCTestCase {
         viewModel.resetGuide()
         XCTAssertEqual(viewModel.guideMode, .initial)
     }
+
+    func testCurrentLocationFailureShowsMessageAndKeepsDefaultArea() async {
+        let viewModel = makeViewModel(bridge: MockSavedShopsBridge())
+        await viewModel.reload()
+        await viewModel.useCurrentLocation()
+        XCTAssertEqual(viewModel.errorMessage, "位置情報を使えません（テスト）")
+        XCTAssertTrue(viewModel.usesDefaultArea)
+        XCTAssertFalse(viewModel.isLocating)
+    }
 }

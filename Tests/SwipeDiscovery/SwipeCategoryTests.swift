@@ -45,4 +45,26 @@ final class SwipeCategoryTests: XCTestCase {
         XCTAssertNil(SwipeCategory.detailGenre(for: "パン"))   // 大分類と同じ名前
         XCTAssertNil(SwipeCategory.detailGenre(for: nil))
     }
+
+    /// 地図のピン（FoodGenre）と同じ区分・名前になる。
+    func testMatchesMapPinGenres() {
+        XCTAssertEqual(SwipeCategory(foodGenre: .bread), .pan)
+        XCTAssertEqual(SwipeCategory(foodGenre: .noodle), .noodle)
+        for genre in FoodGenre.allCases {
+            XCTAssertEqual(SwipeCategory(foodGenre: genre).name, genre.title, genre.rawValue)
+        }
+    }
+
+    /// 地図のピンと同じ判定で決まった大分類を優先し、決まらなければ詳細ジャンルから分類する。
+    func testCandidatePrefersMapPinGenre() {
+        let candidate = SwipeCandidate(id: "a", name: "麺処", genre: "MKPOICategoryRestaurant", address: nil,
+                                       latitude: 35, longitude: 139, reviews: [SwipeFixtures.review("r")],
+                                       foodCategory: .noodle)
+        XCTAssertEqual(candidate.category, .noodle)
+        XCTAssertNil(candidate.detailGenre)
+        let unknown = SwipeCandidate(id: "b", name: "店", genre: "ラーメン", address: nil,
+                                     latitude: 35, longitude: 139, reviews: [SwipeFixtures.review("r")],
+                                     foodCategory: .other)
+        XCTAssertEqual(unknown.category, .noodle)
+    }
 }

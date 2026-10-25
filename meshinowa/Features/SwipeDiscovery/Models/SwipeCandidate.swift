@@ -9,15 +9,18 @@ struct SwipeCandidate: Identifiable, Codable, Hashable {
     let latitude: Double
     let longitude: Double
     let reviews: [SwipeFriendReview]    // 新しい順。1件以上
+    /// 地図のピンと同じ判定（Google の種類・店名・地図のカテゴリ）で決めた大分類。分からなければ nil。
+    let foodCategory: SwipeCategory?
 
     init(id: String, name: String, genre: String?, address: String?,
-         latitude: Double, longitude: Double, reviews: [SwipeFriendReview]) {
+         latitude: Double, longitude: Double, reviews: [SwipeFriendReview], foodCategory: SwipeCategory? = nil) {
         self.id = id
         self.name = name
         self.genre = genre
         self.address = address
         self.latitude = latitude
         self.longitude = longitude
+        self.foodCategory = foodCategory
         self.reviews = reviews.sorted {
             if $0.updatedAt != $1.updatedAt { return $0.updatedAt > $1.updatedAt }
             return $0.id < $1.id
@@ -41,7 +44,11 @@ struct SwipeCandidate: Identifiable, Codable, Hashable {
         }.prefix(10))
     }
 
-    var category: SwipeCategory { SwipeCategory.classify(genre: genre) }
+    /// 大分類。地図のピンと同じ判定を優先し、決まらなければ詳細ジャンルから分類する。
+    var category: SwipeCategory {
+        if let foodCategory, foodCategory != .other { return foodCategory }
+        return SwipeCategory.classify(genre: genre)
+    }
 
     /// 詳細ジャンルのタグ名（# なし）。大分類と同じ名前や不明な時は nil。
     var detailGenre: String? { SwipeCategory.detailGenre(for: genre) }

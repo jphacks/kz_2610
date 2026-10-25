@@ -87,7 +87,9 @@ struct FriendDatasetReviewProvider: FriendReviewProvider {
                 genre: restaurant.category ?? restaurant.genre,
                 address: address,
                 latitude: restaurant.coordinate.latitude, longitude: restaurant.coordinate.longitude,
-                reviews: reviews))
+                reviews: reviews,
+                // 地図のピンと同じ判定（店名・地図のカテゴリ）で大分類を決める。
+                foodCategory: SwipeCategory(foodGenre: item.foodGenre)))
             await mapItems.register(id: id, item: item)
         }
         return candidates
@@ -130,5 +132,12 @@ final class SwipeMapItemRegistry {
         }
         items[candidate.id] = item
         return item
+    }
+}
+
+extension SwipeCategory {
+    /// アプリの FoodGenre（地図のピンのジャンル）から。IDは同じで、パンだけ bread / pan。
+    init(foodGenre: FoodGenre) {
+        self = foodGenre == .bread ? .pan : (SwipeCategory(rawValue: foodGenre.rawValue) ?? .other)
     }
 }

@@ -7,7 +7,8 @@
     "test": "node --test test/*.test.mjs",
     "check": "node --check src/index.js && node --check src/auth.js",
     "db:local": "wrangler d1 migrations apply DB --local --config wrangler.local.jsonc",
-    "deploy:check": "wrangler deploy --dry-run --config wrangler.local.jsonc"
+    "deploy:check": "wrangler deploy --dry-run --config wrangler.local.jsonc",
+    "seed:local": "node scripts/seed-local.mjs"
   },
   "devDependencies": {
     "miniflare": "4.20260730.0",

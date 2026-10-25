@@ -235,15 +235,42 @@ struct SwipeDiscoveryView: View {
 
     // MARK: - 部品
 
+    /// 既定エリアで探している時の表示。押した時だけ位置情報の許可を求める（地図と同じ方針）。
     private var defaultAreaBanner: some View {
-        Label("現在地を使わず、\(SwipeDiscoveryFeature.defaultAreaName)で探しています", systemImage: "location.slash")
-            .font(SwipeTheme.text(12, relativeTo: .caption))
-            .foregroundStyle(SwipeTheme.bodyText)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(SwipeTheme.field, in: Capsule())
-            .padding(.top, 4)
-            .accessibilityLabel("位置情報を使っていないため、\(SwipeDiscoveryFeature.defaultAreaName)で探しています")
+        HStack(spacing: 8) {
+            Label("\(SwipeDiscoveryFeature.defaultAreaName)で探しています", systemImage: "location.slash")
+                .font(SwipeTheme.text(12, relativeTo: .caption))
+                .foregroundStyle(SwipeTheme.bodyText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .accessibilityLabel("位置情報を使っていないため、\(SwipeDiscoveryFeature.defaultAreaName)で探しています")
+            Button {
+                Task { await viewModel.useCurrentLocation() }
+            } label: {
+                HStack(spacing: 4) {
+                    if viewModel.isLocating {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: "location.fill").font(.system(size: 11, weight: .bold))
+                    }
+                    Text("現在地で探す").font(SwipeTheme.text(12, bold: true, relativeTo: .caption))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+                .background(SwipeTheme.brand, in: Capsule())
+                .frame(minHeight: 36)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isLocating)
+            .accessibilityHint("位置情報の許可を求め、現在地の周りの友達のおすすめを探します")
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 4)
+        .padding(.vertical, 2)
+        .background(SwipeTheme.field, in: Capsule())
+        .padding(.top, 4)
     }
 
     @ViewBuilder private var noticeToast: some View {

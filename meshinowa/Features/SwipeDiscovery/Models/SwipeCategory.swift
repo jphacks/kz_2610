@@ -1,7 +1,7 @@
 import Foundation
 
-/// 地図のジャンル別ピン（output/wa-design/category-pins.html）と同じ「9つ＋その他」の大分類。
-/// IDも category-pins.html とそろえ、地図のピンとカードのタグで同じ区分になるようにする。
+/// 地図のジャンル別ピン（output/wa-design/category-pins.html、アプリの FoodGenre）と同じ「9つ＋その他」の大分類。
+/// IDと名前も FoodGenre とそろえ、地図のピンとカードのタグで同じ区分・同じ呼び名になるようにする（パンだけ ID が pan / bread）。
 enum SwipeCategory: String, CaseIterable, Codable, Identifiable {
     case washoku, sushi, noodle, yakiniku, izakaya, yoshoku, chuka, cafe, pan, other
 
@@ -11,13 +11,13 @@ enum SwipeCategory: String, CaseIterable, Codable, Identifiable {
     var name: String {
         switch self {
         case .washoku: return "和食"
-        case .sushi: return "寿司・海鮮"
+        case .sushi: return "寿司"
         case .noodle: return "麺"
-        case .yakiniku: return "焼肉・肉"
-        case .izakaya: return "居酒屋・バー"
-        case .yoshoku: return "洋食・イタリアン"
-        case .chuka: return "中華・アジア"
-        case .cafe: return "カフェ・スイーツ"
+        case .yakiniku: return "焼肉"
+        case .izakaya: return "居酒屋"
+        case .yoshoku: return "洋食"
+        case .chuka: return "中華"
+        case .cafe: return "カフェ"
         case .pan: return "パン"
         case .other: return "その他"
         }

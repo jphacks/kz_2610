@@ -69,8 +69,9 @@ struct MeshinowaApp: App {
                 guard scenePhase == .active,
                       ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
                 while !Task.isCancelled {
-                    await friends.flushReviews()
-                    try? await Task.sleep(for: .seconds(15))
+                    await friends.refreshIfNeeded()
+                    await friends.flushReviewsIfNeeded()
+                    try? await Task.sleep(for: .seconds(60))
                 }
             }
         }

@@ -7,6 +7,9 @@ struct MapHomeView: View {
     var showsSavedShortcut = true
     var isActive = true
     @EnvironmentObject private var friends: FriendStore
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var searchSession = RestaurantSearchSession()
+    @State private var searchTask: Task<Void, Never>?
     @State private var searchesAllPlaces = true
     @State private var friendResults: [RestaurantSearchResult] = []
     @EnvironmentObject private var saved: SavedRestaurantStore
@@ -147,15 +150,12 @@ struct MapHomeView: View {
                     .onChange(of: proxy.size) { _, size in mapSize = size }
             }
         }
-        .task(id: isActive) {
-            guard isActive else { return }
+        .task(id: isActive && scenePhase == .active) {
+            guard isActive && scenePhase == .active else { return }
             if searchesAllPlaces && results.isEmpty && searchedRegion == nil && GooglePlacesService.isConfigured {
                 beginSearch(nearby: true)
             }
-            while !Task.isCancelled {
-                await friends.refresh()
-                try? await Task.sleep(for: .seconds(10))
-            }
+            await friends.refreshIfNeeded()
         }
         .onChange(of: friendSnapshot, initial: true) { _, _ in
             // 同じお店が2つ来ても落ちないよう、先にあったものを使う。
@@ -174,8 +174,11 @@ struct MapHomeView: View {
             query = ""
             selectedID = nil
             notice = nil
-            if !searchesAllPlaces && !friendResults.isEmpty {
-                camera = .fit(friendResults.map { $0.item.placemark.coordinate })
+            if searchesAllPlaces { beginSearch(nearby: true) }
+            else {
+                searchTask?.cancel()
+                isSearching = false
+                if !friendResults.isEmpty { camera = .fit(friendResults.map { $0.item.placemark.coordinate }) }
             }
         }
         .onChange(of: genre) { _, _ in
@@ -184,7 +187,7 @@ struct MapHomeView: View {
             adoptsNextCamera = false
             notice = nil
             // 前のジャンルの結果だけでは判断せず、今の表示エリアで選んだジャンルを探し直す。
-            beginSearch(nearby: true)
+            beginSearch(nearby: true, debounce: true)
         }
         .onChange(of: visibleResults.map(\.id)) { _, _ in
             carouselItems = Self.nearestChain(visibleResults)
@@ -271,7 +274,6 @@ struct MapHomeView: View {
         VStack(spacing: 3) {
             searchField
             NorenTabs(items: RestaurantGenre.allCases, selection: $genre)
-                .disabled(isSearching)
             if !searchesAllPlaces && visibleResults.isEmpty {
                 Text(friendMapMessage)
                     .font(MeshinowaFont.text(13))
@@ -360,7 +362,7 @@ struct MapHomeView: View {
                 .font(MeshinowaFont.text(16))
                 .focused($isSearchFocused)
                 .submitLabel(.search)
-                .onSubmit { beginSearch() }
+                .onSubmit { beginSearch(force: true) }
                 .disabled(isSearching)
                 .accessibilityLabel("店名・ジャンルで検索")
             if !query.isEmpty && !isSearching {
@@ -426,7 +428,7 @@ struct MapHomeView: View {
 
     /// 地図を動かしたときだけ出る、緑の再検索ボタン。ジャンルは上の切り替えで決まる。
     private var areaSearchButton: some View {
-        Button { beginSearch(nearby: true) } label: {
+        Button { beginSearch(nearby: true, force: true) } label: {
             HStack(spacing: 6) {
                 if isSearching {
                     ProgressView()
@@ -558,23 +560,28 @@ struct MapHomeView: View {
         return friendResults.isEmpty ? "友達が評価すると、この地図にお店が表示されます。" : "条件に合う友達のお店がありません。"
     }
 
-    private func beginSearch(nearby: Bool = false) {
+    private func beginSearch(nearby: Bool = false, force: Bool = false, debounce: Bool = false) {
         guard searchesAllPlaces else { isSearchFocused = false; return }
         let term = genre.searchTerm(for: query)
-        guard !isSearching, !term.isEmpty else { return }
+        guard !term.isEmpty else { return }
+        searchTask?.cancel()
         isSearchFocused = false
-        isSearching = true
         selectedID = nil
-        results = []
         notice = nil
-
         let region = visibleRegion
         let selectedGenre = genre
-        Task { @MainActor in
-            defer { isSearching = false }
+        searchTask = Task { @MainActor in
+            if debounce {
+                do { try await Task.sleep(for: .milliseconds(350)) }
+                catch { return }
+            }
+            guard !Task.isCancelled else { return }
+            isSearching = true
+            defer { if !Task.isCancelled { isSearching = false } }
             do {
-                let found = try await GoogleRestaurantSearch.search(term: term, region: region,
-                                                                    genre: selectedGenre, nearby: nearby)
+                let found = try await searchSession.search(term: term, region: region, genre: selectedGenre,
+                                                           nearby: nearby, force: force)
+                guard !Task.isCancelled else { return }
                 results = found.map { RestaurantSearchResult(item: $0) }
                 searchedRegion = region
                 if results.isEmpty {
@@ -583,7 +590,10 @@ struct MapHomeView: View {
                     adoptsNextCamera = true
                     camera = .fit(found.map { $0.placemark.coordinate })
                 }
+            } catch is CancellationError {
+                // 次の条件の検索が引き継ぐので、キャンセルはエラー表示しない。
             } catch {
+                guard !Task.isCancelled else { return }
                 notice = GooglePlacesService.isConfigured
                     ? "検索できませんでした。通信環境とGoogle Placesの設定を確認してください"
                     : "Google MapsのAPIキーを設定してください"

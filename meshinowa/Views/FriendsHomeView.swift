@@ -45,10 +45,7 @@ struct FriendsHomeView: View {
         .refreshable { await store.retryConnection() }
         .task(id: isActive && scenePhase == .active) {
             guard isActive && scenePhase == .active else { return }
-            while !Task.isCancelled {
-                await store.refresh()
-                try? await Task.sleep(for: .seconds(10))
-            }
+            await store.refreshIfNeeded()
         }
         .background(MeshinowaTheme.paper)
         .foregroundStyle(MeshinowaTheme.ink)

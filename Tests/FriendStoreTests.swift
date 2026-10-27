@@ -13,12 +13,13 @@ final class FriendStoreTests: XCTestCase {
         super.tearDown()
     }
 
-    private func store(url: String = "https://api.example.test", environmentStore: UserDefaults = .standard) -> FriendStore {
+    private func store(url: String = "https://api.example.test", environmentStore: UserDefaults = .standard,
+                       now: @escaping () -> Date = Date.init) -> FriendStore {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [BackendURLProtocol.self]
         let backend = CloudflareBackend(configuration: BackendConfiguration(url: URL(string: url)!),
                                         session: URLSession(configuration: config))
-        return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore)
+        return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore, now: now)
     }
 
     func testWithoutBackendStaysUnavailable() async {
@@ -261,6 +262,64 @@ final class FriendStoreTests: XCTestCase {
         }
     }
 
+    func testAutomaticRefreshIsSharedAndManualRefreshBypassesInterval() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var clock = Date(timeIntervalSince1970: 1000)
+        let subject = store(now: { clock })
+        let lock = NSLock()
+        var requests = 0
+        BackendURLProtocol.handler = { request in
+            lock.lock(); requests += 1; lock.unlock()
+            if request.url?.path == "/v1/me" {
+                return (200, Data("{\"id\":\"me\",\"display_name\":\"ゲスト\",\"handle\":\"test123\"}".utf8))
+            }
+            return (200, Data("[]".utf8))
+        }
+        async let first: Void = subject.refreshIfNeeded()
+        async let second: Void = subject.refreshIfNeeded()
+        _ = await (first, second)
+        XCTAssertEqual(requests, 4)
+        clock = clock.addingTimeInterval(59)
+        await subject.refreshIfNeeded()
+        XCTAssertEqual(requests, 4)
+        clock = clock.addingTimeInterval(1)
+        await subject.refreshIfNeeded()
+        XCTAssertEqual(requests, 8)
+        await subject.refresh()
+        XCTAssertEqual(requests, 12)
+    }
+
+    func testPeriodicReviewRetryWaitsButImmediateSaveCanRetry() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let local = LocalReviewStore(fileURL: folder.appendingPathComponent("reviews.json"))
+        XCTAssertTrue(credentials.save(token))
+        var clock = Date(timeIntervalSince1970: 1000)
+        let subject = store(now: { clock })
+        subject.connect(to: local)
+        var uploads = 0
+        BackendURLProtocol.handler = { request in
+            if request.url?.path == "/v1/restaurants" { return (200, Data("{\"id\":\"shop\"}".utf8)) }
+            if request.url?.path == "/v1/reviews" { uploads += 1; return (503, Data("{}".utf8)) }
+            XCTFail("不要な通信です")
+            return (404, Data())
+        }
+        await subject.flushReviewsIfNeeded()
+        XCTAssertEqual(uploads, 0)
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 35, longitude: 139)))
+        item.name = "再試行のテスト店舗"
+        try local.save(item: item, rating: 4, comment: "未送信")
+        await subject.flushReviewsIfNeeded()
+        await subject.flushReviewsIfNeeded()
+        XCTAssertEqual(uploads, 1)
+        XCTAssertEqual(local.pending.count, 1)
+        clock = clock.addingTimeInterval(60)
+        await subject.flushReviewsIfNeeded()
+        XCTAssertEqual(uploads, 2)
+        await subject.flushReviews()
+        XCTAssertEqual(uploads, 3)
+    }
+
 }
 
 final class MemoryGuestCredentials: GuestCredentials {
@@ -269,4 +328,5 @@ final class MemoryGuestCredentials: GuestCredentials {
     func load() -> String? { token }
     func save(_ value: String) -> Bool { guard !rejectsWrites else { return false }; token = value; return true }
     func delete() { token = nil }
+
 }

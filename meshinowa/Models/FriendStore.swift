@@ -91,6 +91,11 @@ final class FriendStore: ObservableObject {
     private var refreshSequence = 0
     private var flushing = false
     private var libraryStore: LocalReviewStore?
+    private var automaticRefreshTask: Task<Void, Never>?
+    private var lastRefreshAttempt: Date?
+    private var lastReviewAttempt: Date?
+    private let now: () -> Date
+    static let automaticRefreshInterval: TimeInterval = 60
 
     private let backend: CloudflareBackend?
     private let credentials: any GuestCredentials
@@ -98,7 +103,8 @@ final class FriendStore: ObservableObject {
 
     init(backend: CloudflareBackend? = try? CloudflareBackend.makeClient(),
          credentials: any GuestCredentials = GuestCredentialStore(),
-         environmentStore: UserDefaults = .standard) {
+         environmentStore: UserDefaults = .standard, now: @escaping () -> Date = Date.init) {
+        self.now = now
         self.backend = backend
         self.credentials = credentials
         self.environmentStore = environmentStore
@@ -159,7 +165,8 @@ final class FriendStore: ObservableObject {
     }
 
     func flushReviews() async {
-        guard isAvailable, !suspendsReviewSync, let libraryStore, !flushing else { return }
+        guard isAvailable, !suspendsReviewSync, let libraryStore, !libraryStore.pending.isEmpty, !flushing else { return }
+        lastReviewAttempt = now()
         flushing = true
         defer { flushing = false }
         while !suspendsReviewSync, let operation = libraryStore.pending.first {
@@ -175,22 +182,41 @@ final class FriendStore: ObservableObject {
         }
     }
 
+    /// 保存・削除時は即時送信し、定期的な再試行だけを60秒以上空ける。
+    func flushReviewsIfNeeded() async {
+        if let lastReviewAttempt, now().timeIntervalSince(lastReviewAttempt) < Self.automaticRefreshInterval { return }
+        await flushReviews()
+    }
+
+    /// マップ・友達・アプリ復帰時の更新を共有する。手動更新と変更後のrefreshは間引かない。
+    func refreshIfNeeded() async {
+        guard isAvailable, !suspendsReviewSync else { return }
+        if let task = automaticRefreshTask { await task.value; return }
+        if let lastRefreshAttempt, now().timeIntervalSince(lastRefreshAttempt) < Self.automaticRefreshInterval { return }
+        let task = Task { await refresh(syncPendingReviews: false) }
+        automaticRefreshTask = task
+        defer { automaticRefreshTask = nil }
+        await task.value
+    }
+
     /// 起動時に呼ぶ。初回はゲストアカウントを作り、端末内のレビューを友達に共有する。
     func start(sharing reviews: [LocalReview]) async {
         guard backend != nil else { return }
         do {
             _ = try await accessToken()
-            await refresh()
+            let hadPending = libraryStore.map { !$0.pending.isEmpty } ?? !reviews.isEmpty
+            await refreshIfNeeded()
             if libraryStore != nil { await flushReviews() }
             else { for review in reviews { try await upload(review) } }
-            await refresh()
+            if hadPending { await refresh() }
         } catch {
             status = .failed(connectionMessage(for: error))
         }
     }
 
-    func refresh() async {
+    func refresh(syncPendingReviews: Bool = true) async {
         guard backend != nil, !suspendsReviewSync else { return }
+        lastRefreshAttempt = now()
         let generation = identityGeneration
         refreshSequence += 1
         let sequence = refreshSequence
@@ -204,7 +230,7 @@ final class FriendStore: ObservableObject {
             (self.me, self.friends, self.requests, self.friendReviews) = values
             status = .ready
             await rememberLocalEnvironment()
-            await flushReviews()
+            if syncPendingReviews { await flushReviews() }
         } catch {
             guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
             status = .failed(connectionMessage(for: error))
@@ -475,6 +501,8 @@ final class FriendStore: ObservableObject {
                                          body: JSONEncoder().encode(["recovery_key":clean]))
         guard credentials.save(session.accessToken) else { throw CocoaError(.fileWriteNoPermission) }
         identityGeneration += 1
+        lastRefreshAttempt = nil
+        lastReviewAttempt = nil
         token = session.accessToken
         me = nil; friends = []; requests = []; friendReviews = []
         // The caller restores the remote library before allowing any local uploads.
@@ -486,6 +514,8 @@ final class FriendStore: ObservableObject {
             guestCreationBlocked = false
         } else { credentials.delete() }
         identityGeneration += 1
+        lastRefreshAttempt = nil
+        lastReviewAttempt = nil
         token = value
     }
 
@@ -494,6 +524,8 @@ final class FriendStore: ObservableObject {
         needsLocalReset = true
         UserDefaults.standard.set(true, forKey: "account.needsLocalReset")
         identityGeneration += 1
+        lastRefreshAttempt = nil
+        lastReviewAttempt = nil
         credentials.delete(); token = nil; me = nil; friends = []; requests = []; friendReviews = []
         preferences = nil; blockedProfiles = []; status = .unavailable
     }

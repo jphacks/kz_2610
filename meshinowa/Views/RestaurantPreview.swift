@@ -198,23 +198,27 @@ struct QuickRatingSheet: View {
 }
 
 struct RestaurantInformationView: View {
-    enum Section: Hashable { case mine, info, friends }
-
     let item: MKMapItem
     @EnvironmentObject private var saved: SavedRestaurantStore
+    @EnvironmentObject private var reviews: LocalReviewStore
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var friends: FriendStore
-    @State private var section: Section
-
-    init(item: MKMapItem, initialSection: Section = .mine, friendIDs: Set<String>? = nil) {
-        self.item = item
-        self.friendIDs = friendIDs
-        _section = State(initialValue: initialSection)
-    }
+    @State private var lens: FriendLens
+    @State private var showsLens = false
     @State private var showsError = false
 
-    let friendIDs: Set<String>?
-    private var friendSummary: FriendRatingSummary { friends.summary(for: item, friendIDs: friendIDs) }
+    init(item: MKMapItem, friendIDs: Set<String>? = nil) {
+        self.item = item
+        _lens = State(initialValue: friendIDs.map {
+            FriendLens(mode: .selectedFriends, selectedFriendIDs: $0)
+        } ?? FriendLens())
+    }
+
+    private var friendSummary: FriendRatingSummary {
+        let dataset = friends.dataset
+        let ids = lens.includedFriendIDs(friends: dataset.friends, favorites: dataset.favoriteFriendIDs)
+        return friends.summary(for: item, friendIDs: ids)
+    }
 
     var body: some View {
         let isLiked = saved.restaurant(for: item)?.isLiked == true
@@ -239,6 +243,7 @@ struct RestaurantInformationView: View {
                     .buttonStyle(CircleIconButtonStyle())
                     .accessibilityLabel("いいね")
                     .accessibilityValue(isLiked ? "登録済み" : "未登録")
+                    SwipeDiscoveryEntry.wantToGoButton(item: item, compact: true)
                 }
 
                 Text(item.name ?? "飲食店")
@@ -248,37 +253,47 @@ struct RestaurantInformationView: View {
                 RestaurantPhotoView(item: item, expanded: true)
 
                 VStack(alignment: .leading, spacing: 12) {
-                    InfoRow(symbol: "mappin.and.ellipse", text: item.placemark.title ?? "住所の情報がありません")
-                    InfoRow(symbol: "fork.knife", text: item.restaurantCategory)
-                    InfoRow(symbol: "person.2", text: friendSummary.average.map { "友達\(friendSummary.count)人の評価 " + $0.formatted(.number.precision(.fractionLength(1))) } ?? "この条件の友達の評価はまだありません")
-                }
-
-                RestaurantCollectionControls(item: item)
-
-                UnderlineTabs(items: [
-                    .init(value: Section.mine, title: "自分の記録"),
-                    .init(value: Section.info, title: "情報"),
-                    .init(value: Section.friends, title: "友達の声", badge: friendSummary.count > 0 ? "\(friendSummary.count)" : nil)
-                ], selection: $section)
-
-                switch section {
-                case .mine:
-                    MyReviewSection(item: item)
-                case .info:
-                    VStack(alignment: .leading, spacing: 14) {
-                        InfoRow(symbol: "mappin.and.ellipse", text: item.placemark.title ?? "住所の情報がありません")
-                        if let phone = item.phoneNumber, !phone.isEmpty {
-                            InfoRow(symbol: "phone", text: phone) {
-                                if let url = URL(string: "tel:" + phone.filter { $0.isNumber || $0 == "+" }) {
-                                    Link("電話", destination: url)
-                                        .font(MeshinowaFont.text(14, weight: .bold))
-                                }
+                    HStack {
+                        Text("友達の評価").font(MeshinowaFont.text(16, weight: .bold))
+                        Spacer()
+                        Button { showsLens = true } label: {
+                            HStack(spacing: 6) {
+                                Text(lens.mode.title)
+                                Image(systemName: "chevron.down")
                             }
                         }
-                        InfoRow(symbol: "clock", text: "営業時間の情報がありません。来店前にお店へ確認してください。")
+                        .buttonStyle(PillButtonStyle(isOn: false))
+                        .accessibilityLabel("誰の評価で見るか選ぶ")
                     }
-                case .friends:
+                    if let average = friendSummary.average {
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Text(average, format: .number.precision(.fractionLength(1)))
+                                .font(MeshinowaFont.number(46, relativeTo: .largeTitle))
+                                .foregroundStyle(MeshinowaTheme.green)
+                            Text("友達\(friendSummary.count)人の平均")
+                                .font(MeshinowaFont.text(14))
+                                .foregroundStyle(MeshinowaTheme.bodyText)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
                     FriendVoicesSection(summary: friendSummary)
+                }
+
+                if reviews.review(for: item) != nil || reviews.loadError != nil {
+                    MyReviewSection(item: item)
+                }
+
+                VStack(alignment: .leading, spacing: 14) {
+                    InfoRow(symbol: "mappin.and.ellipse", text: item.placemark.title ?? "住所の情報がありません")
+                    InfoRow(symbol: "fork.knife", text: item.restaurantCategory)
+                    if let phone = item.phoneNumber, !phone.isEmpty {
+                        InfoRow(symbol: "phone", text: phone) {
+                            if let url = URL(string: "tel:" + phone.filter { $0.isNumber || $0 == "+" }) {
+                                Link("電話", destination: url)
+                                    .font(MeshinowaFont.text(14, weight: .bold))
+                            }
+                        }
+                    }
                 }
             }
             .padding(20)
@@ -286,7 +301,10 @@ struct RestaurantInformationView: View {
         .background(MeshinowaTheme.paper)
         .foregroundStyle(MeshinowaTheme.ink)
         .safeAreaInset(edge: .bottom) {
-            DirectionsButton(item: item)
+            HStack(spacing: 12) {
+                DirectionsButton(item: item, kind: .secondary)
+                RestaurantCollectionControls(item: item)
+            }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
                 .padding(.bottom, 6)
@@ -294,6 +312,7 @@ struct RestaurantInformationView: View {
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .sheet(isPresented: $showsLens) { FriendLensPicker(lens: $lens, dataset: friends.dataset) }
         .alert("保存を変更できませんでした", isPresented: $showsError) {
             Button("閉じる", role: .cancel) {}
         } message: { Text(saved.errorMessage ?? "もう一度お試しください。") }
@@ -302,6 +321,7 @@ struct RestaurantInformationView: View {
 
 struct DirectionsButton: View {
     let item: MKMapItem
+    var kind: PaperButtonStyle.Kind = .primary
     @State private var showsError = false
     @Environment(\.openURL) private var openURL
 
@@ -321,7 +341,7 @@ struct DirectionsButton: View {
         } label: {
             Label("経路", systemImage: "figure.walk")
         }
-        .buttonStyle(PaperButtonStyle())
+        .buttonStyle(PaperButtonStyle(kind: kind))
         .accessibilityLabel("経路を見る")
         .accessibilityHint("Google Mapsで徒歩の経路を開きます")
         .alert("Google Mapsを開けませんでした", isPresented: $showsError) {

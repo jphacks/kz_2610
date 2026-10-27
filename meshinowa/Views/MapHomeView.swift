@@ -222,6 +222,13 @@ struct MapHomeView: View {
             })
         }
         .overlay(alignment: .bottom) { bottomCard }
+        // 現在地ボタンは、Google マップと同じく右下に置く。お店のカードが出ているときはその上。
+        .overlay(alignment: .bottomTrailing) {
+            locationButton
+                .padding(.trailing, 14)
+                .padding(.bottom, selectedResult == nil ? 16 : cardHeight + 6)
+                .animation(.easeOut(duration: 0.2), value: selectedResult == nil)
+        }
         // 知らせは数秒で消し、地図の Legal 表記を隠したままにしない。
         .task(id: notice) {
             guard notice != nil else { return }
@@ -262,15 +269,7 @@ struct MapHomeView: View {
     /// 地図の上に浮かぶ検索欄と、そこから垂れ下がるジャンルののれん。
     private var searchHeader: some View {
         VStack(spacing: 3) {
-            mapScopePicker
-            HStack(spacing: 8) {
-                searchField
-                Button { location.request() } label: {
-                    Image(systemName: "location.fill").frame(width: 44, height: 44)
-                }.buttonStyle(.plain).foregroundStyle(MeshinowaTheme.green)
-                    .background(MeshinowaTheme.card, in: Circle())
-                    .disabled(location.isRequesting).accessibilityLabel("現在地の周辺を探す")
-            }
+            searchField
             NorenTabs(items: RestaurantGenre.allCases, selection: $genre)
                 .disabled(isSearching)
             if !searchesAllPlaces && visibleResults.isEmpty {
@@ -295,46 +294,59 @@ struct MapHomeView: View {
         .padding(.bottom, 8)
     }
 
-    /// 独立した小さなチップで、地図の表示範囲を切り替える。
-    private var mapScopePicker: some View {
-        HStack(spacing: 6) {
-            mapScopeButton(title: "すべて", symbol: "map", showsAll: true)
-            mapScopeButton(title: "友達の評価", symbol: "person.2", showsAll: false)
+    /// 検索欄の右端に入れる、地図に出すお店の切り替え。「すべて」は友達の評価を優先して一般のお店も出す。
+    private var scopeToggle: some View {
+        HStack(spacing: 2) {
+            scopeButton(title: "すべて", showsAll: true)
+            scopeButton(title: "友達", showsAll: false)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(3)
+        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("地図に表示するお店")
     }
 
-    private func mapScopeButton(title: String, symbol: String, showsAll: Bool) -> some View {
+    private func scopeButton(title: String, showsAll: Bool) -> some View {
         let isSelected = searchesAllPlaces == showsAll
         return Button {
             withAnimation(.easeInOut(duration: 0.18)) { searchesAllPlaces = showsAll }
         } label: {
-            HStack(spacing: 4) {
-                Image(systemName: symbol)
-                    .font(.system(size: 11, weight: .semibold))
-                    .accessibilityHidden(true)
-                Text(title)
-                    .font(MeshinowaFont.text(12, weight: .bold))
-                    .multilineTextAlignment(.center)
-            }
-            .foregroundStyle(isSelected ? MeshinowaTheme.mintInk : MeshinowaTheme.bodyText)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 7)
-            .background(isSelected ? MeshinowaTheme.mint : MeshinowaTheme.card,
-                        in: RoundedRectangle(cornerRadius: 10))
-            .overlay {
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(isSelected ? MeshinowaTheme.green : MeshinowaTheme.hairline, lineWidth: 1)
-            }
-            .shadow(color: MeshinowaTheme.ink.opacity(0.08), radius: 3, y: 1)
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            Text(title)
+                .font(MeshinowaFont.text(12, weight: .bold))
+                .lineLimit(1)
+                .fixedSize()
+                .foregroundStyle(isSelected ? MeshinowaTheme.mintInk : MeshinowaTheme.secondaryText)
+                .padding(.horizontal, 9)
+                .frame(height: 30)
+                .background {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(MeshinowaTheme.card)
+                            .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                    }
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(showsAll ? "すべてのお店、友達の評価を優先" : "友達が評価したお店だけ")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var locationButton: some View {
+        Button { location.request() } label: {
+            Group {
+                if location.isRequesting { ProgressView().controlSize(.small) }
+                else { Image(systemName: "location.fill").font(.system(size: 17, weight: .semibold)) }
+            }
+            .foregroundStyle(MeshinowaTheme.green)
+            .frame(width: 44, height: 44)
+            .background(MeshinowaTheme.card, in: Circle())
+            .shadow(color: .black.opacity(0.18), radius: 5, y: 2)
+        }
+        .buttonStyle(.plain)
+        .disabled(location.isRequesting)
+        .accessibilityLabel("現在地の周辺を探す")
     }
 
     /// のれんを掛ける板を兼ねた検索欄。下側はのれんが付くので角を小さくする。
@@ -344,7 +356,7 @@ struct MapHomeView: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(MeshinowaTheme.green)
                 .accessibilityHidden(true)
-            TextField(searchesAllPlaces ? "お店やジャンルを探す" : "友達が評価したお店を絞り込む", text: $query)
+            TextField(searchesAllPlaces ? "お店を探す" : "友達のお店を絞り込む", text: $query)
                 .font(MeshinowaFont.text(16))
                 .focused($isSearchFocused)
                 .submitLabel(.search)
@@ -362,6 +374,7 @@ struct MapHomeView: View {
                 }
                 .accessibilityLabel("入力を消す")
             }
+            scopeToggle
             if !visibleResults.isEmpty {
                 listButton
             } else if showsSavedShortcut {
@@ -399,11 +412,9 @@ struct MapHomeView: View {
                     .font(.system(size: 12, weight: .bold))
                 Text("\(visibleResults.count)")
                     .font(MeshinowaFont.number(15, relativeTo: .body))
-                Text("件")
-                    .font(MeshinowaFont.text(11, weight: .bold))
             }
             .foregroundStyle(MeshinowaTheme.mintInk)
-            .padding(.horizontal, 11)
+            .padding(.horizontal, 10)
             .frame(height: 36)
             .background(Capsule().fill(MeshinowaTheme.mint))
             .frame(minHeight: 44)

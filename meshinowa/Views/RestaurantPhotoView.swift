@@ -38,7 +38,9 @@ struct RestaurantPhotoView: View {
                     if let photo {
                         Image(uiImage: photo).resizable().scaledToFill()
                     } else {
-                        PhotoPlaceholder(symbol: MapHomeView.symbol(for: item))
+                        FoodGenreMark(genre: item.foodGenre, size: expanded ? 72 : 48)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(MeshinowaTheme.photo)
                             .overlay {
                                 if loading { ProgressView().tint(MeshinowaTheme.green) }
                             }

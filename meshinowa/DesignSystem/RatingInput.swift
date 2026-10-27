@@ -80,7 +80,10 @@ struct ReviewShopHeader: View {
     }
 
     private var subtitle: String {
-        let address = item.placemark.title?.withoutPostalCode ?? ""
+        let address = (item.placemark.title?.withoutPostalCode ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            // 「日本橋」などの地名は残し、末尾に独立して付いた国名だけを除く。
+            .replacingOccurrences(of: #"[\s,、]+日本$"#, with: "", options: .regularExpression)
         return [item.restaurantCategory, address].filter { !$0.isEmpty }.joined(separator: "・")
     }
 }

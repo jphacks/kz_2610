@@ -45,8 +45,8 @@ struct FriendRecommendationsView: View {
         GoogleMapCanvas(position: camera, pins: visible.map { restaurant in
             let summary = summary(for: restaurant)
             return GoogleMapPin(id: restaurant.id, title: restaurant.name, coordinate: restaurant.coordinate,
-                                scoreTag: summary.count > 0 ? "友達\(summary.count)" : "未評価",
-                                scoreTitle: summary.average.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "—")
+                                genre: restaurant.mapItem.foodGenre,
+                                mark: summary.average.map { .friends($0) } ?? .none)
         }, selectedID: $selectedID)
         .safeAreaInset(edge: .top, spacing: 0) { header }
         .safeAreaInset(edge: .bottom, spacing: 0) { sheet }

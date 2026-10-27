@@ -32,6 +32,8 @@ struct RestaurantPreview: View {
                            tint: MeshinowaTheme.like) {
                     saved.setLiked(item, isLiked: !isLiked)
                 }
+                // 行きたいは、いいねの隣に文字なしの旗で置く。
+                SwipeDiscoveryEntry.wantToGoButton(item: item, compact: true)
             }
 
             HStack(alignment: .top, spacing: 12) {
@@ -41,11 +43,13 @@ struct RestaurantPreview: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     detailLine(symbol: MapHomeView.symbol(for: item), text: item.restaurantCategory)
-                    detailLine(symbol: "person.2", text: friends.ratingText(for: item))
+                    // 友達の機能につながっていないときは、この行を出さない。
+                    if friends.isAvailable {
+                        detailLine(symbol: "person.2", text: friends.ratingText(for: item))
+                    }
                     detailLine(symbol: "mappin.and.ellipse",
                                text: item.placemark.title.map { $0.withoutPostalCode.replacingOccurrences(of: "\n", with: " ") }
                                    ?? "住所の情報がありません")
-                    SwipeDiscoveryEntry.wantToGoButton(item: item)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { showsDetails = true }
@@ -83,7 +87,8 @@ struct RestaurantPreview: View {
                         Text(rating, format: .number.precision(.fractionLength(1)))
                             .font(MeshinowaFont.number(18, relativeTo: .body))
                     }
-                    .foregroundStyle(MeshinowaTheme.green)
+                    // 自分の評価なので、からし色にする。
+                    .foregroundStyle(MeshinowaTheme.mustardInk)
                 } else {
                     HStack(spacing: 4) {
                         Image(systemName: "star")

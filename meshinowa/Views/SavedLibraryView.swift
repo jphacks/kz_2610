@@ -79,10 +79,7 @@ struct SavedRestaurantsView: View {
 
                 // 件数と、絞り込み・並び替え。並び替えは1つのボタンにまとめ、横にはみ出さないようにする。
                 HStack(spacing: 8) {
-                    Text("\(collection.title) \(visibleRestaurants.count)件")
-                        .font(MeshinowaFont.text(13, relativeTo: .caption))
-                        .foregroundStyle(MeshinowaTheme.secondaryText)
-                        .lineLimit(1)
+                    // 件数は上のタブに出ているので、ここには出さない。
                     Spacer(minLength: 0)
                     if collection == .liked {
                         Button { unreviewedOnly.toggle() } label: {

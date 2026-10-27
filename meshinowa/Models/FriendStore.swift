@@ -66,7 +66,7 @@ final class FriendStore: ObservableObject {
     @Published private(set) var status: Status
     @Published private(set) var me: Profile?
     @Published private(set) var friends: [Friend] = []
-    /// 初回取得後、このセッションで新しくつながった友達。案内を閉じるまで保持する。
+    /// 初回取得後に新しくつながった友達。案内を閉じるまで、再起動後も保持する。
     @Published private(set) var newConnections: [Friend] = []
     private var knownFriendIDs: Set<String>?
     @Published private(set) var requests: [Request] = []
@@ -230,6 +230,12 @@ final class FriendStore: ObservableObject {
             async let reviews: [RemoteReview] = paged("/friend-reviews")
             let values = try await (me, friends, requests, reviews)
             guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
+            if knownFriendIDs == nil,
+               let data = environmentStore.data(forKey: connectionHistoryKey(values.0.id)),
+               let history = try? JSONDecoder().decode(ConnectionHistory.self, from: data) {
+                knownFriendIDs = Set(history.friendIDs)
+                newConnections = history.pendingIDs.compactMap { id in values.1.first { $0.id == id } }
+            }
             if let knownFriendIDs {
                 let announced = Set(newConnections.map(\.id))
                 newConnections += values.1.filter { !knownFriendIDs.contains($0.id) && !announced.contains($0.id) }
@@ -238,6 +244,7 @@ final class FriendStore: ObservableObject {
             // 解除・ブロック済みの人の案内は残さず、表示名も最新にする。
             newConnections = newConnections.compactMap { previous in values.1.first { $0.id == previous.id } }
             (self.me, self.friends, self.requests, self.friendReviews) = values
+            saveConnectionHistory()
             status = .ready
             await rememberLocalEnvironment()
             if syncPendingReviews { await flushReviews() }
@@ -292,6 +299,23 @@ final class FriendStore: ObservableObject {
 
     func dismissNewConnection(_ friendID: String) {
         newConnections.removeAll { $0.id == friendID }
+        saveConnectionHistory()
+    }
+
+    private struct ConnectionHistory: Codable {
+        let friendIDs: [String]
+        let pendingIDs: [String]
+    }
+
+    private func connectionHistoryKey(_ profileID: String) -> String {
+        environmentKey + ".connections." + profileID
+    }
+
+    private func saveConnectionHistory() {
+        guard let me, let knownFriendIDs,
+              let data = try? JSONEncoder().encode(ConnectionHistory(friendIDs: knownFriendIDs.sorted(),
+                                                                     pendingIDs: newConnections.map(\.id))) else { return }
+        environmentStore.set(data, forKey: connectionHistoryKey(me.id))
     }
 
     func respond(to request: Request, accept: Bool) async {
@@ -562,6 +586,7 @@ final class FriendStore: ObservableObject {
 
     func deleteAccount() async throws {
         let _: [String: Bool] = try await call("/me", method: "DELETE")
+        if let me { environmentStore.removeObject(forKey: connectionHistoryKey(me.id)) }
         needsLocalReset = true
         UserDefaults.standard.set(true, forKey: "account.needsLocalReset")
         identityGeneration += 1

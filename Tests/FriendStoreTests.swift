@@ -6,20 +6,23 @@ import XCTest
 final class FriendStoreTests: XCTestCase {
     private let credentials = MemoryGuestCredentials()
     private let token = String(repeating: "c", count: 64)
+    private let testEnvironmentName = "jp.meshinowa.friend-tests." + UUID().uuidString
+    private lazy var testEnvironment = UserDefaults(suiteName: testEnvironmentName)!
 
     override func tearDown() {
         credentials.delete()
+        testEnvironment.removePersistentDomain(forName: testEnvironmentName)
         BackendURLProtocol.handler = nil
         super.tearDown()
     }
 
-    private func store(url: String = "https://api.example.test", environmentStore: UserDefaults = .standard,
+    private func store(url: String = "https://api.example.test", environmentStore: UserDefaults? = nil,
                        now: @escaping () -> Date = Date.init) -> FriendStore {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [BackendURLProtocol.self]
         let backend = CloudflareBackend(configuration: BackendConfiguration(url: URL(string: url)!),
                                         session: URLSession(configuration: config))
-        return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore, now: now)
+        return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore ?? testEnvironment, now: now)
     }
 
     func testProfileLookupNormalizesIDAndDoesNotSendRequest() async throws {
@@ -159,6 +162,41 @@ final class FriendStoreTests: XCTestCase {
         await store.respond(to: request, accept: true)
         XCTAssertEqual(store.newConnections.map(\.id), ["f1"])
         XCTAssertTrue(store.incomingRequests.isEmpty)
+    }
+
+    func testConnectionAnnouncementsSurviveRelaunchAndRememberDismissal() async {
+        XCTAssertTrue(credentials.save(token))
+        var connected = false
+        var profileID = "me"
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/me":
+                return (200, Data(#"{"id":"\#(profileID)","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/friends":
+                return (200, Data((connected ? #"[{"id":"f1","display_name":"さくら","handle":"sakura","is_favorite":0}]"# : "[]").utf8))
+            case "/v1/requests", "/v1/friend-reviews": return (200, Data("[]".utf8))
+            default: return (404, Data("{}".utf8))
+            }
+        }
+        let beforeApproval = store()
+        await beforeApproval.refresh()
+        XCTAssertTrue(beforeApproval.newConnections.isEmpty)
+        connected = true
+        let afterRelaunch = store()
+        await afterRelaunch.refresh()
+        XCTAssertEqual(afterRelaunch.newConnections.map(\.id), ["f1"])
+        profileID = "other-account"
+        let otherAccount = store()
+        await otherAccount.refresh()
+        XCTAssertTrue(otherAccount.newConnections.isEmpty)
+        profileID = "me"
+        let stillPending = store()
+        await stillPending.refresh()
+        XCTAssertEqual(stillPending.newConnections.map(\.id), ["f1"])
+        stillPending.dismissNewConnection("f1")
+        let dismissed = store()
+        await dismissed.refresh()
+        XCTAssertTrue(dismissed.newConnections.isEmpty)
     }
 
     func testWithoutBackendStaysUnavailable() async {

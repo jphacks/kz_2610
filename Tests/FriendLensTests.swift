@@ -5,6 +5,22 @@ final class FriendLensTests: XCTestCase {
     private let friends = TestRecommendations.friends
     private let favorites = TestRecommendations.favoriteFriendIDs
 
+    func testNewFriendMapContainsOnlyThatFriendsRatedRestaurants() {
+        let scoped = TestRecommendations.dataset.forFriend("mio")
+        XCTAssertEqual(scoped.friends.map(\.id), ["mio"])
+        XCTAssertEqual(scoped.favoriteFriendIDs, ["mio"])
+        XCTAssertEqual(Set(scoped.reviews.map(\.friendID)), ["mio"])
+        XCTAssertEqual(Set(scoped.restaurants.map(\.id)), ["cafe", "bakery"])
+        XCTAssertEqual(scoped.summary(for: scoped.restaurants[0]).count, 1)
+        let missing = TestRecommendations.dataset.forFriend("unknown")
+        XCTAssertTrue(missing.friends.isEmpty)
+        XCTAssertTrue(missing.restaurants.isEmpty)
+        XCTAssertTrue(missing.reviews.isEmpty)
+        var noReviews = TestRecommendations.dataset
+        noReviews.reviews = []
+        XCTAssertTrue(noReviews.forFriend("mio").restaurants.isEmpty)
+    }
+
     func testSelectedFriendUsesOnlyTheirLatestReview() throws {
         let shop = try XCTUnwrap(TestRecommendations.restaurants.first { $0.id == "diner" })
         let lens = FriendLens(mode: .selectedFriends, selectedFriendIDs: ["takuma"])

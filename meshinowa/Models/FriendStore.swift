@@ -66,6 +66,9 @@ final class FriendStore: ObservableObject {
     @Published private(set) var status: Status
     @Published private(set) var me: Profile?
     @Published private(set) var friends: [Friend] = []
+    /// 初回取得後、このセッションで新しくつながった友達。案内を閉じるまで保持する。
+    @Published private(set) var newConnections: [Friend] = []
+    private var knownFriendIDs: Set<String>?
     @Published private(set) var requests: [Request] = []
     @Published private(set) var friendReviews: [RemoteReview] = []
 
@@ -227,6 +230,13 @@ final class FriendStore: ObservableObject {
             async let reviews: [RemoteReview] = paged("/friend-reviews")
             let values = try await (me, friends, requests, reviews)
             guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
+            if let knownFriendIDs {
+                let announced = Set(newConnections.map(\.id))
+                newConnections += values.1.filter { !knownFriendIDs.contains($0.id) && !announced.contains($0.id) }
+            }
+            knownFriendIDs = Set(values.1.map(\.id))
+            // 解除・ブロック済みの人の案内は残さず、表示名も最新にする。
+            newConnections = newConnections.compactMap { previous in values.1.first { $0.id == previous.id } }
             (self.me, self.friends, self.requests, self.friendReviews) = values
             status = .ready
             await rememberLocalEnvironment()
@@ -278,6 +288,10 @@ final class FriendStore: ObservableObject {
         } catch {
             return "申請を送れませんでした。もう一度お試しください。"
         }
+    }
+
+    func dismissNewConnection(_ friendID: String) {
+        newConnections.removeAll { $0.id == friendID }
     }
 
     func respond(to request: Request, accept: Bool) async {
@@ -423,6 +437,7 @@ final class FriendStore: ObservableObject {
             environmentStore.set(state.instanceId, forKey: environmentKey)
             recordedLocalEnvironment = true
             me = nil; friends = []; requests = []; friendReviews = []
+            knownFriendIDs = nil; newConnections = []
             return replacement
         }
         localRecoveryTask = task
@@ -523,6 +538,8 @@ final class FriendStore: ObservableObject {
                                          body: JSONEncoder().encode(["recovery_key":clean]))
         guard credentials.save(session.accessToken) else { throw CocoaError(.fileWriteNoPermission) }
         identityGeneration += 1
+        knownFriendIDs = nil
+        newConnections = []
         lastRefreshAttempt = nil
         lastReviewAttempt = nil
         token = session.accessToken
@@ -536,6 +553,8 @@ final class FriendStore: ObservableObject {
             guestCreationBlocked = false
         } else { credentials.delete() }
         identityGeneration += 1
+        knownFriendIDs = nil
+        newConnections = []
         lastRefreshAttempt = nil
         lastReviewAttempt = nil
         token = value
@@ -546,6 +565,8 @@ final class FriendStore: ObservableObject {
         needsLocalReset = true
         UserDefaults.standard.set(true, forKey: "account.needsLocalReset")
         identityGeneration += 1
+        knownFriendIDs = nil
+        newConnections = []
         lastRefreshAttempt = nil
         lastReviewAttempt = nil
         credentials.delete(); token = nil; me = nil; friends = []; requests = []; friendReviews = []

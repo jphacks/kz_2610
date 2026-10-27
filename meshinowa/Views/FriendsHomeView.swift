@@ -42,6 +42,12 @@ struct FriendsHomeView: View {
                         .padding(.top, 12)
                 }
 
+                ForEach(store.newConnections) { friend in
+                    newConnection(friend)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+                }
+
                 switch section {
                 case .recommended: recommended
                 case .feed: feed
@@ -66,6 +72,35 @@ struct FriendsHomeView: View {
         )) {
             Button("閉じる", role: .cancel) { store.actionError = nil }
         } message: { Text(store.actionError ?? "もう一度お試しください。") }
+    }
+
+    private func newConnection(_ friend: FriendStore.Friend) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                FriendAvatar(name: friend.displayName, size: 40, symbol: friend.avatarSymbol)
+                Text("\(friend.displayName)さんと友達になりました")
+                    .font(MeshinowaFont.heading(16))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button { store.dismissNewConnection(friend.id) } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("友達になった案内を閉じる")
+            }
+            NavigationLink {
+                FriendMapScreen(friendID: friend.id)
+            } label: {
+                Label("\(friend.displayName)さんの評価を地図で見る", systemImage: "map")
+            }
+            .buttonStyle(PaperButtonStyle())
+            if !store.friendReviews.contains(where: { $0.userId == friend.id }) {
+                Text("評価が投稿されると、この地図に表示されます。")
+                    .font(MeshinowaFont.text(13, relativeTo: .caption))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
+            }
+        }
+        .padding(16)
+        .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var tabs: [UnderlineTabs<Section>.Item] {
@@ -244,11 +279,14 @@ struct FriendsHomeView: View {
 /// 友達のおすすめマップ。実データは開いている間も最新の状態を反映する。
 private struct FriendMapScreen: View {
     var initialSelection: String? = nil
+    var friendID: String? = nil
     @EnvironmentObject private var store: FriendStore
 
     var body: some View {
-        FriendRecommendationsView(dataset: store.dataset,
-                                initialSelection: initialSelection)
+        let dataset = friendID.map { store.dataset.forFriend($0) } ?? store.dataset
+        FriendRecommendationsView(dataset: dataset,
+                                  initialSelection: initialSelection,
+                                  mapTitle: friendID.map { "\(store.dataset.friendName($0))さんのおすすめ" } ?? "友達のおすすめマップ")
     }
 }
 

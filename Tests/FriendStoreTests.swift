@@ -92,6 +92,75 @@ final class FriendStoreTests: XCTestCase {
         XCTAssertEqual(FriendStore.date("invalid"), .distantPast)
     }
 
+    func testNewConnectionAnnouncementStartsAfterInitialLoadAndDoesNotRepeat() async {
+        XCTAssertTrue(credentials.save(token))
+        var includesNewFriend = false
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/me":
+                return (200, Data(#"{"id":"me","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/friends":
+                let existing = #"{"id":"f1","display_name":"既存の友達","handle":"friend1","is_favorite":0}"#
+                let added = #"{"id":"f2","display_name":"新しい友達","handle":"friend2","is_favorite":0}"#
+                return (200, Data((includesNewFriend ? "[\(existing),\(added)]" : "[\(existing)]").utf8))
+            case "/v1/requests", "/v1/friend-reviews": return (200, Data("[]".utf8))
+            default: return (404, Data("{}".utf8))
+            }
+        }
+        let store = store()
+        await store.refresh()
+        XCTAssertTrue(store.newConnections.isEmpty)
+        includesNewFriend = true
+        await store.refresh()
+        XCTAssertEqual(store.newConnections.map(\.id), ["f2"])
+        await store.refresh()
+        XCTAssertEqual(store.newConnections.count, 1)
+        store.dismissNewConnection("f2")
+        await store.refresh()
+        XCTAssertTrue(store.newConnections.isEmpty)
+        includesNewFriend = false
+        await store.refresh()
+        includesNewFriend = true
+        await store.refresh()
+        XCTAssertEqual(store.newConnections.map(\.id), ["f2"])
+        includesNewFriend = false
+        await store.refresh()
+        XCTAssertTrue(store.newConnections.isEmpty)
+    }
+
+    func testApprovalAnnouncementOnlyAppearsAfterSuccessfulAcceptance() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var accepted = false
+        var fails = true
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/requests/r1":
+                if fails { return (503, Data("{}".utf8)) }
+                accepted = true
+                return (200, Data(#"{"ok":true}"#.utf8))
+            case "/v1/me":
+                return (200, Data(#"{"id":"me","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/friends":
+                return (200, Data((accepted ? #"[{"id":"f1","display_name":"さくら","handle":"sakura","is_favorite":0}]"# : "[]").utf8))
+            case "/v1/requests":
+                return (200, Data((accepted ? "[]" : #"[{"id":"r1","from_id":"f1","to_id":"me","status":"pending","from_name":"さくら","from_handle":"sakura","to_name":"自分","to_handle":"my_id"}]"#).utf8))
+            case "/v1/friend-reviews": return (200, Data("[]".utf8))
+            default: return (404, Data("{}".utf8))
+            }
+        }
+        let store = store()
+        await store.refresh()
+        let request = try XCTUnwrap(store.incomingRequests.first)
+        await store.respond(to: request, accept: true)
+        XCTAssertTrue(store.newConnections.isEmpty)
+        XCTAssertEqual(store.incomingRequests.count, 1)
+        XCTAssertNotNil(store.actionError)
+        fails = false
+        await store.respond(to: request, accept: true)
+        XCTAssertEqual(store.newConnections.map(\.id), ["f1"])
+        XCTAssertTrue(store.incomingRequests.isEmpty)
+    }
+
     func testWithoutBackendStaysUnavailable() async {
         let store = FriendStore(backend: nil, credentials: credentials)
         await store.start(sharing: [])

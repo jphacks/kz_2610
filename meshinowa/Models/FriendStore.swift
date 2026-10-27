@@ -237,17 +237,39 @@ final class FriendStore: ObservableObject {
         }
     }
 
-    /// 相手のIDで申請する。見つからない・申請できないときは理由を返す。
-    func sendRequest(handle raw: String) async -> String? {
+    /// IDの完全一致で相手を確認する。候補一覧のための部分一致検索は行わない。
+    func findProfile(handle raw: String) async throws -> Profile? {
         let handle = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             .replacingOccurrences(of: "@", with: "")
-        guard (3...40).contains(handle.count), handle.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == ".") }) else {
-            return "IDは英小文字・数字の3文字以上で入力してください。"
+        guard (3...40).contains(handle.count),
+              handle.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == ".") }) else {
+            throw ProfileSearchError.invalidHandle
         }
-        if handle == me?.handle { return "自分のIDです。友達のIDを入力してください。" }
+        let found: [Profile] = try await call("/profiles", query: [URLQueryItem(name: "handle", value: handle)])
+        return found.first
+    }
+
+    enum ProfileSearchError: LocalizedError {
+        case invalidHandle
+        var errorDescription: String? { "IDは英小文字・数字・_・. の3〜40文字で入力してください。" }
+    }
+
+    /// 相手のIDで申請する。見つからない・申請できないときは理由を返す。
+    func sendRequest(handle raw: String) async -> String? {
         do {
-            let found: [Profile] = try await call("/profiles", query: [URLQueryItem(name: "handle", value: handle)])
-            guard let target = found.first else { return "そのIDの人が見つかりませんでした。" }
+            guard let target = try await findProfile(handle: raw) else { return "そのIDの人が見つかりませんでした。" }
+            return await sendRequest(to: target)
+        } catch let error as ProfileSearchError {
+            return error.localizedDescription
+        } catch {
+            return "申請を送れませんでした。もう一度お試しください。"
+        }
+    }
+
+    /// 確認済みの相手のIDに申請する。表示後にhandleが変更されても別人へ申請しない。
+    func sendRequest(to target: Profile) async -> String? {
+        if target.id == me?.id { return "自分のIDです。友達のIDを入力してください。" }
+        do {
             let _: [String: String] = try await call("/requests", method: "POST", json: ["target_id": target.id])
             await refresh()
             return nil

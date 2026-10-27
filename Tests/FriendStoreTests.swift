@@ -22,6 +22,67 @@ final class FriendStoreTests: XCTestCase {
         return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore, now: now)
     }
 
+    func testProfileLookupNormalizesIDAndDoesNotSendRequest() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var calls = 0
+        BackendURLProtocol.handler = { request in
+            calls += 1
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(request.url?.path, "/v1/profiles")
+            let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems
+            XCTAssertEqual(query?.first(where: { $0.name == "handle" })?.value, "sakura_tabe")
+            return (200, Data(#"[{"id":"f1","display_name":"さくら","handle":"sakura_tabe"}]"#.utf8))
+        }
+        let profile = try await store().findProfile(handle: "  @Sakura_Tabe\n")
+        XCTAssertEqual(profile?.displayName, "さくら")
+        XCTAssertEqual(calls, 1)
+    }
+
+    func testProfileLookupRejectsInvalidIDWithoutNetworkAndAllowsNoMatch() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var calls = 0
+        BackendURLProtocol.handler = { _ in
+            calls += 1
+            return (200, Data("[]".utf8))
+        }
+        let store = store()
+        do {
+            _ = try await store.findProfile(handle: "さくら")
+            XCTFail("不正なIDでは通信しない")
+        } catch is FriendStore.ProfileSearchError {} catch { XCTFail("Unexpected error: \(error)") }
+        XCTAssertEqual(calls, 0)
+        let profile = try await store.findProfile(handle: "unknown")
+        XCTAssertNil(profile)
+        XCTAssertEqual(calls, 1)
+    }
+
+    func testRequestUsesConfirmedProfileIDWithoutSecondLookup() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var posts = 0
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/requests" where request.httpMethod == "POST":
+                posts += 1
+                return (201, Data(#"{"id":"r1"}"#.utf8))
+            case "/v1/me":
+                return (200, Data(#"{"id":"me","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/requests":
+                return (200, Data(#"[{"id":"r1","from_id":"me","to_id":"f1","status":"pending","from_name":"自分","from_handle":"my_id","to_name":"さくら","to_handle":"new_handle"}]"#.utf8))
+            case "/v1/friends", "/v1/friend-reviews":
+                return (200, Data("[]".utf8))
+            default:
+                XCTFail("確認済みなら再検索しない: \(request.url?.path ?? "")")
+                return (404, Data("{}".utf8))
+            }
+        }
+        let store = store()
+        let selected = FriendStore.Profile(id: "f1", displayName: "さくら", handle: "old_handle")
+        let error = await store.sendRequest(to: selected)
+        XCTAssertNil(error)
+        XCTAssertEqual(posts, 1)
+        XCTAssertEqual(store.outgoingRequests.first?.toId, selected.id)
+    }
+
     func testWithoutBackendStaysUnavailable() async {
         let store = FriendStore(backend: nil, credentials: credentials)
         await store.start(sharing: [])

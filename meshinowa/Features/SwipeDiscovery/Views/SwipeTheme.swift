@@ -5,8 +5,8 @@ import UIKit
 /// 矢印・ボタン・オーバーレイが同じ色になるよう、行きたい色・イマイチ色はここだけで定義する。
 enum SwipeTheme {
     // MARK: 面
-    /// 和モダンな生成り色の背景。
-    static let background = dynamic(light: 0xF4EFE6, dark: 0x171A18)
+    /// ほかの画面と同じ白の背景。
+    static let background = dynamic(light: 0xFFFFFF, dark: 0x171A18)
     static let card = dynamic(light: 0xFFFFFF, dark: 0x242826)
     static let field = dynamic(light: 0xF4F5F2, dark: 0x2E3230)
     static let hairline = dynamic(light: 0xE3E5E2, dark: 0x3A3F3C)
@@ -21,8 +21,9 @@ enum SwipeTheme {
     static let brand = MeshinowaTheme.green
     static let star = MeshinowaTheme.accent
 
-    // MARK: 判断の色（灰色＝イマイチ、ピンク＝行きたい）。明るさにも差を付ける。
-    static let interested = dynamic(light: 0xE5577E, dark: 0xF07A9A)
+    // MARK: 判断の色（灰色＝イマイチ、緑＝行きたい）。明るさにも差を付ける。
+    /// 行きたい。保存画面やお店カードの旗と同じ緑。ピンクはアプリの中で「いいね」だけに使う。
+    static let interested = dynamic(light: 0x27755B, dark: 0x6FBF9C)
     static let notInterested = dynamic(light: 0x6E7681, dark: 0x9AA3AE)
     static let undo = dynamic(light: 0x4F5550, dark: 0xC9CDC8)
 

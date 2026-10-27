@@ -341,7 +341,7 @@ struct MyRestaurantMapView: View {
                         .buttonStyle(PaperButtonStyle())
                 } else {
                     SavedRestaurantMap(restaurants: restaurants,
-                                       ratings: Dictionary(uniqueKeysWithValues: reviews.reviews.map { ($0.id, $0.rating) })) {
+                                       ratings: PersonalLibrary.ratings(for: restaurants, reviews: reviews.reviews)) {
                         selected = $0
                     }
                         .frame(height: 500)

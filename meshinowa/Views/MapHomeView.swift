@@ -157,9 +157,10 @@ struct MapHomeView: View {
             }
         }
         .onChange(of: friendSnapshot, initial: true) { _, _ in
-            let previous = Dictionary(uniqueKeysWithValues: friendResults.map {
+            // 同じお店が2つ来ても落ちないよう、先にあったものを使う。
+            let previous = Dictionary(friendResults.map {
                 (SavedRestaurant.identifier(for: $0.item), $0.id)
-            })
+            }, uniquingKeysWith: { first, _ in first })
             let wasEmpty = friendResults.isEmpty
             friendResults = friends.dataset.ratedRestaurants.map {
                 RestaurantSearchResult(id: previous[$0.id] ?? UUID(), item: $0.mapItem)

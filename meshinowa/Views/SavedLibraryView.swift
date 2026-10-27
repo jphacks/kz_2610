@@ -38,8 +38,9 @@ struct SavedRestaurantsView: View {
         library.filter { collection.includes($0, reviewed: Set(ratings.keys), wantToGo: wantToGoIDs) }.count
     }
 
+    /// 一覧のお店ごとの自分の評価。キーは一覧のお店の ID。
     private var ratings: [String: Double] {
-        Dictionary(uniqueKeysWithValues: reviews.reviews.map { ($0.id, $0.rating) })
+        PersonalLibrary.ratings(for: library, reviews: reviews.reviews)
     }
 
     private var visibleRestaurants: [SavedRestaurant] {
@@ -171,7 +172,7 @@ struct SavedRestaurantsView: View {
         .toolbar(onFindRestaurants == nil ? .visible : .hidden, for: .navigationBar)
         .sheet(item: $selected) { RestaurantInformationView(item: $0.mapItem) }
         // 行きたいはレビューを書いた（行った）ら外れる。サーバーとも同期する。
-        .task { await SwipeDiscoveryEntry.refreshWantToGo(reviewedIDs: Set(reviews.reviews.map(\.id))) }
+        .task { await SwipeDiscoveryEntry.refreshWantToGo(reviewedIDs: PersonalLibrary.reviewedKeys(reviews.reviews)) }
         .alert("行きたいを変更できませんでした", isPresented: Binding(get: { wantToGoError != nil },
                                                           set: { if !$0 { wantToGoError = nil } })) {
             Button("閉じる", role: .cancel) {}

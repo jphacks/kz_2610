@@ -21,8 +21,9 @@ struct ReviewTargetPicker: View {
 
     /// いいねしたけれど、まだ評価していないお店。
     private var likedUnreviewed: [SavedRestaurant] {
-        let reviewed = Set(reviews.reviews.map(\.id))
-        return saved.restaurants.filter { $0.isLiked && !reviewed.contains($0.id) }
+        saved.restaurants.filter { restaurant in
+            restaurant.isLiked && !reviews.reviews.contains { $0.restaurant.isSameStore(as: restaurant) }
+        }
     }
 
     var body: some View {

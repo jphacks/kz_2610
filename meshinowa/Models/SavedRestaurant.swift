@@ -79,6 +79,19 @@ struct SavedRestaurant: Codable, Identifiable {
         return id == Self.identifier(for: item) || Self.legacyIdentifier(for: mapItem) == Self.legacyIdentifier(for: item)
     }
 
+    /// 同じお店かを確かめるための鍵。Google の ID と、店名と座標の ID の両方を持つ。
+    /// Google に切り替える前に保存したお店（店名と座標の ID）と、あとから保存したお店（Google の ID）を同じお店として扱う。
+    var matchKeys: Set<String> {
+        var keys: Set<String> = [id, Self.legacyIdentifier(for: mapItem)]
+        if let googlePlaceID { keys.insert("google:" + googlePlaceID) }
+        return keys
+    }
+
+    func isSameStore(as other: SavedRestaurant) -> Bool {
+        if let left = googlePlaceID, let right = other.googlePlaceID { return left == right }
+        return !matchKeys.isDisjoint(with: other.matchKeys)
+    }
+
     static func legacyIdentifier(for item: MKMapItem) -> String {
         let name = (item.name ?? "飲食店")
             .trimmingCharacters(in: .whitespacesAndNewlines)

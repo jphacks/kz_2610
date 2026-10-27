@@ -170,18 +170,27 @@ struct ProfileView: View {
 }
 
 struct ProfileIcon: View {
+    /// サーバーの初期値。まだアイコンを選んでいない人には、人の形の代わりにロゴのお椀を出す。
+    static let defaultSymbol = "person.fill"
     var symbol: String
     var size: CGFloat = 64
     var body: some View {
-        Image(systemName: symbol).font(.system(size: size * 0.4, weight: .semibold))
-            .foregroundStyle(MeshinowaTheme.green).frame(width: size, height: size)
-            .background(MeshinowaTheme.mint, in: Circle()).accessibilityHidden(true)
+        Group {
+            if symbol == Self.defaultSymbol {
+                BowlMark(size: size * 0.66, holes: MeshinowaTheme.mint)
+            } else {
+                Image(systemName: symbol).font(.system(size: size * 0.4, weight: .semibold))
+                    .foregroundStyle(MeshinowaTheme.green)
+            }
+        }
+        .frame(width: size, height: size)
+        .background(MeshinowaTheme.mint, in: Circle()).accessibilityHidden(true)
     }
 }
 
 struct ProfileEditorView: View {
     static let icons: [(String, String)] = [
-        ("person.fill", "ひと"), ("fork.knife", "ごはん"), ("cup.and.saucer.fill", "カフェ"),
+        ("person.fill", "メシノワ"), ("fork.knife", "ごはん"), ("cup.and.saucer.fill", "カフェ"),
         ("leaf.fill", "葉っぱ"), ("fish.fill", "おさかな"), ("carrot.fill", "にんじん"),
         ("birthday.cake.fill", "ケーキ"), ("sun.max.fill", "太陽")
     ]
@@ -204,7 +213,11 @@ struct ProfileEditorView: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4)) {
                         ForEach(Self.icons, id: \.0) { icon in
                             Button { symbol = icon.0 } label: {
-                                Image(systemName: icon.0).frame(maxWidth: .infinity, minHeight: 48)
+                                Group {
+                                    if icon.0 == ProfileIcon.defaultSymbol { BowlMark(size: 26, holes: symbol == icon.0 ? MeshinowaTheme.mint : MeshinowaTheme.paper) }
+                                    else { Image(systemName: icon.0) }
+                                }
+                                .frame(maxWidth: .infinity, minHeight: 48)
                                     .background(symbol == icon.0 ? MeshinowaTheme.mint : .clear, in: RoundedRectangle(cornerRadius: 12))
                             }.buttonStyle(.plain).accessibilityLabel(icon.1)
                                 .accessibilityAddTraits(symbol == icon.0 ? .isSelected : [])

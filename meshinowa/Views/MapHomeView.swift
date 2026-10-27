@@ -124,7 +124,8 @@ struct MapHomeView: View {
                                 coordinate: result.item.placemark.coordinate,
                                 symbol: Self.symbol(for: result.item),
                                 genre: result.item.foodGenre,
-                                mark: friendRating.map { .reviewed($0) } ?? review.map { .reviewed($0.rating) } ?? (entry?.isLiked == true ? .liked : .none),
+                                // 自分の評価を優先し（からし色）、ない時だけ友達の平均点（緑）を出す。
+                                mark: review.map { .reviewed($0.rating) } ?? friendRating.map { .friends($0) } ?? (entry?.isLiked == true ? .liked : .none),
                                 showsLikeBadge: (review != nil || friendRating != nil) && entry?.isLiked == true)
         }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),
                         topPadding: headerHeight,

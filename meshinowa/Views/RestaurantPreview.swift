@@ -404,6 +404,7 @@ private struct FriendVoicesSection: View {
                                     .font(MeshinowaFont.number(16, relativeTo: .body))
                                     .foregroundStyle(MeshinowaTheme.green)
                             }
+                            ReviewUpdatedDate(date: review.updatedAt)
                             if !review.comment.isEmpty {
                                 Text(review.comment)
                                     .font(MeshinowaFont.text(15))
@@ -432,5 +433,22 @@ extension FriendStore {
         let summary = summary(for: item)
         guard let average = summary.average else { return "友達の評価はまだありません" }
         return "友達\(summary.count)人の評価 " + average.formatted(.number.precision(.fractionLength(1)))
+    }
+}
+
+/// 来店日ではなく、サーバーで評価が最後に更新された日付。
+struct ReviewUpdatedDate: View {
+    let date: Date
+
+    var body: some View {
+        if date != .distantPast {
+            HStack(spacing: 4) {
+                Text("評価更新")
+                Text(date, format: .dateTime.year().month().day())
+            }
+            .font(MeshinowaFont.text(12, relativeTo: .caption))
+            .foregroundStyle(MeshinowaTheme.secondaryText)
+            .accessibilityElement(children: .combine)
+        }
     }
 }

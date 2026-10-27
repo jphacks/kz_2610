@@ -83,6 +83,15 @@ final class FriendStoreTests: XCTestCase {
         XCTAssertEqual(store.outgoingRequests.first?.toId, selected.id)
     }
 
+    func testReviewDateAcceptsTimestampsWithAndWithoutFractionalSeconds() {
+        let expected = Date(timeIntervalSince1970: 1_761_408_000)
+        let whole = FriendStore.date("2025-10-25T16:00:00Z")
+        XCTAssertEqual(whole, expected)
+        let fractional = FriendStore.date("2025-10-25T16:00:00.456Z")
+        XCTAssertEqual(fractional.timeIntervalSince(whole), 0.456, accuracy: 0.001)
+        XCTAssertEqual(FriendStore.date("invalid"), .distantPast)
+    }
+
     func testWithoutBackendStaysUnavailable() async {
         let store = FriendStore(backend: nil, credentials: credentials)
         await store.start(sharing: [])

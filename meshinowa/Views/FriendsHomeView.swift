@@ -414,6 +414,7 @@ private struct RecentReviewCard: View {
                     .foregroundStyle(MeshinowaTheme.green)
                     .fixedSize()
             }
+            ReviewUpdatedDate(date: review.updatedAt)
             Text(review.comment)
                 .font(MeshinowaFont.text(13, relativeTo: .caption))
                 .foregroundStyle(MeshinowaTheme.bodyText)

@@ -4,6 +4,7 @@ struct FriendsHomeView: View {
     private enum Section: Hashable { case recommended, feed, connections }
     /// タブが表示中のときだけ、申請や友達の評価を定期的に取り直す。
     var isActive = true
+    var onFindRestaurants: (() -> Void)? = nil
     @EnvironmentObject private var store: FriendStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var section: Section = .recommended
@@ -21,7 +22,7 @@ struct FriendsHomeView: View {
                 UnderlineTabs(items: tabs, selection: $section)
                     .padding(.horizontal, 20)
 
-                if case .failed(let message) = store.status {
+                if case .failed(let message) = store.status, !(isDisconnected && section == .recommended) {
                     Text(message)
                         .font(MeshinowaFont.text(13, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.bodyText)
@@ -66,7 +67,51 @@ struct FriendsHomeView: View {
         return items
     }
 
-    private var recommended: some View {
+    /// 友達の機能につながっていない、またはつながりに失敗したとき。
+    private var isDisconnected: Bool {
+        if !store.isAvailable { return true }
+        if case .failed = store.status { return dataset.latestReviews.isEmpty }
+        return false
+    }
+
+    /// つながっていないときの空の状態。ほかの画面と同じ形（ミントの丸・見出し・主ボタン・副ボタン）。
+    private var disconnected: some View {
+        VStack(spacing: 12) {
+            BowlMark(size: 52, holes: MeshinowaTheme.mint)
+                .frame(width: 84, height: 84)
+                .background(MeshinowaTheme.mint, in: Circle())
+            Text("友達の機能に\nつながっていません")
+                .font(MeshinowaFont.heading(18))
+                .multilineTextAlignment(.center)
+            Text(store.isAvailable ? "通信を確かめて、もう一度試してください。\n地図のお店探しは、このままでも使えます。"
+                 : "このアプリには、友達の機能の接続先が設定されていません。\n地図のお店探しは、このままでも使えます。")
+                .font(MeshinowaFont.text(14))
+                .foregroundStyle(MeshinowaTheme.bodyText)
+                .multilineTextAlignment(.center)
+            if store.isAvailable {
+                Button("もう一度つなぐ") { Task { await store.retryConnection() } }
+                    .buttonStyle(PaperButtonStyle())
+                    .padding(.top, 4)
+            }
+            if let onFindRestaurants {
+                Button("マップでお店を探す", action: onFindRestaurants)
+                    .buttonStyle(PaperButtonStyle(kind: store.isAvailable ? .secondary : .primary))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.top, 36)
+    }
+
+    @ViewBuilder private var recommended: some View {
+        if isDisconnected {
+            disconnected
+        } else {
+            connectedRecommendations
+        }
+    }
+
+    private var connectedRecommendations: some View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(spacing: 10) {
                 banner

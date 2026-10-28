@@ -39,6 +39,7 @@ struct MapHomeView: View {
     @State private var searchedRegion: MKCoordinateRegion?
     /// 検索結果や一覧に合わせて地図を動かしたあと、その範囲を検索済みとして扱う。
     @State private var adoptsNextCamera = false
+    @State private var hasMovedSinceSearch = false
     /// カードを横に並べる順番。隣のカードが地図上でも近いお店になるようにつなぐ。
     @State private var carouselItems: [RestaurantSearchResult] = []
     /// カルーセルで今見ているカード。ループのために同じお店を3周分並べ、何周目かも持つ。
@@ -108,7 +109,8 @@ struct MapHomeView: View {
     /// 結果がまだないか、検索した範囲から地図が離れたときに再検索を勧める。
     private var suggestsAreaSearch: Bool {
         guard searchesAllPlaces else { return false }
-        guard !isSearching, let searchedRegion else { return false }
+        guard hasMovedSinceSearch, !isSearching else { return false }
+        guard let searchedRegion else { return true }
         let center = visibleRegion.center, old = searchedRegion.center
         let span = visibleRegion.span, oldSpan = searchedRegion.span
         let moved = abs(center.latitude - old.latitude) > oldSpan.latitudeDelta * 0.25
@@ -131,7 +133,8 @@ struct MapHomeView: View {
                                 showsLikeBadge: (review != nil || friendRating != nil) && entry?.isLiked == true)
         }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),
                         topPadding: headerHeight,
-                        bottomPadding: tabBarSpace + (selectedResult == nil ? 0 : cardHeight)) { region, position in
+                        bottomPadding: tabBarSpace + (selectedResult == nil ? 0 : cardHeight),
+                        onUserMove: { hasMovedSinceSearch = true }) { region, position in
             visibleRegion = region
             lastCamera = position
             if adoptsNextCamera {
@@ -242,6 +245,7 @@ struct MapHomeView: View {
         }
         .onChange(of: location.location) { _, value in
             guard let value else { return }
+            hasMovedSinceSearch = true
             camera = .region(MKCoordinateRegion(center: value.coordinate, latitudinalMeters: 2000, longitudinalMeters: 2000))
             searchedRegion = nil
         }
@@ -522,6 +526,7 @@ struct MapHomeView: View {
         let term = genre.searchTerm(for: query)
         guard !term.isEmpty else { return }
         searchTask?.cancel()
+        hasMovedSinceSearch = false
         isSearchFocused = false
         selectedID = nil
         notice = nil

@@ -5,6 +5,7 @@ import SwiftUI
 struct FriendRecommendationsView: View {
     var dataset: FriendDataset
     var initialSelection: String? = nil
+    var mapTitle = "友達のおすすめマップ"
 
     @State private var camera: GoogleMapPosition = .region(MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 35.6812, longitude: 139.7671),
@@ -45,8 +46,8 @@ struct FriendRecommendationsView: View {
         GoogleMapCanvas(position: camera, pins: visible.map { restaurant in
             let summary = summary(for: restaurant)
             return GoogleMapPin(id: restaurant.id, title: restaurant.name, coordinate: restaurant.coordinate,
-                                scoreTag: summary.count > 0 ? "友達\(summary.count)" : "未評価",
-                                scoreTitle: summary.average.map { $0.formatted(.number.precision(.fractionLength(1))) } ?? "—")
+                                genre: restaurant.mapItem.foodGenre,
+                                mark: summary.average.map { .friends($0) } ?? .none)
         }, selectedID: $selectedID)
         .safeAreaInset(edge: .top, spacing: 0) { header }
         .safeAreaInset(edge: .bottom, spacing: 0) { sheet }
@@ -58,10 +59,13 @@ struct FriendRecommendationsView: View {
             if selectedID == nil { selectedID = initialSelection ?? rated.first?.id }
         }
         .onChange(of: visible.map(\.id)) { _, ids in
-            if let id = selectedID, !ids.contains(id) { selectedID = rated.first?.id }
+            if selectedID == nil || !ids.contains(selectedID!) { selectedID = rated.first?.id }
+        }
+        .onChange(of: dataset.restaurants.map(\.id)) { _, _ in
+            if !dataset.restaurants.isEmpty { camera = .fit(dataset.restaurants.map(\.coordinate)) }
         }
         .sheet(item: $detail) { restaurant in
-            RestaurantInformationView(item: restaurant.mapItem, initialSection: .friends, friendIDs: includedIDs)
+            RestaurantInformationView(item: restaurant.mapItem, friendIDs: includedIDs)
         }
         .sheet(isPresented: $showsLens) {
             FriendLensPicker(lens: $lens, dataset: dataset)
@@ -75,7 +79,7 @@ struct FriendRecommendationsView: View {
                     .buttonStyle(CircleIconButtonStyle())
                     .accessibilityLabel("戻る")
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("友達のおすすめマップ")
+                    Text(mapTitle)
                         .font(MeshinowaFont.heading(18))
                     Text("友達\(dataset.friends.count)人の評価から")
                         .font(MeshinowaFont.text(12, relativeTo: .caption))

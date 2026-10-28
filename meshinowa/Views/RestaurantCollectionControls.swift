@@ -10,14 +10,9 @@ struct RestaurantCollectionControls: View {
     var body: some View {
         let review = reviews.review(for: item)
         Button { showsEditor = true } label: {
-            if let review {
-                Label("レビューを編集（★\(review.rating.formatted(.number.precision(.fractionLength(1)))))",
-                      systemImage: "square.and.pencil")
-            } else {
-                Label("レビューを書く", systemImage: "star")
-            }
+            Text(review == nil ? "評価する" : "評価を編集")
         }
-        .buttonStyle(PaperButtonStyle(kind: review == nil ? .primary : .secondary))
+        .buttonStyle(PaperButtonStyle())
         .disabled(reviews.loadError != nil)
         .sheet(isPresented: $showsEditor) {
             ReviewEditor(item: item, existing: review)

@@ -275,7 +275,7 @@ struct MyReviewSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("あなたのレビュー")
+            Text("自分の記録")
                 .font(MeshinowaFont.text(17, weight: .black, relativeTo: .headline))
             if let error = reviews.loadError {
                 Text(error).font(MeshinowaFont.text(14))
@@ -283,7 +283,8 @@ struct MyReviewSection: View {
             }
             if let review = reviews.review(for: item) {
                 Text("★ " + review.rating.formatted(.number.precision(.fractionLength(1))))
-                    .font(MeshinowaFont.number(22))
+                    .font(MeshinowaFont.number(28))
+                    .foregroundStyle(MeshinowaTheme.mustardInk)
                 if !review.comment.isEmpty { Text(review.comment).font(MeshinowaFont.text(14)) }
                 if !review.dish.isEmpty { Text("おすすめ：\(review.dish)").font(MeshinowaFont.text(14)) }
                 if review.wantAgain { Label("また行きたい", systemImage: "heart.fill").font(MeshinowaFont.text(12, weight: .bold)) }
@@ -304,7 +305,8 @@ struct MyReviewSection: View {
                 .disabled(reviews.loadError != nil)
         }
         .padding(18)
-        .paperCard()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MeshinowaTheme.mustardSoft, in: RoundedRectangle(cornerRadius: 18))
         .sheet(isPresented: $showsEditor) {
             ReviewEditor(item: item, existing: reviews.review(for: item))
         }

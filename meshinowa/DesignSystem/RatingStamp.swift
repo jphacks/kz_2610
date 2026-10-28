@@ -79,10 +79,17 @@ struct ScorePin: View {
 }
 
 /// 実際の地図のピン。形はジャンルの器（お椀・丼・提灯など）、色は自分の記録。
-/// 記録なしは白に緑の線、いいねはピンクにハート、レビューしたお店は緑に自分の点数。選ぶと大きくなり、緑で塗る。
+/// 記録なしは白に緑の線、いいねはピンクにハート、自分が評価したお店はからし色に自分の点数、
+/// 友達だけが評価したお店は緑に友達の平均点。選ぶと大きくなる。
 /// 形は output/wa-design/category-pins.html のデザインと同じ。
 struct PlacePin: View {
-    enum Mark: Equatable { case none, liked, reviewed(Double) }
+    enum Mark: Equatable {
+        case none, liked
+        /// 自分の評価。からし色。
+        case reviewed(Double)
+        /// 友達の平均点。緑。
+        case friends(Double)
+    }
 
     /// 以前の丸いピンのアイコン。今は形をジャンルで決めるため使わない。
     var symbol: String = "fork.knife"
@@ -96,7 +103,8 @@ struct PlacePin: View {
         switch mark {
         // いいねのピンは選択中もピンクのまま。大きさで選択中を示す。
         case .liked: return .liked
-        case .reviewed: return .reviewed
+        case .reviewed: return .mine
+        case .friends: return .reviewed
         case .none: return isSelected ? .reviewed : .plain
         }
     }
@@ -110,7 +118,7 @@ struct PlacePin: View {
         case .liked:
             Image(systemName: "heart.fill")
                 .font(.system(size: isSelected ? 14 : 9, weight: .bold))
-        case .reviewed(let score):
+        case .reviewed(let score), .friends(let score):
             Text(score, format: .number.precision(.fractionLength(1)))
                 .font(MeshinowaFont.number(isSelected ? 15 : 10, relativeTo: .caption))
                 .fixedSize()
@@ -119,14 +127,19 @@ struct PlacePin: View {
 
     var body: some View {
         let anchor = FoodGenreMark.contentAnchor(for: genre)
-        let tailColor = tone == .plain ? MeshinowaTheme.green
-            : (tone == .liked ? MeshinowaTheme.like : MeshinowaTheme.green)
+        let tailColor: Color = switch tone {
+        case .liked: MeshinowaTheme.like
+        case .mine: MeshinowaTheme.accent
+        default: MeshinowaTheme.green
+        }
+        // からし色の上は白い文字が読みにくいので、自分の評価の文字色にする。
+        let contentColor = tone == .mine ? MeshinowaTheme.mustardInk : Color.white
         VStack(spacing: -1) {
             FoodGenreMark(genre: genre, tone: tone, size: width)
                 .overlay {
                     GeometryReader { proxy in
                         content
-                            .foregroundStyle(.white)
+                            .foregroundStyle(contentColor)
                             .position(x: proxy.size.width * anchor.x, y: proxy.size.height * anchor.y)
                     }
                 }
@@ -177,6 +190,7 @@ private struct PinTail: Shape {
             PlacePin(genre: .noodle)
             PlacePin(genre: .cafe, mark: .liked)
             PlacePin(genre: .bread, mark: .reviewed(4.5), showsLikeBadge: true)
+            PlacePin(genre: .washoku, mark: .friends(4.2))
             PlacePin(genre: .izakaya, isSelected: true)
         }
     }

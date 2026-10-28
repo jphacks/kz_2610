@@ -4,9 +4,11 @@ struct FriendsHomeView: View {
     private enum Section: Hashable { case recommended, feed, connections }
     /// タブが表示中のときだけ、申請や友達の評価を定期的に取り直す。
     var isActive = true
+    var onFindRestaurants: (() -> Void)? = nil
     @EnvironmentObject private var store: FriendStore
     @Environment(\.scenePhase) private var scenePhase
     @State private var section: Section = .recommended
+    @State private var showsAddFriend = false
 
     /// 接続状態にかかわらず、取得済みの実データだけを表示する。
     private var dataset: FriendDataset {
@@ -16,12 +18,20 @@ struct FriendsHomeView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenTitle(text: "友達")
-                    .padding(.horizontal, 20)
+                HStack {
+                    ScreenTitle(text: "友達")
+                    Spacer()
+                    Button { showsAddFriend = true } label: {
+                        Label("追加", systemImage: "person.badge.plus")
+                    }
+                    .buttonStyle(PillButtonStyle(isOn: false))
+                    .accessibilityIdentifier("friends.add")
+                }
+                .padding(.horizontal, 20)
                 UnderlineTabs(items: tabs, selection: $section)
                     .padding(.horizontal, 20)
 
-                if case .failed(let message) = store.status {
+                if case .failed(let message) = store.status, !(isDisconnected && section == .recommended) {
                     Text(message)
                         .font(MeshinowaFont.text(13, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.bodyText)
@@ -30,6 +40,12 @@ struct FriendsHomeView: View {
                         .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
+                }
+
+                ForEach(store.newConnections) { friend in
+                    newConnection(friend)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
                 }
 
                 switch section {
@@ -44,14 +60,47 @@ struct FriendsHomeView: View {
         .refreshable { await store.retryConnection() }
         .task(id: isActive && scenePhase == .active) {
             guard isActive && scenePhase == .active else { return }
-            while !Task.isCancelled {
-                await store.refresh()
-                try? await Task.sleep(for: .seconds(10))
-            }
+            await store.refreshIfNeeded()
         }
         .background(MeshinowaTheme.paper)
         .foregroundStyle(MeshinowaTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $showsAddFriend) { FriendAddSheet() }
+        .alert("変更できませんでした", isPresented: Binding(
+            get: { store.actionError != nil },
+            set: { if !$0 { store.actionError = nil } }
+        )) {
+            Button("閉じる", role: .cancel) { store.actionError = nil }
+        } message: { Text(store.actionError ?? "もう一度お試しください。") }
+    }
+
+    private func newConnection(_ friend: FriendStore.Friend) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                FriendAvatar(name: friend.displayName, size: 40, symbol: friend.avatarSymbol)
+                Text("\(friend.displayName)さんと友達になりました")
+                    .font(MeshinowaFont.heading(16))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button { store.dismissNewConnection(friend.id) } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("友達になった案内を閉じる")
+            }
+            NavigationLink {
+                FriendMapScreen(friendID: friend.id)
+            } label: {
+                Label("\(friend.displayName)さんの評価を地図で見る", systemImage: "map")
+            }
+            .buttonStyle(PaperButtonStyle())
+            if !store.friendReviews.contains(where: { $0.userId == friend.id }) {
+                Text("評価が投稿されると、この地図に表示されます。")
+                    .font(MeshinowaFont.text(13, relativeTo: .caption))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
+            }
+        }
+        .padding(16)
+        .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var tabs: [UnderlineTabs<Section>.Item] {
@@ -61,12 +110,56 @@ struct FriendsHomeView: View {
         ]
         if store.isAvailable {
             let incoming = store.incomingRequests.count
-            items.append(.init(value: .connections, title: "つながり", badge: incoming > 0 ? "\(incoming)" : nil))
+            items.append(.init(value: .connections, title: "友達 \(store.friends.count)", badge: incoming > 0 ? "\(incoming)" : nil))
         }
         return items
     }
 
-    private var recommended: some View {
+    /// 友達の機能につながっていない、またはつながりに失敗したとき。
+    private var isDisconnected: Bool {
+        if !store.isAvailable { return true }
+        if case .failed = store.status { return dataset.latestReviews.isEmpty }
+        return false
+    }
+
+    /// つながっていないときの空の状態。ほかの画面と同じ形（ミントの丸・見出し・主ボタン・副ボタン）。
+    private var disconnected: some View {
+        VStack(spacing: 12) {
+            BowlMark(size: 52, holes: MeshinowaTheme.mint)
+                .frame(width: 84, height: 84)
+                .background(MeshinowaTheme.mint, in: Circle())
+            Text("友達の機能に\nつながっていません")
+                .font(MeshinowaFont.heading(18))
+                .multilineTextAlignment(.center)
+            Text(store.isAvailable ? "通信を確かめて、もう一度試してください。\n地図のお店探しは、このままでも使えます。"
+                 : "このアプリには、友達の機能の接続先が設定されていません。\n地図のお店探しは、このままでも使えます。")
+                .font(MeshinowaFont.text(14))
+                .foregroundStyle(MeshinowaTheme.bodyText)
+                .multilineTextAlignment(.center)
+            if store.isAvailable {
+                Button("もう一度つなぐ") { Task { await store.retryConnection() } }
+                    .buttonStyle(PaperButtonStyle())
+                    .padding(.top, 4)
+            }
+            if let onFindRestaurants {
+                Button("マップでお店を探す", action: onFindRestaurants)
+                    .buttonStyle(PaperButtonStyle(kind: store.isAvailable ? .secondary : .primary))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.top, 36)
+    }
+
+    @ViewBuilder private var recommended: some View {
+        if isDisconnected {
+            disconnected
+        } else {
+            connectedRecommendations
+        }
+    }
+
+    private var connectedRecommendations: some View {
         VStack(alignment: .leading, spacing: 24) {
             VStack(spacing: 10) {
                 banner
@@ -82,11 +175,11 @@ struct FriendsHomeView: View {
             .padding(.horizontal, 20)
 
             if store.isAvailable && store.friends.isEmpty {
-                Button { section = .connections } label: {
+                Button { showsAddFriend = true } label: {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("まずは友達とつながろう")
                             .font(MeshinowaFont.heading(17))
-                        Text("「つながり」で自分のIDを伝えるか、友達のIDで申請できます。")
+                        Text("「追加」から自分のIDを伝えるか、友達のIDで申請できます。")
                             .font(MeshinowaFont.text(14))
                             .foregroundStyle(MeshinowaTheme.bodyText)
                     }
@@ -186,32 +279,28 @@ struct FriendsHomeView: View {
 /// 友達のおすすめマップ。実データは開いている間も最新の状態を反映する。
 private struct FriendMapScreen: View {
     var initialSelection: String? = nil
+    var friendID: String? = nil
     @EnvironmentObject private var store: FriendStore
 
     var body: some View {
-        FriendRecommendationsView(dataset: store.dataset,
-                                initialSelection: initialSelection)
+        let dataset = friendID.map { store.dataset.forFriend($0) } ?? store.dataset
+        FriendRecommendationsView(dataset: dataset,
+                                  initialSelection: initialSelection,
+                                  mapTitle: friendID.map { "\(store.dataset.friendName($0))さんのおすすめ" } ?? "友達のおすすめマップ")
     }
 }
 
 /// 自分のID・申請・友達一覧。
 private struct FriendConnectionsSection: View {
     @EnvironmentObject private var store: FriendStore
-    @State private var handle = ""
-    @State private var message: String?
-    @State private var isSending = false
-    @State private var editsName = false
-    @State private var name = ""
     @State private var removing: FriendStore.Friend?
     @State private var blockingID: String?
     @State private var selectedProfile: FriendStore.Friend?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            myCard
-            addFriend
             if !store.incomingRequests.isEmpty {
-                group("届いた申請") {
+                group("申請が届いています") {
                     ForEach(store.incomingRequests) { request in
                         personRow(name: request.fromName, handle: request.fromHandle) {
                             HStack(spacing: 8) {
@@ -224,6 +313,8 @@ private struct FriendConnectionsSection: View {
                         .contextMenu { Button("ブロック", role: .destructive) { blockingID = request.fromId } }
                     }
                 }
+                .padding(16)
+                .background(MeshinowaTheme.mint, in: RoundedRectangle(cornerRadius: 18))
             }
             if !store.outgoingRequests.isEmpty {
                 group("送った申請") {
@@ -235,32 +326,40 @@ private struct FriendConnectionsSection: View {
                     }
                 }
             }
-            group("友達 \(store.friends.count)人") {
-                if store.friends.isEmpty {
-                    Text("まだ友達はいません。")
-                        .font(MeshinowaFont.text(14))
-                        .foregroundStyle(MeshinowaTheme.bodyText)
-                }
-                ForEach(store.friends) { friend in
-                    let isFavorite = friend.isFavorite != 0
-                    personRow(name: friend.displayName, handle: friend.handle, symbol: friend.avatarSymbol) {
-                        Button {
-                            Task { await store.setFavorite(friend, !isFavorite) }
-                        } label: {
-                            Image(systemName: isFavorite ? "star.fill" : "star")
-                                .font(.system(size: 20))
-                                .foregroundStyle(isFavorite ? MeshinowaTheme.accent : MeshinowaTheme.secondaryText)
-                                .frame(width: 44, height: 44)
+            if store.friends.isEmpty {
+                Text("まだ友達はいません。右上の「追加」から友達とつながれます。")
+                    .font(MeshinowaFont.text(14))
+                    .foregroundStyle(MeshinowaTheme.bodyText)
+            }
+            ForEach([true, false], id: \.self) { favorite in
+                let people = store.friends.filter { ($0.isFavorite != 0) == favorite }
+                if !people.isEmpty {
+                    group(favorite ? "お気に入りの友達" : "ほかの友達") {
+                        ForEach(people) { friend in
+                            personRow(name: friend.displayName, handle: friend.handle, symbol: friend.avatarSymbol) {
+                                Button { selectedProfile = friend } label: {
+                                    Image(systemName: "chevron.right")
+                                        .frame(width: 44, height: 44)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(friend.displayName)のプロフィール")
+                                Button {
+                                    Task { await store.setFavorite(friend, !favorite) }
+                                } label: {
+                                    Image(systemName: favorite ? "star.fill" : "star")
+                                        .foregroundStyle(MeshinowaTheme.green)
+                                        .frame(width: 44, height: 44)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("お気に入りの友達")
+                                .accessibilityValue(favorite ? "登録済み" : "未登録")
+                            }
+                            .contextMenu {
+                                Button("プロフィールを見る") { selectedProfile = friend }
+                                Button("ブロック", role: .destructive) { blockingID = friend.id }
+                                Button("友達を解除", role: .destructive) { removing = friend }
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("お気に入りの友達")
-                        .accessibilityValue(isFavorite ? "登録済み" : "未登録")
-                    }
-                    .onTapGesture { selectedProfile = friend }
-                    .contextMenu {
-                        Button("プロフィールを見る") { selectedProfile = friend }
-                        Button("ブロック", role: .destructive) { blockingID = friend.id }
-                        Button("友達を解除", role: .destructive) { removing = friend }
                     }
                 }
             }
@@ -286,100 +385,12 @@ private struct FriendConnectionsSection: View {
                 blockingID = nil
             }
         } message: { Text("お互いのプロフィールと評価が見えなくなり、友達関係と申請は解除されます。") }
-        .alert("名前を変更", isPresented: $editsName) {
-            TextField("表示名", text: $name)
-            Button("キャンセル", role: .cancel) {}
-            Button("保存") { Task { _ = await store.rename(name) } }
-        } message: { Text("友達に表示される名前です（40文字まで）。") }
         .confirmationDialog("友達を解除しますか？", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
                             titleVisibility: .visible) {
             Button("解除する", role: .destructive) {
                 if let removing { Task { await store.remove(removing) } }
             }
         } message: { Text("お互いの評価が見えなくなります。") }
-    }
-
-    private var myCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 12) {
-                FriendAvatar(name: store.me?.displayName ?? "ゲスト", size: 48, symbol: store.me?.avatarSymbol)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(store.me?.displayName ?? store.connectionLabel)
-                        .font(MeshinowaFont.heading(18))
-                    Text(store.me.map { "ID: \($0.handle)" } ?? "")
-                        .font(MeshinowaFont.number(15, relativeTo: .body))
-                        .foregroundStyle(MeshinowaTheme.bodyText)
-                        .textSelection(.enabled)
-                }
-                Spacer(minLength: 0)
-                Button {
-                    name = store.me?.displayName ?? ""
-                    editsName = true
-                } label: { Image(systemName: "pencil") }
-                    .buttonStyle(CircleIconButtonStyle())
-                    .accessibilityLabel("名前を変更")
-                    .disabled(store.me == nil)
-            }
-            if let me = store.me {
-                HStack(spacing: 10) {
-                    Button {
-                        UIPasteboard.general.string = me.handle
-                        message = "IDをコピーしました。"
-                    } label: { Label("IDをコピー", systemImage: "doc.on.doc") }
-                        .buttonStyle(PaperButtonStyle(kind: .secondary))
-                    ShareLink(item: "meshinowaで友達になろう！ ID: \(me.handle)") {
-                        Label("IDを送る", systemImage: "square.and.arrow.up")
-                    }
-                    .buttonStyle(PaperButtonStyle(kind: .secondary))
-                }
-            }
-            Text("ゲストとして利用中です。このIDはこの端末だけのもので、アプリを削除すると戻せない場合があります。")
-                .font(MeshinowaFont.text(12, relativeTo: .caption))
-                .foregroundStyle(MeshinowaTheme.secondaryText)
-        }
-        .padding(16)
-        .paperCard()
-    }
-
-    private var addFriend: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("IDで友達を追加")
-                .font(MeshinowaFont.heading(18))
-            HStack(spacing: 10) {
-                TextField("友達のID", text: $handle)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .font(MeshinowaFont.text(16))
-                    .padding(.horizontal, 14)
-                    .frame(minHeight: 50)
-                    .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .submitLabel(.send)
-                    .onSubmit(send)
-                Button("申請", action: send)
-                    .buttonStyle(PaperButtonStyle())
-                    .frame(width: 96)
-                    .disabled(isSending || handle.trimmingCharacters(in: .whitespaces).isEmpty || store.me == nil)
-            }
-            if let message {
-                Text(message)
-                    .font(MeshinowaFont.text(13, relativeTo: .caption))
-                    .foregroundStyle(MeshinowaTheme.bodyText)
-            }
-        }
-    }
-
-    private func send() {
-        guard !isSending else { return }
-        isSending = true
-        Task {
-            if let error = await store.sendRequest(handle: handle) {
-                message = error
-            } else {
-                message = "申請を送りました。相手が承認すると友達になります。"
-                handle = ""
-            }
-            isSending = false
-        }
     }
 
     private func group<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -441,6 +452,7 @@ private struct RecentReviewCard: View {
                     .foregroundStyle(MeshinowaTheme.green)
                     .fixedSize()
             }
+            ReviewUpdatedDate(date: review.updatedAt)
             Text(review.comment)
                 .font(MeshinowaFont.text(13, relativeTo: .caption))
                 .foregroundStyle(MeshinowaTheme.bodyText)
@@ -449,5 +461,212 @@ private struct RecentReviewCard: View {
         }
         .frame(width: 200)
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// IDの共有と申請を一か所にまとめる。検索は明示操作時だけ完全一致で行う。
+private struct FriendAddSheet: View {
+    @EnvironmentObject private var store: FriendStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var handle = ""
+    @State private var result: FriendStore.Profile?
+    @State private var message: String?
+    @State private var isSearching = false
+    @State private var isSending = false
+    @State private var sentID: String?
+    @FocusState private var focusesID: Bool
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack(alignment: .top, spacing: 12) {
+                        step(1, "IDを送るか\nIDで申請")
+                        step(2, "相手が\n承認する")
+                        step(3, "お互いの評価が\n地図に出る")
+                    }
+                    myID
+                    if store.isAvailable {
+                        search
+                    } else {
+                        Text("友達の機能につながっていません。接続後にIDの共有と申請ができます。")
+                            .font(MeshinowaFont.text(14))
+                            .foregroundStyle(MeshinowaTheme.bodyText)
+                    }
+                    if let message {
+                        Text(message)
+                            .font(MeshinowaFont.text(14))
+                            .foregroundStyle(MeshinowaTheme.bodyText)
+                            .accessibilityIdentifier("friends.add.message")
+                    }
+                    Text("送った申請の取り消しや、届いた申請の承認は「友達」タブでできます。")
+                        .font(MeshinowaFont.text(12, relativeTo: .caption))
+                        .foregroundStyle(MeshinowaTheme.secondaryText)
+                }
+                .padding(20)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .background(MeshinowaTheme.paper)
+            .foregroundStyle(MeshinowaTheme.ink)
+            .navigationTitle("友達を追加")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("閉じる") { dismiss() }
+                }
+            }
+            .task { await store.refreshIfNeeded() }
+        }
+        .tint(MeshinowaTheme.green)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func step(_ number: Int, _ text: String) -> some View {
+        VStack(spacing: 8) {
+            Text("\(number)")
+                .font(MeshinowaFont.number(16, relativeTo: .body))
+                .frame(width: 30, height: 30)
+                .foregroundStyle(number == 1 ? MeshinowaTheme.paper : MeshinowaTheme.green)
+                .background(number == 1 ? MeshinowaTheme.green : MeshinowaTheme.mint, in: Circle())
+            Text(text)
+                .font(MeshinowaFont.text(12, relativeTo: .caption))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(MeshinowaTheme.bodyText)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var myID: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("あなたのID").font(MeshinowaFont.text(14, weight: .bold))
+            if let me = store.me {
+                Text("@\(me.handle)")
+                    .font(MeshinowaFont.number(30, relativeTo: .title))
+                    .textSelection(.enabled)
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                HStack(spacing: 8) {
+                    ShareLink(item: "メシノワで友達になろう！ ID: @\(me.handle)") {
+                        Label("IDを送る", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(PaperButtonStyle())
+                    Button {
+                        UIPasteboard.general.string = me.handle
+                        message = "IDをコピーしました。"
+                    } label: { Label("コピー", systemImage: "doc.on.doc") }
+                    .buttonStyle(PaperButtonStyle(kind: .secondary))
+                }
+                Text("このIDはこの端末のものです。アプリを削除すると戻せない場合があります。")
+                    .font(MeshinowaFont.text(12, relativeTo: .caption))
+                    .foregroundStyle(MeshinowaTheme.secondaryText)
+            } else if store.isAvailable {
+                Text("IDを取得できていません。接続を確認して再試行してください。")
+                    .font(MeshinowaFont.text(14))
+                Button("もう一度つなぐ") { Task { await store.retryConnection() } }
+                    .buttonStyle(PaperButtonStyle(kind: .secondary))
+            } else {
+                Text("接続後に表示されます").font(MeshinowaFont.text(14))
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 22))
+    }
+
+    private var search: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("友達のIDで申請する").font(MeshinowaFont.text(15, weight: .bold))
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass").foregroundStyle(MeshinowaTheme.secondaryText)
+                TextField("@友達のID（完全一致）", text: $handle)
+                    .font(MeshinowaFont.text(16))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.search)
+                    .focused($focusesID)
+                    .onSubmit(lookup)
+                    .onChange(of: handle) { _, _ in result = nil; message = nil }
+                    .disabled(isSearching || isSending)
+                    .accessibilityIdentifier("friends.add.handle")
+                Button(action: lookup) {
+                    if isSearching { ProgressView() } else { Text("検索") }
+                }
+                .font(MeshinowaFont.text(14, weight: .bold))
+                .frame(minWidth: 44, minHeight: 44)
+                .disabled(handle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || store.me == nil || isSearching || isSending)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(MeshinowaTheme.green))
+            if let profile = result {
+                HStack(spacing: 12) {
+                    FriendAvatar(name: profile.displayName, size: 44, symbol: profile.avatarSymbol)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(profile.displayName).font(MeshinowaFont.text(16, weight: .bold))
+                        Text("@\(profile.handle)")
+                            .font(MeshinowaFont.text(13, relativeTo: .caption))
+                            .foregroundStyle(MeshinowaTheme.secondaryText)
+                    }
+                    Spacer(minLength: 0)
+                    if profile.id == store.me?.id {
+                        stateLabel("自分")
+                    } else if store.friends.contains(where: { $0.id == profile.id }) {
+                        stateLabel("友達")
+                    } else if store.incomingRequests.contains(where: { $0.fromId == profile.id }) {
+                        stateLabel("申請あり")
+                    } else if sentID == profile.id || store.outgoingRequests.contains(where: { $0.toId == profile.id }) {
+                        stateLabel("申請中")
+                    } else {
+                        Button(isSending ? "送信中" : "申請する") { send(profile) }
+                            .buttonStyle(PillButtonStyle(isOn: true))
+                            .disabled(isSending)
+                    }
+                }
+                .padding(.vertical, 12)
+                .overlay(alignment: .bottom) { Rectangle().fill(MeshinowaTheme.hairline).frame(height: 1) }
+            }
+        }
+    }
+
+    private func stateLabel(_ text: String) -> some View {
+        Text(text)
+            .font(MeshinowaFont.text(13, weight: .bold))
+            .foregroundStyle(MeshinowaTheme.bodyText)
+            .padding(12)
+            .background(MeshinowaTheme.field, in: Capsule())
+    }
+
+    private func lookup() {
+        guard !isSearching && !isSending && store.me != nil else { return }
+        focusesID = false
+        isSearching = true
+        result = nil
+        message = nil
+        Task {
+            defer { isSearching = false }
+            do {
+                result = try await store.findProfile(handle: handle)
+                if result == nil { message = "そのIDの人が見つかりませんでした。IDを確認してください。" }
+            } catch let error as FriendStore.ProfileSearchError {
+                message = error.localizedDescription
+            } catch {
+                message = "検索できませんでした。通信を確認して、もう一度お試しください。"
+            }
+        }
+    }
+
+    private func send(_ profile: FriendStore.Profile) {
+        guard !isSending else { return }
+        isSending = true
+        Task {
+            defer { isSending = false }
+            if let error = await store.sendRequest(to: profile) {
+                message = error
+            } else {
+                sentID = profile.id
+                message = "申請を送りました。相手が承認すると友達になります。"
+            }
+        }
     }
 }

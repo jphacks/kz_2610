@@ -100,6 +100,7 @@ private struct SwipeReviewRow: View {
                         .font(SwipeTheme.text(13, relativeTo: .caption))
                         .foregroundStyle(SwipeTheme.bodyText)
                 }
+                ReviewUpdatedDate(date: review.updatedAt)
                 if let visitedAt = review.visitedAt {
                     Text("来店日：\(visitedAt.formatted(date: .long, time: .omitted))")
                         .font(SwipeTheme.text(12, relativeTo: .caption))

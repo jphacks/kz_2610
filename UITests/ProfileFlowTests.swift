@@ -1,6 +1,29 @@
 import XCTest
 
 final class ProfileFlowTests: XCTestCase {
+    func testFriendAddSheetOpensAndClosesWithoutConnection() {
+        let app = XCUIApplication()
+        app.launchEnvironment["MESHINOWA_OFFLINE"] = "1"
+        app.launchEnvironment["MESHINOWA_UI_TEST_ID"] = UUID().uuidString
+        app.launchArguments = ["-hasOpenedMeshinowa", "YES"]
+        app.launch()
+        XCTAssertTrue(app.buttons["友達"].waitForExistence(timeout: 15))
+        app.buttons["友達"].tap()
+        let addButton = app.buttons["friends.add"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5))
+        addButton.tap()
+        XCTAssertTrue(app.navigationBars["友達を追加"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["あなたのID"].exists)
+        XCTAssertTrue(app.staticTexts["接続後に表示されます"].exists)
+        XCTAssertFalse(app.textFields["friends.add.handle"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "friend-add-disconnected"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.navigationBars.buttons["閉じる"].tap()
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5))
+    }
+
     func testProfileEditPersistsAndSettingsOpen() {
         let app = XCUIApplication()
         app.launchEnvironment["MESHINOWA_OFFLINE"] = "1"

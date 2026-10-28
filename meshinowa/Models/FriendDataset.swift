@@ -69,6 +69,18 @@ struct FriendDataset {
     var restaurants: [FriendRestaurant]
     var reviews: [FriendReview]
 
+    /// 承認後の案内からは、その友達の実際の評価があるお店だけを表示する。
+    func forFriend(_ friendID: String) -> FriendDataset {
+        let scopedReviews = reviews.filter { $0.friendID == friendID }
+        let restaurantIDs = Set(scopedReviews.map(\.restaurantID))
+        var scoped = FriendDataset(friends: friends.filter { $0.id == friendID },
+                                   favoriteFriendIDs: favoriteFriendIDs.intersection([friendID]),
+                                   restaurants: restaurants.filter { restaurantIDs.contains($0.id) },
+                                   reviews: scopedReviews)
+        scoped.restaurants = scoped.ratedRestaurants
+        return scoped
+    }
+
     func summary(for restaurant: FriendRestaurant, friendIDs: Set<String>? = nil) -> FriendRatingSummary {
         FriendRatingSummary(restaurantID: restaurant.id, reviews: reviews, friendIDs: friendIDs)
     }

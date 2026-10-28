@@ -6,19 +6,197 @@ import XCTest
 final class FriendStoreTests: XCTestCase {
     private let credentials = MemoryGuestCredentials()
     private let token = String(repeating: "c", count: 64)
+    private let testEnvironmentName = "jp.meshinowa.friend-tests." + UUID().uuidString
+    private lazy var testEnvironment = UserDefaults(suiteName: testEnvironmentName)!
 
     override func tearDown() {
         credentials.delete()
+        testEnvironment.removePersistentDomain(forName: testEnvironmentName)
         BackendURLProtocol.handler = nil
         super.tearDown()
     }
 
-    private func store(url: String = "https://api.example.test", environmentStore: UserDefaults = .standard) -> FriendStore {
+    private func store(url: String = "https://api.example.test", environmentStore: UserDefaults? = nil,
+                       now: @escaping () -> Date = Date.init) -> FriendStore {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [BackendURLProtocol.self]
         let backend = CloudflareBackend(configuration: BackendConfiguration(url: URL(string: url)!),
                                         session: URLSession(configuration: config))
-        return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore)
+        return FriendStore(backend: backend, credentials: credentials, environmentStore: environmentStore ?? testEnvironment, now: now)
+    }
+
+    func testProfileLookupNormalizesIDAndDoesNotSendRequest() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var calls = 0
+        BackendURLProtocol.handler = { request in
+            calls += 1
+            XCTAssertEqual(request.httpMethod, "GET")
+            XCTAssertEqual(request.url?.path, "/v1/profiles")
+            let query = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?.queryItems
+            XCTAssertEqual(query?.first(where: { $0.name == "handle" })?.value, "sakura_tabe")
+            return (200, Data(#"[{"id":"f1","display_name":"さくら","handle":"sakura_tabe"}]"#.utf8))
+        }
+        let profile = try await store().findProfile(handle: "  @Sakura_Tabe\n")
+        XCTAssertEqual(profile?.displayName, "さくら")
+        XCTAssertEqual(calls, 1)
+    }
+
+    func testProfileLookupRejectsInvalidIDWithoutNetworkAndAllowsNoMatch() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var calls = 0
+        BackendURLProtocol.handler = { _ in
+            calls += 1
+            return (200, Data("[]".utf8))
+        }
+        let store = store()
+        do {
+            _ = try await store.findProfile(handle: "さくら")
+            XCTFail("不正なIDでは通信しない")
+        } catch is FriendStore.ProfileSearchError {} catch { XCTFail("Unexpected error: \(error)") }
+        XCTAssertEqual(calls, 0)
+        let profile = try await store.findProfile(handle: "unknown")
+        XCTAssertNil(profile)
+        XCTAssertEqual(calls, 1)
+    }
+
+    func testRequestUsesConfirmedProfileIDWithoutSecondLookup() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var posts = 0
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/requests" where request.httpMethod == "POST":
+                posts += 1
+                return (201, Data(#"{"id":"r1"}"#.utf8))
+            case "/v1/me":
+                return (200, Data(#"{"id":"me","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/requests":
+                return (200, Data(#"[{"id":"r1","from_id":"me","to_id":"f1","status":"pending","from_name":"自分","from_handle":"my_id","to_name":"さくら","to_handle":"new_handle"}]"#.utf8))
+            case "/v1/friends", "/v1/friend-reviews":
+                return (200, Data("[]".utf8))
+            default:
+                XCTFail("確認済みなら再検索しない: \(request.url?.path ?? "")")
+                return (404, Data("{}".utf8))
+            }
+        }
+        let store = store()
+        let selected = FriendStore.Profile(id: "f1", displayName: "さくら", handle: "old_handle")
+        let error = await store.sendRequest(to: selected)
+        XCTAssertNil(error)
+        XCTAssertEqual(posts, 1)
+        XCTAssertEqual(store.outgoingRequests.first?.toId, selected.id)
+    }
+
+    func testReviewDateAcceptsTimestampsWithAndWithoutFractionalSeconds() {
+        let expected = Date(timeIntervalSince1970: 1_761_408_000)
+        let whole = FriendStore.date("2025-10-25T16:00:00Z")
+        XCTAssertEqual(whole, expected)
+        let fractional = FriendStore.date("2025-10-25T16:00:00.456Z")
+        XCTAssertEqual(fractional.timeIntervalSince(whole), 0.456, accuracy: 0.001)
+        XCTAssertEqual(FriendStore.date("invalid"), .distantPast)
+    }
+
+    func testNewConnectionAnnouncementStartsAfterInitialLoadAndDoesNotRepeat() async {
+        XCTAssertTrue(credentials.save(token))
+        var includesNewFriend = false
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/me":
+                return (200, Data(#"{"id":"me","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/friends":
+                let existing = #"{"id":"f1","display_name":"既存の友達","handle":"friend1","is_favorite":0}"#
+                let added = #"{"id":"f2","display_name":"新しい友達","handle":"friend2","is_favorite":0}"#
+                return (200, Data((includesNewFriend ? "[\(existing),\(added)]" : "[\(existing)]").utf8))
+            case "/v1/requests", "/v1/friend-reviews": return (200, Data("[]".utf8))
+            default: return (404, Data("{}".utf8))
+            }
+        }
+        let store = store()
+        await store.refresh()
+        XCTAssertTrue(store.newConnections.isEmpty)
+        includesNewFriend = true
+        await store.refresh()
+        XCTAssertEqual(store.newConnections.map(\.id), ["f2"])
+        await store.refresh()
+        XCTAssertEqual(store.newConnections.count, 1)
+        store.dismissNewConnection("f2")
+        await store.refresh()
+        XCTAssertTrue(store.newConnections.isEmpty)
+        includesNewFriend = false
+        await store.refresh()
+        includesNewFriend = true
+        await store.refresh()
+        XCTAssertEqual(store.newConnections.map(\.id), ["f2"])
+        includesNewFriend = false
+        await store.refresh()
+        XCTAssertTrue(store.newConnections.isEmpty)
+    }
+
+    func testApprovalAnnouncementOnlyAppearsAfterSuccessfulAcceptance() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var accepted = false
+        var fails = true
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/requests/r1":
+                if fails { return (503, Data("{}".utf8)) }
+                accepted = true
+                return (200, Data(#"{"ok":true}"#.utf8))
+            case "/v1/me":
+                return (200, Data(#"{"id":"me","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/friends":
+                return (200, Data((accepted ? #"[{"id":"f1","display_name":"さくら","handle":"sakura","is_favorite":0}]"# : "[]").utf8))
+            case "/v1/requests":
+                return (200, Data((accepted ? "[]" : #"[{"id":"r1","from_id":"f1","to_id":"me","status":"pending","from_name":"さくら","from_handle":"sakura","to_name":"自分","to_handle":"my_id"}]"#).utf8))
+            case "/v1/friend-reviews": return (200, Data("[]".utf8))
+            default: return (404, Data("{}".utf8))
+            }
+        }
+        let store = store()
+        await store.refresh()
+        let request = try XCTUnwrap(store.incomingRequests.first)
+        await store.respond(to: request, accept: true)
+        XCTAssertTrue(store.newConnections.isEmpty)
+        XCTAssertEqual(store.incomingRequests.count, 1)
+        XCTAssertNotNil(store.actionError)
+        fails = false
+        await store.respond(to: request, accept: true)
+        XCTAssertEqual(store.newConnections.map(\.id), ["f1"])
+        XCTAssertTrue(store.incomingRequests.isEmpty)
+    }
+
+    func testConnectionAnnouncementsSurviveRelaunchAndRememberDismissal() async {
+        XCTAssertTrue(credentials.save(token))
+        var connected = false
+        var profileID = "me"
+        BackendURLProtocol.handler = { request in
+            switch request.url?.path {
+            case "/v1/me":
+                return (200, Data(#"{"id":"\#(profileID)","display_name":"自分","handle":"my_id"}"#.utf8))
+            case "/v1/friends":
+                return (200, Data((connected ? #"[{"id":"f1","display_name":"さくら","handle":"sakura","is_favorite":0}]"# : "[]").utf8))
+            case "/v1/requests", "/v1/friend-reviews": return (200, Data("[]".utf8))
+            default: return (404, Data("{}".utf8))
+            }
+        }
+        let beforeApproval = store()
+        await beforeApproval.refresh()
+        XCTAssertTrue(beforeApproval.newConnections.isEmpty)
+        connected = true
+        let afterRelaunch = store()
+        await afterRelaunch.refresh()
+        XCTAssertEqual(afterRelaunch.newConnections.map(\.id), ["f1"])
+        profileID = "other-account"
+        let otherAccount = store()
+        await otherAccount.refresh()
+        XCTAssertTrue(otherAccount.newConnections.isEmpty)
+        profileID = "me"
+        let stillPending = store()
+        await stillPending.refresh()
+        XCTAssertEqual(stillPending.newConnections.map(\.id), ["f1"])
+        stillPending.dismissNewConnection("f1")
+        let dismissed = store()
+        await dismissed.refresh()
+        XCTAssertTrue(dismissed.newConnections.isEmpty)
     }
 
     func testWithoutBackendStaysUnavailable() async {
@@ -261,6 +439,64 @@ final class FriendStoreTests: XCTestCase {
         }
     }
 
+    func testAutomaticRefreshIsSharedAndManualRefreshBypassesInterval() async throws {
+        XCTAssertTrue(credentials.save(token))
+        var clock = Date(timeIntervalSince1970: 1000)
+        let subject = store(now: { clock })
+        let lock = NSLock()
+        var requests = 0
+        BackendURLProtocol.handler = { request in
+            lock.lock(); requests += 1; lock.unlock()
+            if request.url?.path == "/v1/me" {
+                return (200, Data("{\"id\":\"me\",\"display_name\":\"ゲスト\",\"handle\":\"test123\"}".utf8))
+            }
+            return (200, Data("[]".utf8))
+        }
+        async let first: Void = subject.refreshIfNeeded()
+        async let second: Void = subject.refreshIfNeeded()
+        _ = await (first, second)
+        XCTAssertEqual(requests, 4)
+        clock = clock.addingTimeInterval(59)
+        await subject.refreshIfNeeded()
+        XCTAssertEqual(requests, 4)
+        clock = clock.addingTimeInterval(1)
+        await subject.refreshIfNeeded()
+        XCTAssertEqual(requests, 8)
+        await subject.refresh()
+        XCTAssertEqual(requests, 12)
+    }
+
+    func testPeriodicReviewRetryWaitsButImmediateSaveCanRetry() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let local = LocalReviewStore(fileURL: folder.appendingPathComponent("reviews.json"))
+        XCTAssertTrue(credentials.save(token))
+        var clock = Date(timeIntervalSince1970: 1000)
+        let subject = store(now: { clock })
+        subject.connect(to: local)
+        var uploads = 0
+        BackendURLProtocol.handler = { request in
+            if request.url?.path == "/v1/restaurants" { return (200, Data("{\"id\":\"shop\"}".utf8)) }
+            if request.url?.path == "/v1/reviews" { uploads += 1; return (503, Data("{}".utf8)) }
+            XCTFail("不要な通信です")
+            return (404, Data())
+        }
+        await subject.flushReviewsIfNeeded()
+        XCTAssertEqual(uploads, 0)
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: CLLocationCoordinate2D(latitude: 35, longitude: 139)))
+        item.name = "再試行のテスト店舗"
+        try local.save(item: item, rating: 4, comment: "未送信")
+        await subject.flushReviewsIfNeeded()
+        await subject.flushReviewsIfNeeded()
+        XCTAssertEqual(uploads, 1)
+        XCTAssertEqual(local.pending.count, 1)
+        clock = clock.addingTimeInterval(60)
+        await subject.flushReviewsIfNeeded()
+        XCTAssertEqual(uploads, 2)
+        await subject.flushReviews()
+        XCTAssertEqual(uploads, 3)
+    }
+
 }
 
 final class MemoryGuestCredentials: GuestCredentials {
@@ -269,4 +505,5 @@ final class MemoryGuestCredentials: GuestCredentials {
     func load() -> String? { token }
     func save(_ value: String) -> Bool { guard !rejectsWrites else { return false }; token = value; return true }
     func delete() { token = nil }
+
 }

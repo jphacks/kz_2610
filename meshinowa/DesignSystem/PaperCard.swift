@@ -106,7 +106,7 @@ struct UnderlineTabs<Value: Hashable>: View {
     }
 }
 
-/// 友達の頭文字アバター。色は友達ごとに固定する。
+/// 友達のアバター。初期アイコンはお椀、色は友達ごとに固定する。
 struct FriendAvatar: View {
     let name: String
     var size: CGFloat = 26
@@ -122,7 +122,9 @@ struct FriendAvatar: View {
     var body: some View {
         let index = name.unicodeScalars.reduce(0) { $0 + Int($1.value) } % Self.tones.count
         Group {
-            if let symbol { Image(systemName: symbol) }
+            if symbol == "person.fill" {
+                BowlMark(size: size * 0.8, holes: Self.tones[index])
+            } else if let symbol { Image(systemName: symbol) }
             else { Text(String(name.prefix(1))) }
         }
             .font(.system(size: size * 0.46, weight: .bold))

@@ -44,9 +44,9 @@ enum SwipeDiscoveryEntry {
 
     /// 地図のお店カードに置く小さな「行きたい」ボタン。
     @ViewBuilder
-    static func wantToGoButton(item: MKMapItem) -> some View {
+    static func wantToGoButton(item: MKMapItem, compact: Bool = false) -> some View {
         if SwipeDiscoveryFeature.isEnabled {
-            SwipeWantToGoButton(item: item)
+            SwipeWantToGoButton(item: item, compact: compact)
         }
     }
 
@@ -113,12 +113,21 @@ struct SwipeDiscoveryEntryBanner: View {
 /// 「行きたい」の切り替えボタン（地図のお店カード用）。お店スワイプの右スワイプと同じ一覧に入る。
 struct SwipeWantToGoButton: View {
     let item: MKMapItem
+    /// true なら文字なしの旗だけ。お店カードで、いいねのハートの隣に並べる。
+    var compact = false
     @ObservedObject private var store = SwipeDiscoveryEntry.wantToGoStore
     @State private var errorMessage: String?
 
     var body: some View {
         let isOn = store.contains(SwipeWantToGoEntry.shopID(for: item))
         Button { toggle(isOn: isOn) } label: {
+            if compact {
+                Image(systemName: isOn ? "flag.fill" : "flag")
+                    .font(.system(size: 19, weight: .regular))
+                    .foregroundStyle(isOn ? SwipeTheme.brand : MeshinowaTheme.secondaryText)
+                    .frame(width: 40, height: 40)
+                    .contentShape(Rectangle())
+            } else {
             HStack(spacing: 4) {
                 Image(systemName: isOn ? "flag.fill" : "flag")
                     .font(.system(size: 11, weight: .bold))
@@ -131,6 +140,7 @@ struct SwipeWantToGoButton: View {
             .background(isOn ? SwipeTheme.brand : SwipeTheme.tagBackground, in: Capsule())
             .frame(minHeight: 36)
             .contentShape(Rectangle())
+            }
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.selection, trigger: isOn)

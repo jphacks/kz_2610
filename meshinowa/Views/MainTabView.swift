@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MainTabView: View {
     enum Tab: Hashable, CaseIterable { case map, saved, friends, profile }
+    @EnvironmentObject private var friends: FriendStore
     @State private var selection: Tab = .map
     @State private var showsReviewPicker = false
     @State private var reviewTarget: ReviewTarget?
@@ -14,11 +15,11 @@ struct MainTabView: View {
         ZStack {
             tab(.map) { MapHomeView(showsSavedShortcut: false, isActive: selection == .map) }
             tab(.saved) { SavedRestaurantsView(onFindRestaurants: { selection = .map }) }
-            tab(.friends) { FriendsHomeView(isActive: selection == .friends) }
+            tab(.friends) { FriendsHomeView(isActive: selection == .friends, onFindRestaurants: { selection = .map }) }
             tab(.profile) { ProfileView(onFindRestaurants: { selection = .map }) }
         }
         .overlay(alignment: .bottom) {
-            FloatingTabBar(selection: $selection) { showsReviewPicker = true }
+            FloatingTabBar(selection: $selection, incomingRequestCount: friends.incomingRequests.count) { showsReviewPicker = true }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .environment(\.floatingTabBarSpace, 80)
@@ -93,6 +94,7 @@ extension View {
 /// アイコンだけのタブバー。選んだタブの後ろに提灯の灯りがともり、真ん中は評価のボタン。
 private struct FloatingTabBar: View {
     @Binding var selection: MainTabView.Tab
+    var incomingRequestCount: Int
     var onReview: () -> Void
 
     var body: some View {
@@ -121,11 +123,25 @@ private struct FloatingTabBar: View {
                 .foregroundStyle(isActive ? MeshinowaTheme.green : MeshinowaTheme.ink)
                 .frame(width: 30, height: 36)
                 .background { LanternLight(isLit: isActive) }
+                .overlay(alignment: .topTrailing) {
+                    if tab == .friends && incomingRequestCount > 0 {
+                        Text(incomingRequestCount > 99 ? "99+" : "\(incomingRequestCount)")
+                            .font(MeshinowaFont.number(10, relativeTo: .caption2))
+                            .foregroundStyle(MeshinowaTheme.paper)
+                            .padding(.horizontal, 4)
+                            .frame(minWidth: 18, minHeight: 18)
+                            .background(MeshinowaTheme.green, in: Capsule())
+                            .overlay(Capsule().strokeBorder(MeshinowaTheme.paper, lineWidth: 1.5))
+                            .offset(x: 10, y: -5)
+                            .accessibilityHidden(true)
+                    }
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
+        .accessibilityValue(tab == .friends && incomingRequestCount > 0 ? "届いた申請\(incomingRequestCount)件" : "")
         .accessibilityAddTraits(isActive ? [.isSelected, .isButton] : .isButton)
     }
 

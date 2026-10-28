@@ -66,6 +66,9 @@ final class FriendStore: ObservableObject {
     @Published private(set) var status: Status
     @Published private(set) var me: Profile?
     @Published private(set) var friends: [Friend] = []
+    /// 初回取得後に新しくつながった友達。案内を閉じるまで、再起動後も保持する。
+    @Published private(set) var newConnections: [Friend] = []
+    private var knownFriendIDs: Set<String>?
     @Published private(set) var requests: [Request] = []
     @Published private(set) var friendReviews: [RemoteReview] = []
 
@@ -91,6 +94,11 @@ final class FriendStore: ObservableObject {
     private var refreshSequence = 0
     private var flushing = false
     private var libraryStore: LocalReviewStore?
+    private var automaticRefreshTask: Task<Void, Never>?
+    private var lastRefreshAttempt: Date?
+    private var lastReviewAttempt: Date?
+    private let now: () -> Date
+    static let automaticRefreshInterval: TimeInterval = 60
 
     private let backend: CloudflareBackend?
     private let credentials: any GuestCredentials
@@ -98,7 +106,8 @@ final class FriendStore: ObservableObject {
 
     init(backend: CloudflareBackend? = try? CloudflareBackend.makeClient(),
          credentials: any GuestCredentials = GuestCredentialStore(),
-         environmentStore: UserDefaults = .standard) {
+         environmentStore: UserDefaults = .standard, now: @escaping () -> Date = Date.init) {
+        self.now = now
         self.backend = backend
         self.credentials = credentials
         self.environmentStore = environmentStore
@@ -159,7 +168,8 @@ final class FriendStore: ObservableObject {
     }
 
     func flushReviews() async {
-        guard isAvailable, !suspendsReviewSync, let libraryStore, !flushing else { return }
+        guard isAvailable, !suspendsReviewSync, let libraryStore, !libraryStore.pending.isEmpty, !flushing else { return }
+        lastReviewAttempt = now()
         flushing = true
         defer { flushing = false }
         while !suspendsReviewSync, let operation = libraryStore.pending.first {
@@ -175,22 +185,41 @@ final class FriendStore: ObservableObject {
         }
     }
 
+    /// 保存・削除時は即時送信し、定期的な再試行だけを60秒以上空ける。
+    func flushReviewsIfNeeded() async {
+        if let lastReviewAttempt, now().timeIntervalSince(lastReviewAttempt) < Self.automaticRefreshInterval { return }
+        await flushReviews()
+    }
+
+    /// マップ・友達・アプリ復帰時の更新を共有する。手動更新と変更後のrefreshは間引かない。
+    func refreshIfNeeded() async {
+        guard isAvailable, !suspendsReviewSync else { return }
+        if let task = automaticRefreshTask { await task.value; return }
+        if let lastRefreshAttempt, now().timeIntervalSince(lastRefreshAttempt) < Self.automaticRefreshInterval { return }
+        let task = Task { await refresh(syncPendingReviews: false) }
+        automaticRefreshTask = task
+        defer { automaticRefreshTask = nil }
+        await task.value
+    }
+
     /// 起動時に呼ぶ。初回はゲストアカウントを作り、端末内のレビューを友達に共有する。
     func start(sharing reviews: [LocalReview]) async {
         guard backend != nil else { return }
         do {
             _ = try await accessToken()
-            await refresh()
+            let hadPending = libraryStore.map { !$0.pending.isEmpty } ?? !reviews.isEmpty
+            await refreshIfNeeded()
             if libraryStore != nil { await flushReviews() }
             else { for review in reviews { try await upload(review) } }
-            await refresh()
+            if hadPending { await refresh() }
         } catch {
             status = .failed(connectionMessage(for: error))
         }
     }
 
-    func refresh() async {
+    func refresh(syncPendingReviews: Bool = true) async {
         guard backend != nil, !suspendsReviewSync else { return }
+        lastRefreshAttempt = now()
         let generation = identityGeneration
         refreshSequence += 1
         let sequence = refreshSequence
@@ -201,27 +230,63 @@ final class FriendStore: ObservableObject {
             async let reviews: [RemoteReview] = paged("/friend-reviews")
             let values = try await (me, friends, requests, reviews)
             guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
+            if knownFriendIDs == nil,
+               let data = environmentStore.data(forKey: connectionHistoryKey(values.0.id)),
+               let history = try? JSONDecoder().decode(ConnectionHistory.self, from: data) {
+                knownFriendIDs = Set(history.friendIDs)
+                newConnections = history.pendingIDs.compactMap { id in values.1.first { $0.id == id } }
+            }
+            if let knownFriendIDs {
+                let announced = Set(newConnections.map(\.id))
+                newConnections += values.1.filter { !knownFriendIDs.contains($0.id) && !announced.contains($0.id) }
+            }
+            knownFriendIDs = Set(values.1.map(\.id))
+            // 解除・ブロック済みの人の案内は残さず、表示名も最新にする。
+            newConnections = newConnections.compactMap { previous in values.1.first { $0.id == previous.id } }
             (self.me, self.friends, self.requests, self.friendReviews) = values
+            saveConnectionHistory()
             status = .ready
             await rememberLocalEnvironment()
-            await flushReviews()
+            if syncPendingReviews { await flushReviews() }
         } catch {
             guard generation == identityGeneration, sequence == refreshSequence, !suspendsReviewSync else { return }
             status = .failed(connectionMessage(for: error))
         }
     }
 
-    /// 相手のIDで申請する。見つからない・申請できないときは理由を返す。
-    func sendRequest(handle raw: String) async -> String? {
+    /// IDの完全一致で相手を確認する。候補一覧のための部分一致検索は行わない。
+    func findProfile(handle raw: String) async throws -> Profile? {
         let handle = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             .replacingOccurrences(of: "@", with: "")
-        guard (3...40).contains(handle.count), handle.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == ".") }) else {
-            return "IDは英小文字・数字の3文字以上で入力してください。"
+        guard (3...40).contains(handle.count),
+              handle.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "_" || $0 == ".") }) else {
+            throw ProfileSearchError.invalidHandle
         }
-        if handle == me?.handle { return "自分のIDです。友達のIDを入力してください。" }
+        let found: [Profile] = try await call("/profiles", query: [URLQueryItem(name: "handle", value: handle)])
+        return found.first
+    }
+
+    enum ProfileSearchError: LocalizedError {
+        case invalidHandle
+        var errorDescription: String? { "IDは英小文字・数字・_・. の3〜40文字で入力してください。" }
+    }
+
+    /// 相手のIDで申請する。見つからない・申請できないときは理由を返す。
+    func sendRequest(handle raw: String) async -> String? {
         do {
-            let found: [Profile] = try await call("/profiles", query: [URLQueryItem(name: "handle", value: handle)])
-            guard let target = found.first else { return "そのIDの人が見つかりませんでした。" }
+            guard let target = try await findProfile(handle: raw) else { return "そのIDの人が見つかりませんでした。" }
+            return await sendRequest(to: target)
+        } catch let error as ProfileSearchError {
+            return error.localizedDescription
+        } catch {
+            return "申請を送れませんでした。もう一度お試しください。"
+        }
+    }
+
+    /// 確認済みの相手のIDに申請する。表示後にhandleが変更されても別人へ申請しない。
+    func sendRequest(to target: Profile) async -> String? {
+        if target.id == me?.id { return "自分のIDです。友達のIDを入力してください。" }
+        do {
             let _: [String: String] = try await call("/requests", method: "POST", json: ["target_id": target.id])
             await refresh()
             return nil
@@ -230,6 +295,27 @@ final class FriendStore: ObservableObject {
         } catch {
             return "申請を送れませんでした。もう一度お試しください。"
         }
+    }
+
+    func dismissNewConnection(_ friendID: String) {
+        newConnections.removeAll { $0.id == friendID }
+        saveConnectionHistory()
+    }
+
+    private struct ConnectionHistory: Codable {
+        let friendIDs: [String]
+        let pendingIDs: [String]
+    }
+
+    private func connectionHistoryKey(_ profileID: String) -> String {
+        environmentKey + ".connections." + profileID
+    }
+
+    private func saveConnectionHistory() {
+        guard let me, let knownFriendIDs,
+              let data = try? JSONEncoder().encode(ConnectionHistory(friendIDs: knownFriendIDs.sorted(),
+                                                                     pendingIDs: newConnections.map(\.id))) else { return }
+        environmentStore.set(data, forKey: connectionHistoryKey(me.id))
     }
 
     func respond(to request: Request, accept: Bool) async {
@@ -375,6 +461,7 @@ final class FriendStore: ObservableObject {
             environmentStore.set(state.instanceId, forKey: environmentKey)
             recordedLocalEnvironment = true
             me = nil; friends = []; requests = []; friendReviews = []
+            knownFriendIDs = nil; newConnections = []
             return replacement
         }
         localRecoveryTask = task
@@ -475,6 +562,10 @@ final class FriendStore: ObservableObject {
                                          body: JSONEncoder().encode(["recovery_key":clean]))
         guard credentials.save(session.accessToken) else { throw CocoaError(.fileWriteNoPermission) }
         identityGeneration += 1
+        knownFriendIDs = nil
+        newConnections = []
+        lastRefreshAttempt = nil
+        lastReviewAttempt = nil
         token = session.accessToken
         me = nil; friends = []; requests = []; friendReviews = []
         // The caller restores the remote library before allowing any local uploads.
@@ -486,14 +577,23 @@ final class FriendStore: ObservableObject {
             guestCreationBlocked = false
         } else { credentials.delete() }
         identityGeneration += 1
+        knownFriendIDs = nil
+        newConnections = []
+        lastRefreshAttempt = nil
+        lastReviewAttempt = nil
         token = value
     }
 
     func deleteAccount() async throws {
         let _: [String: Bool] = try await call("/me", method: "DELETE")
+        if let me { environmentStore.removeObject(forKey: connectionHistoryKey(me.id)) }
         needsLocalReset = true
         UserDefaults.standard.set(true, forKey: "account.needsLocalReset")
         identityGeneration += 1
+        knownFriendIDs = nil
+        newConnections = []
+        lastRefreshAttempt = nil
+        lastReviewAttempt = nil
         credentials.delete(); token = nil; me = nil; friends = []; requests = []; friendReviews = []
         preferences = nil; blockedProfiles = []; status = .unavailable
     }
@@ -507,9 +607,11 @@ final class FriendStore: ObservableObject {
         guestCreationBlocked = false
     }
 
-    private static func date(_ value: String) -> Date {
+    static func date(_ value: String) -> Date {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: value) { return date }
+        formatter.formatOptions = [.withInternetDateTime]
         return formatter.date(from: value) ?? .distantPast
     }
 }

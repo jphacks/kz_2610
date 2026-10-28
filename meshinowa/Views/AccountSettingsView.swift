@@ -36,6 +36,11 @@ struct SWAccountSettingsView: View {
                     Text("現在は端末内モードです。プロフィール・保存・レビューをこの端末で利用できます。友達・バックアップ・引き継ぎにはサーバーへの接続が必要です。")
                 }
             }
+            Section("記録の保存場所") {
+                Text(friends.isAvailable
+                     ? "評価・ひとこと・おすすめ料理は友達に共有されます。写真と来店日は友達に公開されません。自分専用のバックアップを作れます。"
+                     : "記録はこの端末だけに保存されます。アプリを削除すると端末内のデータも消えます。")
+            }
             if let error { Section { Text(error).foregroundStyle(.red) } }
             Section {
                 Text("meshinowa \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.1.0")")

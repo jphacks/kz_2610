@@ -31,6 +31,7 @@ enum MeshinowaTheme {
     /// 「いいね」だけに使うピンク。
     static let like = hex(0xE5577E)
     static let likeSoft = hex(0xFCE4EB)
+    static let danger = hex(0xD93A3A)
     static let likeInk = hex(0xA3254B)
 
     private static func hex(_ value: UInt32) -> Color {

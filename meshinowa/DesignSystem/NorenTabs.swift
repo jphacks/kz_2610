@@ -7,12 +7,21 @@ protocol NorenTabItem: Identifiable, Hashable {
     var symbol: String { get }
 }
 
+/// 既存の形に加え、地図の小さなのれんと保存の2枚のれんを選べる。
+enum NorenStyle {
+    case standard, rod, collection
+    var shortHeight: CGFloat { self == .rod ? 28 : (self == .collection ? 34 : 32) }
+    var longHeight: CGFloat { self == .rod ? 40 : (self == .collection ? 46 : 48) }
+}
+
 /// 上の板から垂れ下がるのれん風のタブ。選んだ一枚が竿から落ちるように垂れ、揺れながら止まる。
 /// 項目が `fitsCount` 枚までなら横幅を等分し、それより多ければ横にスクロールする。
 struct NorenTabs<Item: NorenTabItem>: View {
     let items: [Item]
     @Binding var selection: Item
     var fitsCount = 4
+    var style: NorenStyle = .standard
+    var counts: [Item: Int] = [:]
 
     /// 切り替えるたびに増やし、すべてのタブに動き出しを知らせる。
     @State private var changeID = 0
@@ -20,6 +29,23 @@ struct NorenTabs<Item: NorenTabItem>: View {
     @State private var travel = 1
 
     var body: some View {
+        ZStack(alignment: .top) {
+            if style != .standard {
+                Capsule().fill(MeshinowaTheme.mustardInk)
+                    .frame(height: 4)
+                    .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
+                    .padding(.horizontal, style == .collection ? -6 : 0)
+            }
+            tabs.padding(.top, style == .standard ? 0 : 3)
+        }
+        .onChange(of: selection) { old, new in
+            travel = index(of: new) >= index(of: old) ? 1 : -1
+            changeID += 1
+        }
+        .sensoryFeedback(.selection, trigger: selection)
+    }
+
+    private var tabs: some View {
         Group {
             if items.count <= fitsCount {
                 HStack(alignment: .top, spacing: 4) {
@@ -29,8 +55,16 @@ struct NorenTabs<Item: NorenTabItem>: View {
                 ScrollViewReader { proxy in
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(alignment: .top, spacing: 4) {
-                            ForEach(items) { tab($0).frame(width: 84).id($0.id) }
+                            ForEach(items) { item in
+                                tab(item).frame(width: style == .rod ? (selection == item ? 60 : 52) : 84).id(item.id)
+                            }
                         }
+                    }
+                    .mask {
+                        LinearGradient(stops: [.init(color: .white, location: 0),
+                                               .init(color: .white, location: style == .rod ? 0.86 : 1),
+                                               .init(color: style == .rod ? .clear : .white, location: 1)],
+                                       startPoint: .leading, endPoint: .trailing)
                     }
                     .onChange(of: selection) { _, item in
                         withAnimation(.snappy(duration: 0.3)) { proxy.scrollTo(item.id, anchor: .center) }
@@ -38,11 +72,6 @@ struct NorenTabs<Item: NorenTabItem>: View {
                 }
             }
         }
-        .onChange(of: selection) { old, new in
-            travel = index(of: new) >= index(of: old) ? 1 : -1
-            changeID += 1
-        }
-        .sensoryFeedback(.selection, trigger: selection)
     }
 
     private func tab(_ item: Item) -> some View {
@@ -50,7 +79,7 @@ struct NorenTabs<Item: NorenTabItem>: View {
                  isOn: selection == item,
                  offset: index(of: item) - index(of: selection),
                  travel: travel,
-                 changeID: changeID) { selection = item }
+                 changeID: changeID, style: style, count: counts[item]) { selection = item }
     }
 
     private func index(of item: Item) -> Int {
@@ -66,6 +95,8 @@ private struct NorenTab<Item: NorenTabItem>: View {
     let offset: Int
     let travel: Int
     let changeID: Int
+    let style: NorenStyle
+    let count: Int?
     let action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -78,7 +109,7 @@ private struct NorenTab<Item: NorenTabItem>: View {
             TimelineView(.animation(paused: !isAnimating)) { context in
                 cloth(motion?.pose(at: context.date) ?? .resting(isOn))
             }
-            .frame(height: NorenPose.longHeight, alignment: .top)
+            .frame(height: style.longHeight, alignment: .top)
             .contentShape(Rectangle())
         }
         .buttonStyle(NorenPressStyle())
@@ -109,8 +140,8 @@ private struct NorenTab<Item: NorenTabItem>: View {
     private func cloth(_ pose: NorenPose) -> some View {
         ZStack(alignment: .top) {
             // いつも掛かっている白い短い布。
-            Text(item.title)
-                .font(MeshinowaFont.text(13))
+            titleLabel(selected: false)
+                .font(style == .standard ? MeshinowaFont.text(13) : MeshinowaFont.wa(style == .collection ? 15 : 13, bold: false))
                 .foregroundStyle(MeshinowaTheme.ink)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
@@ -118,7 +149,7 @@ private struct NorenTab<Item: NorenTabItem>: View {
                 .offset(x: pose.baseSway * 0.5)
                 .opacity(1 - pose.reveal)
                 .frame(maxWidth: .infinity)
-                .frame(height: NorenPose.shortHeight)
+                .frame(height: style.shortHeight)
                 .background {
                     NorenCloth(sway: pose.baseSway)
                         .fill(MeshinowaTheme.card)
@@ -128,22 +159,28 @@ private struct NorenTab<Item: NorenTabItem>: View {
             // 選んだときに垂れてくる緑の長い布。中身も布と一緒に下りてきて、布の形で切り抜く。
             if pose.length > 0 {
                 let shape = NorenCloth(length: pose.length, sway: pose.sway, slitDepth: pose.slit)
-                VStack(spacing: 2) {
-                    Image(systemName: item.symbol)
-                        .font(.system(size: 12, weight: .bold))
-                        .scaleEffect(0.6 + 0.4 * pose.reveal)
-                    Text(item.title)
-                        .font(MeshinowaFont.text(13, weight: .bold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                Group {
+                    if style == .standard {
+                        VStack(spacing: 2) {
+                            Image(systemName: item.symbol)
+                                .font(.system(size: 12, weight: .bold))
+                                .scaleEffect(0.6 + 0.4 * pose.reveal)
+                            Text(item.title).font(MeshinowaFont.text(13, weight: .bold))
+                        }
+                    } else {
+                        titleLabel(selected: true)
+                            .font(MeshinowaFont.wa(style == .collection ? 15 : 13))
+                    }
                 }
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .foregroundStyle(.white)
                 .padding(.horizontal, 6)
-                .padding(.bottom, 6)
+                .padding(.bottom, style == .standard ? 6 : 4)
                 .opacity(pose.reveal)
                 .offset(x: pose.sway * 0.55, y: -(1 - min(pose.length, 1)) * 14)
                 .frame(maxWidth: .infinity)
-                .frame(height: NorenPose.longHeight)
+                .frame(height: style.longHeight)
                 .mask { shape }
                 .background {
                     shape.fill(MeshinowaTheme.green)
@@ -153,6 +190,20 @@ private struct NorenTab<Item: NorenTabItem>: View {
             }
         }
     }
+
+    private func titleLabel(selected: Bool) -> some View {
+        HStack(spacing: 6) {
+            if style == .collection {
+                Image(systemName: item.symbol)
+                    .foregroundStyle(selected ? MeshinowaTheme.paper : (item.symbol == "heart" ? MeshinowaTheme.like : MeshinowaTheme.green))
+            }
+            Text(item.title)
+            if let count {
+                Text("\(count)").font(MeshinowaFont.number(14, relativeTo: .caption))
+            }
+        }
+    }
+
 }
 
 /// 押しているあいだ、布を指で軽く引いたように少し下げる。薄くはしない。

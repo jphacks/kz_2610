@@ -108,8 +108,7 @@ struct MapHomeView: View {
     /// 結果がまだないか、検索した範囲から地図が離れたときに再検索を勧める。
     private var suggestsAreaSearch: Bool {
         guard searchesAllPlaces else { return false }
-        guard !isSearching else { return true }
-        guard let searchedRegion, !visibleResults.isEmpty else { return true }
+        guard !isSearching, let searchedRegion else { return false }
         let center = visibleRegion.center, old = searchedRegion.center
         let span = visibleRegion.span, oldSpan = searchedRegion.span
         let moved = abs(center.latitude - old.latitude) > oldSpan.latitudeDelta * 0.25
@@ -226,11 +225,14 @@ struct MapHomeView: View {
         }
         .overlay(alignment: .bottom) { bottomCard }
         // 現在地ボタンは、Google マップと同じく右下に置く。お店のカードが出ているときはその上。
-        .overlay(alignment: .bottomTrailing) {
-            locationButton
-                .padding(.trailing, 14)
-                .padding(.bottom, selectedResult == nil ? 16 : cardHeight + 6)
-                .animation(.easeOut(duration: 0.2), value: selectedResult == nil)
+        .overlay(alignment: .bottom) {
+            ZStack {
+                if suggestsAreaSearch { areaSearchButton }
+                HStack { Spacer(); locationButton }.padding(.horizontal, 14)
+            }
+            .frame(height: 44)
+            .padding(.bottom, selectedResult == nil ? 16 : cardHeight + 14)
+            .animation(.easeOut(duration: 0.2), value: selectedResult == nil)
         }
         // 知らせは数秒で消し、地図の Legal 表記を隠したままにしない。
         .task(id: notice) {
@@ -271,9 +273,10 @@ struct MapHomeView: View {
 
     /// 地図の上に浮かぶ検索欄と、そこから垂れ下がるジャンルののれん。
     private var searchHeader: some View {
-        VStack(spacing: 3) {
+        VStack(spacing: 10) {
             searchField
-            NorenTabs(items: RestaurantGenre.allCases, selection: $genre)
+            NorenTabs(items: RestaurantGenre.allCases, selection: $genre, style: .rod)
+                .frame(height: 50)
             if !searchesAllPlaces && visibleResults.isEmpty {
                 Text(friendMapMessage)
                     .font(MeshinowaFont.text(13))
@@ -284,14 +287,6 @@ struct MapHomeView: View {
             }
         }
         .padding(.horizontal, 12)
-        .overlay(alignment: .bottom) {
-            if suggestsAreaSearch {
-                // のれんのすぐ下に重ねる。ボタンの高さは44pt。
-                areaSearchButton
-                    .offset(y: 50)
-                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
-            }
-        }
         .padding(.top, 4)
         .padding(.bottom, 8)
     }
@@ -303,7 +298,7 @@ struct MapHomeView: View {
             scopeButton(title: "友達", showsAll: false)
         }
         .padding(3)
-        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("地図に表示するお店")
     }
@@ -322,12 +317,11 @@ struct MapHomeView: View {
                 .frame(height: 30)
                 .background {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
                             .fill(MeshinowaTheme.card)
                             .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
                     }
                 }
-                .frame(minHeight: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -358,7 +352,7 @@ struct MapHomeView: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(MeshinowaTheme.green)
                 .accessibilityHidden(true)
-            TextField(searchesAllPlaces ? "お店を探す" : "友達のお店を絞り込む", text: $query)
+            TextField(searchesAllPlaces ? "お店やジャンルを探す" : "友達のお店を絞り込む", text: $query)
                 .font(MeshinowaFont.text(16))
                 .focused($isSearchFocused)
                 .submitLabel(.search)
@@ -377,53 +371,14 @@ struct MapHomeView: View {
                 .accessibilityLabel("入力を消す")
             }
             scopeToggle
-            if !visibleResults.isEmpty {
-                listButton
-            } else if showsSavedShortcut {
-                NavigationLink {
-                    SavedRestaurantsView()
-                } label: {
-                    Image(systemName: "heart")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(MeshinowaTheme.mintInk)
-                        .frame(width: 44, height: 36)
-                        .background(Capsule().fill(MeshinowaTheme.mint))
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("保存したお店、\(saved.restaurants.count)件")
-            }
+
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(.leading, 14)
         .padding(.trailing, 7)
         .frame(height: 50)
-        .background(UnevenRoundedRectangle(topLeadingRadius: 18, bottomLeadingRadius: 6,
-                                           bottomTrailingRadius: 6, topTrailingRadius: 18,
-                                           style: .continuous)
-            .fill(MeshinowaTheme.card)
+        .background(Capsule().fill(MeshinowaTheme.card)
             .shadow(color: .black.opacity(0.16), radius: 8, y: 2))
-    }
-
-    /// 結果の件数を兼ねた一覧ボタン。検索欄の右端に札のように置く。
-    private var listButton: some View {
-        Button { showsResults = true } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "list.bullet")
-                    .font(.system(size: 12, weight: .bold))
-                Text("\(visibleResults.count)")
-                    .font(MeshinowaFont.number(15, relativeTo: .body))
-            }
-            .foregroundStyle(MeshinowaTheme.mintInk)
-            .padding(.horizontal, 10)
-            .frame(height: 36)
-            .background(Capsule().fill(MeshinowaTheme.mint))
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("検索結果\(visibleResults.count)件を一覧で見る")
     }
 
     /// 地図を動かしたときだけ出る、緑の再検索ボタン。ジャンルは上の切り替えで決まる。
@@ -433,18 +388,18 @@ struct MapHomeView: View {
                 if isSearching {
                     ProgressView()
                         .controlSize(.small)
-                        .tint(.white)
+                        .tint(MeshinowaTheme.green)
                 } else {
-                    Image(systemName: "scope")
+                    Image(systemName: "arrow.clockwise")
                         .font(.system(size: 13, weight: .bold))
                 }
                 Text(isSearching ? "探しています…" : "このエリアで探す")
                     .font(MeshinowaFont.text(14, weight: .bold))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(MeshinowaTheme.green)
             .padding(.horizontal, 16)
             .frame(height: 36)
-            .background(Capsule().fill(MeshinowaTheme.green).shadow(color: .black.opacity(0.22), radius: 5, y: 2))
+            .background(Capsule().fill(MeshinowaTheme.card).shadow(color: .black.opacity(0.22), radius: 5, y: 2))
             .frame(minHeight: 44)
             .contentShape(Capsule())
         }
@@ -486,8 +441,10 @@ struct MapHomeView: View {
                 ForEach(0..<(carouselItems.count > 1 ? 3 : 1), id: \.self) { lap in
                     ForEach(carouselItems) { result in
                         let slot = CarouselSlot(lap: carouselItems.count > 1 ? lap : 1, id: result.id)
-                        RestaurantPreview(item: result.item, loadsPhoto: carouselPosition == slot)
-                            .containerRelativeFrame(.horizontal) { width, _ in width - 40 }
+                        RestaurantPreview(item: result.item, loadsPhoto: carouselPosition == slot,
+                                          position: (carouselItems.firstIndex(where: { $0.id == result.id }) ?? 0) + 1,
+                                          total: carouselItems.count, onShowList: { showsResults = true })
+                            .containerRelativeFrame(.horizontal) { width, _ in width - 24 }
                             .id(CarouselSlot(lap: carouselItems.count > 1 ? lap : 1, id: result.id))
                     }
                 }
@@ -497,7 +454,7 @@ struct MapHomeView: View {
         }
         // 横スクロールは縦にも広がろうとするので、カードの高さに合わせて地図の下端に置く。
         .fixedSize(horizontal: false, vertical: true)
-        .contentMargins(.horizontal, 20, for: .scrollContent)
+        .contentMargins(.horizontal, 12, for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $carouselPosition)
         .onAppear {

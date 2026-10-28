@@ -5,6 +5,9 @@ import SwiftUI
 struct RestaurantPreview: View {
     let item: MKMapItem
     var loadsPhoto = true
+    var position = 1
+    var total = 0
+    var onShowList: (() -> Void)? = nil
     @EnvironmentObject private var saved: SavedRestaurantStore
     @EnvironmentObject private var reviews: LocalReviewStore
     @EnvironmentObject private var friends: FriendStore
@@ -14,130 +17,79 @@ struct RestaurantPreview: View {
 
     var body: some View {
         let isLiked = saved.restaurant(for: item)?.isLiked == true
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 4) {
-                Button { showsDetails = true } label: {
-                    Text(item.name ?? "飲食店")
-                        .font(MeshinowaFont.heading(18, relativeTo: .headline))
-                        .lineLimit(1)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                .buttonStyle(.plain)
-                Spacer(minLength: 8)
-                reviewButton
-                Rectangle()
-                    .fill(MeshinowaTheme.hairline)
-                    .frame(width: 1, height: 24)
-                markButton(title: "いいね", symbol: "heart", isOn: isLiked,
-                           tint: MeshinowaTheme.like) {
-                    saved.setLiked(item, isLiked: !isLiked)
-                }
-                // 行きたいは、いいねの隣に文字なしの旗で置く。
-                SwipeDiscoveryEntry.wantToGoButton(item: item, compact: true)
-            }
-
-            HStack(alignment: .top, spacing: 12) {
-                RestaurantPhotoView(item: item, isActive: loadsPhoto, showsGoogleAttribution: false,
-                                    imageHeight: 100)
-                    .frame(width: 100)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    detailLine(symbol: MapHomeView.symbol(for: item), text: item.restaurantCategory)
-                    // 友達の機能につながっていないときは、この行を出さない。
-                    if friends.isAvailable {
-                        detailLine(symbol: "person.2", text: friends.ratingText(for: item))
+        let rating = reviews.review(for: item)?.rating
+        VStack(alignment: .leading, spacing: 10) {
+            RestaurantPhotoView(item: item, isActive: loadsPhoto, showsGoogleAttribution: false,
+                                imageHeight: 128, overlaysCredits: true)
+                .overlay(alignment: .topLeading) { GenreRibbon(genre: item.foodGenre).padding(.leading, 12) }
+                .overlay(alignment: .topTrailing) {
+                    if let onShowList, total > 0 {
+                        Button(action: onShowList) {
+                            Text("\(position) / \(total)")
+                                .font(MeshinowaFont.number(12, relativeTo: .caption))
+                                .foregroundStyle(MeshinowaTheme.paper)
+                                .padding(.horizontal, 10)
+                                .frame(height: 24)
+                                .background(MeshinowaTheme.ink.opacity(0.55), in: Capsule())
+                                .frame(minHeight: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 8)
+                        .accessibilityLabel("検索結果\(total)件を一覧で見る、\(position)件目")
                     }
-                    detailLine(symbol: "mappin.and.ellipse",
-                               text: item.placemark.title.map { $0.withoutPostalCode.replacingOccurrences(of: "\n", with: " ") }
-                                   ?? "住所の情報がありません")
+                }
+            Button { showsDetails = true } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(item.name ?? "飲食店")
+                        .font(MeshinowaFont.wa(21, relativeTo: .title3))
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let average = friends.summary(for: item).average {
+                        Label("友達 \(average.formatted(.number.precision(.fractionLength(1))))", systemImage: "person.2")
+                            .font(MeshinowaFont.text(13, weight: .bold))
+                            .foregroundStyle(MeshinowaTheme.green)
+                    }
+                    Label(item.placemark.title?.withoutPostalCode.replacingOccurrences(of: "\n", with: " ")
+                          ?? "住所の情報がありません", systemImage: "mappin.and.ellipse")
+                        .font(MeshinowaFont.text(13, relativeTo: .caption))
+                        .foregroundStyle(MeshinowaTheme.bodyText)
+                        .lineLimit(1)
                 }
                 .contentShape(Rectangle())
-                .onTapGesture { showsDetails = true }
             }
+            .buttonStyle(.plain)
+            .accessibilityHint("お店の詳細を開きます")
+            HStack(spacing: 8) {
+                Button { showsRating = true } label: {
+                    RestaurantActionTile(title: rating.map { "自分 " + $0.formatted(.number.precision(.fractionLength(1))) } ?? "評価する",
+                                         symbol: rating == nil ? "star" : "star.fill",
+                                         tint: rating == nil ? MeshinowaTheme.accent : MeshinowaTheme.mustardInk,
+                                         background: rating == nil ? MeshinowaTheme.field : MeshinowaTheme.mustardSoft)
+                }
+                .disabled(reviews.loadError != nil)
+                .accessibilityLabel(rating.map { "自分の評価、\($0.formatted(.number.precision(.fractionLength(1))))点。変更する" } ?? "行ったお店を評価する")
+                Button { showsError = !saved.setLiked(item, isLiked: !isLiked) } label: {
+                    RestaurantActionTile(title: "いいね", symbol: isLiked ? "heart.fill" : "heart",
+                                         tint: MeshinowaTheme.like,
+                                         background: isLiked ? MeshinowaTheme.likeSoft : MeshinowaTheme.field)
+                }
+                .accessibilityLabel("いいね")
+                .accessibilityValue(isLiked ? "登録済み" : "未登録")
+                SwipeDiscoveryEntry.wantToGoButton(item: item, tile: true)
+            }
+            .buttonStyle(.plain)
         }
         .foregroundStyle(MeshinowaTheme.ink)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .fill(MeshinowaTheme.card)
-            .shadow(color: .black.opacity(0.16), radius: 8, y: 2))
-        .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(10)
+        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
         .accessibilityElement(children: .contain)
         .accessibilityAction(named: "お店の情報を開く") { showsDetails = true }
-        .sheet(isPresented: $showsDetails) {
-            RestaurantInformationView(item: item)
-        }
-        .sheet(isPresented: $showsRating) {
-            QuickRatingSheet(item: item)
-        }
+        .sheet(isPresented: $showsDetails) { RestaurantInformationView(item: item) }
+        .sheet(isPresented: $showsRating) { QuickRatingSheet(item: item) }
         .alert("保存を変更できませんでした", isPresented: $showsError) {
             Button("閉じる", role: .cancel) {}
         } message: { Text(saved.errorMessage ?? "もう一度お試しください。") }
-    }
-
-    /// 行った＝レビュー。まだなら「☆ 評価」、レビュー済みなら自分の点数を出す。どちらも押すと星のシートが開く。
-    private var reviewButton: some View {
-        let rating = reviews.review(for: item)?.rating
-        return Button { showsRating = true } label: {
-            Group {
-                if let rating {
-                    HStack(spacing: 3) {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 13, weight: .bold))
-                        Text(rating, format: .number.precision(.fractionLength(1)))
-                            .font(MeshinowaFont.number(18, relativeTo: .body))
-                    }
-                    // 自分の評価なので、からし色にする。
-                    .foregroundStyle(MeshinowaTheme.mustardInk)
-                } else {
-                    HStack(spacing: 4) {
-                        Image(systemName: "star")
-                            .font(.system(size: 14, weight: .semibold))
-                        Text("評価")
-                            .font(MeshinowaFont.text(14, weight: .bold))
-                    }
-                    .foregroundStyle(MeshinowaTheme.secondaryText)
-                }
-            }
-            .padding(.horizontal, 6)
-            .frame(minWidth: 44, minHeight: 40)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(reviews.loadError != nil)
-        .accessibilityLabel(rating.map { "自分の評価、\($0.formatted(.number.precision(.fractionLength(1))))点。変更する" } ?? "行ったお店を評価する")
-    }
-
-    private func detailLine(symbol: String, text: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: symbol)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(MeshinowaTheme.secondaryText)
-                .frame(width: 16)
-                .accessibilityHidden(true)
-            Text(text)
-                .font(MeshinowaFont.text(13, relativeTo: .caption))
-                .foregroundStyle(MeshinowaTheme.bodyText)
-                .lineLimit(1)
-        }
-    }
-
-    /// 名前の右に並ぶ、いいねの切り替え。オンのときは塗りつぶしの記号にする。
-    private func markButton(title: String, symbol: String, isOn: Bool, tint: Color,
-                            action: @escaping () -> Bool) -> some View {
-        Button {
-            showsError = !action()
-        } label: {
-            Image(systemName: isOn ? symbol + ".fill" : symbol)
-                .font(.system(size: 21, weight: .regular))
-                .foregroundStyle(isOn ? tint : MeshinowaTheme.secondaryText)
-                .frame(width: 40, height: 40)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.selection, trigger: isOn)
-        .accessibilityLabel(title)
-        .accessibilityValue(isOn ? "登録済み" : "未登録")
     }
 }
 

@@ -25,5 +25,10 @@ enum MeshinowaFont {
         .custom("RoundedMplus1c-ExtraBold", size: size, relativeTo: style)
     }
 
+    /// 地図と保存の見出し・のれんに使う丸い和文書体。
+    static func wa(_ size: CGFloat, bold: Bool = true, relativeTo style: Font.TextStyle = .headline) -> Font {
+        .custom(bold ? "ZenMaruGothic-Bold" : "ZenMaruGothic-Medium", size: size, relativeTo: style)
+    }
+
     static let wordmark = number(46, relativeTo: .largeTitle)
 }

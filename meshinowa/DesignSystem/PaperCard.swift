@@ -252,3 +252,69 @@ struct ScreenTitle: View {
             .accessibilityAddTraits(.isHeader)
     }
 }
+
+/// 地図と保存の写真に掛けるジャンルの札。分類できないお店には出さない。
+struct GenreRibbon: View {
+    let genre: FoodGenre
+    var compact = false
+
+    var body: some View {
+        if genre != .other {
+            VStack(spacing: compact ? 2 : 3) {
+                ForEach(Array(genre.title.enumerated()), id: \.offset) { _, character in
+                    Text(String(character))
+                        .font(MeshinowaFont.wa(compact ? 12 : 14))
+                }
+            }
+            .foregroundStyle(MeshinowaTheme.paper)
+            .padding(.horizontal, compact ? 4 : 6)
+            .padding(.top, compact ? 8 : 10)
+            .padding(.bottom, compact ? 10 : 12)
+            .background(MeshinowaTheme.green, in: UnevenRoundedRectangle(
+                bottomLeadingRadius: compact ? 5 : 6, bottomTrailingRadius: compact ? 5 : 6))
+            .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(genre.title)
+        }
+    }
+}
+
+/// 保存の写真に重ねる、自分の評価だけの小さな判子。
+struct CompactRatingSeal: View {
+    let rating: Double
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(rating, format: .number.precision(.fractionLength(1)))
+                .font(MeshinowaFont.number(16, relativeTo: .caption))
+            Text("自分").font(MeshinowaFont.wa(8)).tracking(2)
+        }
+        .foregroundStyle(MeshinowaTheme.mustardInk)
+        .frame(width: 46, height: 46)
+        .background(MeshinowaTheme.cream, in: RoundedRectangle(cornerRadius: 9))
+        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(MeshinowaTheme.accent, lineWidth: 3))
+        .rotationEffect(.degrees(-6))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("自分の評価、\(rating.formatted(.number.precision(.fractionLength(1))))点")
+    }
+}
+
+/// 地図カードの3つの操作。状態は色と文字の両方で示す。
+struct RestaurantActionTile: View {
+    let title: String
+    let symbol: String
+    let tint: Color
+    let background: Color
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Image(systemName: symbol).font(.system(size: 22)).accessibilityHidden(true)
+            Text(title).font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
+                .lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .foregroundStyle(tint)
+        .frame(maxWidth: .infinity, minHeight: 56)
+        .background(background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 14))
+    }
+}

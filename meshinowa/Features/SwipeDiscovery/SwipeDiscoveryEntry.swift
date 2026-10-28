@@ -44,9 +44,9 @@ enum SwipeDiscoveryEntry {
 
     /// 地図のお店カードに置く小さな「行きたい」ボタン。
     @ViewBuilder
-    static func wantToGoButton(item: MKMapItem, compact: Bool = false) -> some View {
+    static func wantToGoButton(item: MKMapItem, compact: Bool = false, tile: Bool = false) -> some View {
         if SwipeDiscoveryFeature.isEnabled {
-            SwipeWantToGoButton(item: item, compact: compact)
+            SwipeWantToGoButton(item: item, compact: compact, tile: tile)
         }
     }
 
@@ -115,13 +115,18 @@ struct SwipeWantToGoButton: View {
     let item: MKMapItem
     /// true なら文字なしの旗だけ。お店カードで、いいねのハートの隣に並べる。
     var compact = false
+    var tile = false
     @ObservedObject private var store = SwipeDiscoveryEntry.wantToGoStore
     @State private var errorMessage: String?
 
     var body: some View {
         let isOn = store.contains(SwipeWantToGoEntry.shopID(for: item))
         Button { toggle(isOn: isOn) } label: {
-            if compact {
+            if tile {
+                RestaurantActionTile(title: "行きたい", symbol: isOn ? "flag.fill" : "flag",
+                                     tint: MeshinowaTheme.green,
+                                     background: isOn ? MeshinowaTheme.mint : MeshinowaTheme.field)
+            } else if compact {
                 Image(systemName: isOn ? "flag.fill" : "flag")
                     .font(.system(size: 19, weight: .regular))
                     .foregroundStyle(isOn ? SwipeTheme.brand : MeshinowaTheme.secondaryText)

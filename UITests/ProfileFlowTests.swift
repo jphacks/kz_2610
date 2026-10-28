@@ -24,6 +24,33 @@ final class ProfileFlowTests: XCTestCase {
         XCTAssertTrue(addButton.waitForExistence(timeout: 5))
     }
 
+    func testSavedSearchFiltersAndProfileReviewEntry() {
+        let app = XCUIApplication()
+        app.launchEnvironment["MESHINOWA_OFFLINE"] = "1"
+        app.launchEnvironment["MESHINOWA_UI_TEST_ID"] = UUID().uuidString
+        app.launchArguments = ["-hasOpenedMeshinowa", "YES"]
+        app.launch()
+        XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 15))
+        app.buttons["保存"].tap()
+        XCTAssertFalse(app.textFields["保存したお店を検索"].exists)
+        app.buttons["保存したお店を検索"].tap()
+        let search = app.textFields["保存したお店を検索"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText("no-match")
+        XCTAssertTrue(app.staticTexts["検索に一致するお店がありません"].waitForExistence(timeout: 5))
+        app.buttons["保存したお店を検索"].tap()
+        app.buttons["未レビューだけ"].tap()
+        XCTAssertTrue(app.staticTexts["未レビューのお店はありません"].waitForExistence(timeout: 5))
+        app.buttons["絞り込みを解除"].tap()
+        app.buttons["行きたい"].tap()
+        XCTAssertTrue(app.staticTexts["行きたいのお店はまだありません"].waitForExistence(timeout: 5))
+        app.buttons["プロフィール"].tap()
+        XCTAssertTrue(app.staticTexts["0 / 9 ジャンル"].waitForExistence(timeout: 5))
+        app.buttons["すべて見る"].tap()
+        XCTAssertTrue(app.navigationBars["自分のレビュー"].waitForExistence(timeout: 5))
+    }
+
     func testProfileEditPersistsAndSettingsOpen() {
         let app = XCUIApplication()
         app.launchEnvironment["MESHINOWA_OFFLINE"] = "1"

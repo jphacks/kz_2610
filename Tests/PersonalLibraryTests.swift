@@ -41,6 +41,15 @@ final class PersonalLibraryTests: XCTestCase {
         XCTAssertTrue(liked.isEmpty, "レビュー済みのお店は未レビューに出ない")
     }
 
+    func testShortAddressKeepsBuildingAndDoesNotGuessUnknownAreas() {
+        let address = "〒100-0005 東京都千代田区丸の内２丁目７−２ KITTE 6F 日本"
+        XCTAssertEqual(address.restaurantLocalAddress, "丸の内２丁目７−２ KITTE 6F")
+        XCTAssertEqual(address.restaurantArea, "丸の内２丁目")
+        XCTAssertEqual("東京都中央区日本橋1丁目1−1".restaurantArea, "日本橋1丁目")
+        XCTAssertEqual("石川県野々市市扇が丘7−1".restaurantArea, "石川県野々市市扇が丘7−1")
+        XCTAssertEqual("住所の情報がありません".restaurantArea, "住所の情報がありません")
+    }
+
     func testDifferentGooglePlacesAreNotMerged() {
         let a = restaurant("同じ名前"), b = restaurant("同じ名前")
         let itemA = a.mapItem; itemA.googleDetails = GoogleRestaurantDetails(placeID: "A")

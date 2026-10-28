@@ -114,6 +114,7 @@ private struct NorenTab<Item: NorenTabItem>: View {
         }
         .buttonStyle(NorenPressStyle())
         .accessibilityLabel(item.title)
+        .accessibilityValue(count.map { "\($0)件" } ?? "")
         .accessibilityAddTraits(isOn ? .isSelected : [])
         .onAppear { lastOn = isOn }
         .onChange(of: changeID) { _, _ in

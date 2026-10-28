@@ -309,6 +309,21 @@ extension String {
     var withoutPostalCode: String {
         replacingOccurrences(of: #"^〒\d{3}-?\d{4}[\s,、]*"#, with: "", options: .regularExpression)
     }
+
+    /// 丁目を含む場合だけ、町名以降を切り出す。判断できない住所は省略しない。
+    var restaurantLocalAddress: String {
+        let address = withoutPostalCode.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: #"[\s,、]+日本$"#, with: "", options: .regularExpression)
+        guard let range = address.range(of: #"(?<=[市区郡])[^市区郡、,]+?[0-9０-９一二三四五六七八九十]+丁目"#, options: .regularExpression) else { return address }
+        return String(address[range.lowerBound...])
+    }
+
+    var restaurantArea: String {
+        let address = restaurantLocalAddress
+        guard let range = address.range(of: #"^.+?丁目"#, options: .regularExpression) else { return address }
+        return String(address[range])
+    }
+
 }
 
 extension MKMapItem {

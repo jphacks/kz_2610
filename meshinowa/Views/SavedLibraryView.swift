@@ -12,6 +12,8 @@ struct SavedRestaurantsView: View {
     @State private var sort: SavedSort = .newest
     @State private var query = ""
     @State private var showsMap = false
+    @State private var showsSearch = false
+    @FocusState private var focusesSearch: Bool
     @State private var unreviewedOnly = false
     /// 上部の切り替え。保存の画面では「いいね」と「行きたい」だけを出す。
     @State private var collection: SavedCollection = .liked
@@ -51,43 +53,43 @@ struct SavedRestaurantsView: View {
                                      distances: Dictionary(uniqueKeysWithValues: library.compactMap { entry in
                                          location.location.map { (entry.id, $0.distance(from: CLLocation(latitude: entry.latitude, longitude: entry.longitude))) }
                                      }),
-                                     unreviewedOnly: collection == .liked && unreviewedOnly, wantToGo: wantToGoIDs)
+                                     unreviewedOnly: unreviewedOnly, wantToGo: wantToGoIDs)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    ScreenTitle(text: "保存")
+                    Text("保存").font(MeshinowaFont.wa(28, relativeTo: .largeTitle))
                     Spacer()
+                    Button {
+                        withAnimation(.snappy) { showsSearch.toggle() }
+                        focusesSearch = showsSearch
+                        if !showsSearch { query = "" }
+                    } label: { Image(systemName: "magnifyingglass") }
+                    .buttonStyle(CircleIconButtonStyle())
+                    .accessibilityLabel("保存したお店を検索")
                     Button { withAnimation(.snappy) { showsMap.toggle() } } label: {
-                        Label(showsMap ? "一覧" : "地図", systemImage: showsMap ? "list.bullet" : "map")
+                        Image(systemName: showsMap ? "square.grid.2x2" : "map")
                     }
-                    .buttonStyle(PillButtonStyle(isOn: showsMap))
+                    .buttonStyle(CircleIconButtonStyle())
                     .accessibilityLabel(showsMap ? "一覧で表示" : "地図で表示")
                 }
                 .padding(.horizontal, 20)
 
-                UnderlineTabs(items: [SavedCollection.liked, .wantToGo].map {
-                    .init(value: $0, title: $0.title, badge: "\(count(of: $0))")
-                }, selection: $collection)
-                .padding(.horizontal, 20)
-
-                searchField
+                NorenTabs(items: [SavedCollection.liked, .wantToGo], selection: $collection,
+                          style: .collection,
+                          counts: [.liked: count(of: .liked), .wantToGo: count(of: .wantToGo)])
                     .padding(.horizontal, 20)
-                    .padding(.top, 10)
+                    .padding(.top, 14)
 
-                // 件数と、絞り込み・並び替え。並び替えは1つのボタンにまとめ、横にはみ出さないようにする。
+                if showsSearch {
+                    searchField
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
+                }
+
                 HStack(spacing: 8) {
-                    // 件数は上のタブに出ているので、ここには出さない。
-                    Spacer(minLength: 0)
-                    if collection == .liked {
-                        Button { unreviewedOnly.toggle() } label: {
-                            Label("未レビュー", systemImage: unreviewedOnly ? "checkmark" : "line.3.horizontal.decrease")
-                        }
-                        .buttonStyle(PillButtonStyle(isOn: unreviewedOnly))
-                        .accessibilityAddTraits(unreviewedOnly ? .isSelected : [])
-                    }
                     Menu {
                         Picker("並び替え", selection: $sort) {
                             ForEach(SavedSort.allCases) { option in
@@ -96,11 +98,17 @@ struct SavedRestaurantsView: View {
                             }
                         }
                     } label: {
-                        Label(sort.title, systemImage: "arrow.up.arrow.down")
+                        HStack(spacing: 4) { Text(sort.title); Image(systemName: "chevron.down") }
+                            .modifier(SavedFilterChip())
                     }
-                    .buttonStyle(PillButtonStyle(isOn: true))
                     .accessibilityLabel("並び替え、\(sort.title)")
+                    Button { unreviewedOnly.toggle() } label: {
+                        Text("未レビューだけ").modifier(SavedFilterChip(isOn: unreviewedOnly))
+                    }
+                    .accessibilityAddTraits(unreviewedOnly ? .isSelected : [])
+                    Spacer(minLength: 0)
                 }
+                .buttonStyle(.plain)
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
 
@@ -127,36 +135,31 @@ struct SavedRestaurantsView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         .padding(20)
                 } else {
-                    LazyVStack(spacing: 0) {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         ForEach(visibleRestaurants) { restaurant in
-                            VStack(alignment: .leading, spacing: 8) {
-                                Button { selected = restaurant } label: {
-                                    SavedRow(restaurant: restaurant,
-                                             rating: reviews.review(for: restaurant.mapItem)?.rating,
-                                             friends: friends.summary(for: restaurant.mapItem),
-                                             isWantToGo: wantToGoIDs.contains(restaurant.id))
-                                }
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    if wantToGoIDs.contains(restaurant.id) {
-                                        Button("行きたいから外す", systemImage: "flag.slash", role: .destructive) {
-                                            removeFromWantToGo(restaurant)
-                                        }
+                            Button { selected = restaurant } label: {
+                                SavedGridCard(restaurant: restaurant, rating: ratings[restaurant.id])
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                if restaurant.isLiked {
+                                    Button("いいねから外す", systemImage: "heart.slash", role: .destructive) {
+                                        _ = saved.setLiked(restaurant.mapItem, isLiked: false)
                                     }
                                 }
-                                RestaurantPhotoView(item: restaurant.mapItem)
+                                if wantToGoIDs.contains(restaurant.id) {
+                                    Button("行きたいから外す", systemImage: "flag.slash", role: .destructive) {
+                                        removeFromWantToGo(restaurant)
+                                    }
+                                }
                             }
-                            .padding(.bottom, 12)
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 6)
+                    .padding(.top, 14)
+                    .padding(.bottom, 20)
                 }
 
-                Text("この端末に保存しています。\(visibleRestaurants.count)件を表示中。")
-                    .font(MeshinowaFont.text(12, relativeTo: .caption))
-                    .foregroundStyle(MeshinowaTheme.secondaryText)
-                    .padding(20)
             }
             .padding(.top, 8)
         }
@@ -164,7 +167,7 @@ struct SavedRestaurantsView: View {
         .onChange(of: sort) { _, value in
             if value == .distance { location.request() }
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.cream)
         .foregroundStyle(MeshinowaTheme.ink)
         .toolbar(onFindRestaurants == nil ? .visible : .hidden, for: .navigationBar)
         .sheet(item: $selected) { RestaurantInformationView(item: $0.mapItem) }
@@ -195,6 +198,7 @@ struct SavedRestaurantsView: View {
             TextField("保存したお店を検索", text: $query)
                 .font(MeshinowaFont.text(15))
                 .submitLabel(.search)
+                .focused($focusesSearch)
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark.circle.fill")
@@ -215,16 +219,16 @@ struct SavedRestaurantsView: View {
             FoodGenreMark(genre: .washoku, size: 46)
                 .frame(width: 80, height: 80)
                 .background(MeshinowaTheme.mint, in: Circle())
-            Text(query.isEmpty ? "\(collection.title)のお店はまだありません" : "検索に一致するお店がありません")
+            Text(!query.isEmpty ? "検索に一致するお店がありません" : (unreviewedOnly ? "未レビューのお店はありません" : "\(collection.title)のお店はまだありません"))
                 .font(MeshinowaFont.heading(18))
-            if query.isEmpty {
+            if query.isEmpty && !unreviewedOnly {
                 Text(collection == .wantToGo
                      ? "お店スワイプで右にスワイプするか、マップのお店の「行きたい」を押すと、ここに集まります。"
                      : "マップでお店のハートを押すと、ここに集まります。")
                     .font(MeshinowaFont.text(14))
                     .foregroundStyle(MeshinowaTheme.bodyText)
             } else {
-                Button("検索を解除") { query = "" }.buttonStyle(PaperButtonStyle(kind: .secondary))
+                Button("絞り込みを解除") { query = ""; unreviewedOnly = false }.buttonStyle(PaperButtonStyle(kind: .secondary))
             }
             Button("マップでお店を探す") {
                 if let onFindRestaurants { onFindRestaurants() } else { dismiss() }
@@ -238,57 +242,72 @@ struct SavedRestaurantsView: View {
     }
 }
 
-/// 保存の一行。左の器はジャンルの形で、色は自分の記録（いいね＝ピンク、レビュー済み＝緑）。
-/// 右には友達の評価（緑）と自分の評価（からし色）を分けて出す。
-private struct SavedRow: View {
+extension SavedCollection: NorenTabItem {
+    var symbol: String {
+        switch self {
+        case .liked: return "heart"
+        case .wantToGo: return "flag"
+        case .visited: return "star"
+        }
+    }
+}
+
+private struct SavedFilterChip: ViewModifier {
+    var isOn = false
+    func body(content: Content) -> some View {
+        content.font(MeshinowaFont.text(13))
+            .foregroundStyle(MeshinowaTheme.ink)
+            .padding(.horizontal, 12)
+            .frame(minHeight: 32)
+            .background(isOn ? MeshinowaTheme.mint : MeshinowaTheme.card, in: Capsule())
+            .overlay(Capsule().strokeBorder(isOn ? MeshinowaTheme.green : MeshinowaTheme.hairline, lineWidth: isOn ? 2 : 1))
+    }
+}
+
+private struct SavedGridCard: View {
     let restaurant: SavedRestaurant
     let rating: Double?
-    let friends: FriendRatingSummary
-    var isWantToGo = false
 
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
-            FoodGenreMark(genre: restaurant.foodGenre,
-                          tone: rating != nil ? .reviewed : (restaurant.isLiked ? .liked : .plain), size: 34)
-                .frame(width: 52, height: 52)
-                .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            VStack(alignment: .leading, spacing: 3) {
-                Text(restaurant.name)
-                    .font(MeshinowaFont.heading(17))
-                    .lineLimit(2)
-                Text(restaurant.address.withoutPostalCode)
-                    .font(MeshinowaFont.text(13, relativeTo: .caption))
-                    .foregroundStyle(MeshinowaTheme.bodyText)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 4)
-            VStack(alignment: .trailing, spacing: 4) {
-                if let rating {
-                    MyRatingTag(rating: rating)
-                } else if let average = friends.average {
-                    RatingStamp(rating: average, friendCount: friends.count, size: 18)
+        VStack(alignment: .leading, spacing: 0) {
+            RestaurantPhotoView(item: restaurant.mapItem, imageHeight: 124)
+                .overlay(alignment: .topLeading) {
+                    GenreRibbon(genre: restaurant.foodGenre, compact: true).padding(.leading, 10)
                 }
-                HStack(spacing: 6) {
-                    if isWantToGo {
-                        Image(systemName: "flag.fill")
-                            .font(.system(size: 13))
-                            .foregroundStyle(MeshinowaTheme.green)
-                            .accessibilityLabel("行きたい")
-                    }
+                .overlay(alignment: .topTrailing) {
                     if restaurant.isLiked {
                         Image(systemName: "heart.fill")
                             .font(.system(size: 14))
-                            .foregroundStyle(MeshinowaTheme.like)
+                            .foregroundStyle(MeshinowaTheme.paper)
+                            .frame(width: 26, height: 26)
+                            .background(MeshinowaTheme.like, in: Circle())
+                            .overlay(Circle().strokeBorder(MeshinowaTheme.paper, lineWidth: 2))
+                            .padding(8)
                             .accessibilityLabel("いいね済み")
                     }
                 }
+                .overlay(alignment: .topTrailing) {
+                    if let rating { CompactRatingSeal(rating: rating).padding(.trailing, 8).offset(y: 70) }
+                }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(restaurant.name)
+                    .font(MeshinowaFont.wa(15))
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, minHeight: 40, alignment: .topLeading)
+                Text(restaurant.address.restaurantArea)
+                    .font(MeshinowaFont.text(11, relativeTo: .caption))
+                    .foregroundStyle(MeshinowaTheme.secondaryText)
+                    .lineLimit(1)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
         }
-        .padding(.vertical, 12)
-        .overlay(alignment: .bottom) { Rectangle().fill(MeshinowaTheme.hairline).frame(height: 1) }
-        .contentShape(Rectangle())
+        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.08), radius: 4, y: 1)
+        .contentShape(RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .combine)
-        .accessibilityHint("お店の情報を開きます")
+        .accessibilityHint("お店の詳細を開きます。長押しで保存から外せます")
     }
 }
 

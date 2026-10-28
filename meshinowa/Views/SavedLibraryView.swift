@@ -135,7 +135,7 @@ struct SavedRestaurantsView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         .padding(20)
                 } else {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12, alignment: .top), GridItem(.flexible(), spacing: 12, alignment: .top)], spacing: 12) {
                         ForEach(visibleRestaurants) { restaurant in
                             Button { selected = restaurant } label: {
                                 SavedGridCard(restaurant: restaurant, rating: ratings[restaurant.id])

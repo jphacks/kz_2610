@@ -195,7 +195,7 @@ private struct NorenTab<Item: NorenTabItem>: View {
     private func titleLabel(selected: Bool) -> some View {
         HStack(spacing: 6) {
             if style == .collection {
-                Image(systemName: item.symbol)
+                Image(systemName: selected ? item.symbol + ".fill" : item.symbol)
                     .foregroundStyle(selected ? MeshinowaTheme.paper : (item.symbol == "heart" ? MeshinowaTheme.like : MeshinowaTheme.green))
             }
             Text(item.title)

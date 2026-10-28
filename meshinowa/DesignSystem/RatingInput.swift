@@ -52,7 +52,8 @@ struct BigStarRating: View {
                 } label: {
                     Image(systemName: rating >= Double(value) ? "star.fill"
                           : (rating >= Double(value) - 0.5 ? "star.leadinghalf.filled" : "star"))
-                        .font(.system(size: size))
+                        .resizable().scaledToFit()
+                        .frame(width: size, height: size)
                         .foregroundStyle(MeshinowaTheme.accent)
                         .frame(width: size, height: 44)
                         .contentShape(Rectangle())

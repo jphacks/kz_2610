@@ -17,6 +17,7 @@ struct ReviewEditor: View {
     @State private var wantAgain: Bool
     @State private var recordsVisitDate: Bool
     @State private var visitedOn: Date
+    @State private var showsVisitPicker = false
     @State private var retainedPhotoNames: [String]
     @State private var newPhotos: [Data] = []
     @State private var pickerItems: [PhotosPickerItem] = []
@@ -57,11 +58,21 @@ struct ReviewEditor: View {
                              ink: MeshinowaTheme.mintInk) { wantAgain.toggle() }
                         chip(recordsVisitDate ? visitedOn.formatted(.dateTime.month().day()) : "来店日",
                              symbol: "calendar", isOn: recordsVisitDate, tint: MeshinowaTheme.green,
-                             soft: MeshinowaTheme.mint, ink: MeshinowaTheme.mintInk) { recordsVisitDate.toggle() }
-                    }
-                    if recordsVisitDate {
-                        DatePicker("来店日", selection: $visitedOn, in: ...Date.now, displayedComponents: .date)
-                            .font(MeshinowaFont.text(14))
+                             soft: MeshinowaTheme.mint, ink: MeshinowaTheme.mintInk) { showsVisitPicker = true }
+                            .popover(isPresented: $showsVisitPicker) {
+                                VStack(spacing: 12) {
+                                    DatePicker("来店日", selection: $visitedOn, in: ...Date.now, displayedComponents: .date)
+                                        .datePickerStyle(.graphical)
+                                    Button("この日を記録") { recordsVisitDate = true; showsVisitPicker = false }
+                                        .buttonStyle(PaperButtonStyle())
+                                    if recordsVisitDate {
+                                        Button("来店日を記録しない") { recordsVisitDate = false; showsVisitPicker = false }
+                                            .buttonStyle(PaperButtonStyle(kind: .secondary))
+                                    }
+                                }
+                                .padding(16).frame(width: 320)
+                                .presentationCompactAdaptation(.popover)
+                            }
                     }
 
                     VStack(alignment: .leading, spacing: 0) {
@@ -233,7 +244,11 @@ struct ReviewEditor: View {
                                  matching: .images, photoLibrary: .shared()) {
                         VStack(spacing: 2) {
                             if isLoadingPhotos { ProgressView() } else {
-                                Image(systemName: "camera.badge.plus").font(.system(size: 22, weight: .semibold))
+                                Image(systemName: "camera").font(.system(size: 22, weight: .semibold))
+                                    .overlay(alignment: .topTrailing) {
+                                        Image(systemName: "plus.circle.fill").font(.system(size: 10, weight: .bold))
+                                            .background(MeshinowaTheme.paper, in: Circle()).offset(x: 5, y: -3)
+                                    }
                             }
                             Text("写真").font(MeshinowaFont.text(11, relativeTo: .caption2))
                         }

@@ -47,20 +47,23 @@ enum MeshinowaTheme {
 enum MeshinowaMapStyle {
     static let json = #"""
     [
-      {"elementType":"geometry","stylers":[{"color":"#F6F1E6"}]},
-      {"elementType":"labels.text.fill","stylers":[{"color":"#7B7F7C"}]},
+      {"elementType":"geometry","stylers":[{"color":"#F1EADB"}]},
+      {"elementType":"labels.text.fill","stylers":[{"color":"#6B716D"}]},
       {"elementType":"labels.text.stroke","stylers":[{"color":"#FDF8EE"}]},
-      {"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#EFE8D8"}]},
+      {"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#EAE2D0"}]},
       {"featureType":"poi","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
-      {"featureType":"poi","elementType":"labels.text","stylers":[{"visibility":"off"}]},
       {"featureType":"poi.business","stylers":[{"visibility":"off"}]},
       {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#DDE6D3"}]},
       {"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#FFFFFF"}]},
-      {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#E6DDCB"}]},
-      {"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#FBF6EC"}]},
-      {"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#FBF6EC"}]},
+      {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#DCD2BE"}]},
+      {"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#FFFFFF"}]},
+      {"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#FFFFFF"}]},
       {"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#B9C8C4"}]},
-      {"featureType":"transit.station","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+      {"featureType":"transit.station","elementType":"labels.icon","stylers":[{"visibility":"on"}]},
+      {"featureType":"transit.station","elementType":"labels.text","stylers":[{"visibility":"on"}]},
+      {"featureType":"transit.station","elementType":"labels.text.fill","stylers":[{"color":"#3B5F86"}]},
+      {"featureType":"road.highway","elementType":"labels","stylers":[{"visibility":"off"}]},
+      {"featureType":"road.highway.controlled_access","elementType":"labels","stylers":[{"visibility":"off"}]},
       {"featureType":"water","elementType":"geometry","stylers":[{"color":"#C9DCE3"}]}
     ]
     """#

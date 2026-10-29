@@ -78,7 +78,7 @@ struct SavedRestaurantsView: View {
                 .padding(.horizontal, 20)
 
                 HStack(spacing: 4) {
-                    ForEach(SavedCollection.allCases) { item in
+                    ForEach([SavedCollection.liked, .wantToGo]) { item in
                         let selected = collection == item
                         Button { collection = item } label: {
                             HStack(spacing: 6) {

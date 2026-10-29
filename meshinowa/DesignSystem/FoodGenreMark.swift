@@ -19,6 +19,7 @@ struct FoodGenreMark: View {
     let genre: FoodGenre
     var tone: Tone = .plain
     var size: CGFloat = 32
+    var outlineWidth: CGFloat = 1.5
 
     private var fill: Color {
         switch tone {
@@ -50,7 +51,7 @@ struct FoodGenreMark: View {
             }
             let body = SVGPath.parse(shape.body)
             context.fill(body, with: .color(fill))
-            context.stroke(body, with: .color(line), style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
+            context.stroke(body, with: .color(line), style: StrokeStyle(lineWidth: outlineWidth, lineJoin: .round))
             if let deco = shape.deco {
                 context.stroke(SVGPath.parse(deco), with: .color(decoLine),
                                style: StrokeStyle(lineWidth: 1.1, lineCap: .round))

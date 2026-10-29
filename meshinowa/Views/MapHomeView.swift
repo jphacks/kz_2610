@@ -136,7 +136,8 @@ struct MapHomeView: View {
         }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),
                         topPadding: headerHeight,
                         bottomPadding: tabBarSpace + (selectedResult == nil ? 0 : cardHeight),
-                        onUserMove: { hasMovedSinceSearch = true; showsCurrentArea = false; areaNamer.invalidate() }) { region, position in
+                        onCameraMove: { areaNamer.invalidate() },
+                        onUserMove: { hasMovedSinceSearch = true; showsCurrentArea = false }) { region, position in
             visibleRegion = region
             lastCamera = position
             areaNamer.update(center: position.target)

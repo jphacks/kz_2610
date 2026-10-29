@@ -34,13 +34,14 @@ struct GoogleMapCanvas: View {
     var topPadding: CGFloat = 0
     var bottomPadding: CGFloat = 0
     var showsPinNames = true
+    var onCameraMove: (() -> Void)?
     var onUserMove: (() -> Void)?
     var onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
     var body: some View {
         if GooglePlacesService.isMapConfigured {
             GoogleMapRepresentable(position: position, pins: pins, selectedID: $selectedID,
-                                   topPadding: topPadding, bottomPadding: bottomPadding, showsPinNames: showsPinNames, onUserMove: onUserMove, onCameraEnd: onCameraEnd)
+                                   topPadding: topPadding, bottomPadding: bottomPadding, showsPinNames: showsPinNames, onCameraMove: onCameraMove, onUserMove: onUserMove, onCameraEnd: onCameraEnd)
         } else {
             ContentUnavailableView("地図を表示できません", systemImage: "map", description: Text("Google Mapsの設定を確認してください。"))
         }
@@ -54,6 +55,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
     let topPadding: CGFloat
     let bottomPadding: CGFloat
     let showsPinNames: Bool
+    let onCameraMove: (() -> Void)?
     let onUserMove: (() -> Void)?
     let onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
@@ -198,6 +200,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
         }
 
         func mapView(_ mapView: GMSMapView, willMove gesture: Bool) {
+            parent.onCameraMove?()
             if gesture { parent.onUserMove?() }
         }
 

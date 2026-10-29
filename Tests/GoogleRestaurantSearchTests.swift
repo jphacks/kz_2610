@@ -110,3 +110,51 @@ final class RestaurantSearchSessionTests: XCTestCase {
         XCTAssertEqual(calls, 2)
     }
 }
+
+@MainActor
+final class MapAreaNamerTests: XCTestCase {
+    func testAreaNamePrefersLocalityThenAdministrativeArea() {
+        XCTAssertEqual(MapAreaNamer.Area(subLocality: "丸の内", locality: "千代田区", administrativeArea: "東京都").name, "丸の内")
+        XCTAssertEqual(MapAreaNamer.Area(subLocality: " ", locality: "千代田区", administrativeArea: "東京都").name, "千代田区")
+        XCTAssertEqual(MapAreaNamer.Area(subLocality: nil, locality: nil, administrativeArea: "東京都").name, "東京都")
+        XCTAssertNil(MapAreaNamer.Area(subLocality: nil, locality: nil, administrativeArea: nil).name)
+    }
+
+    func testNearbyCenterDoesNotRepeatRequest() async {
+        var calls = 0
+        let namer = MapAreaNamer { _ in
+            calls += 1
+            return .init(subLocality: "丸の内", locality: nil, administrativeArea: nil)
+        }
+        namer.update(center: .init(latitude: 35.681, longitude: 139.767))
+        for _ in 0..<20 where namer.name == nil { await Task.yield() }
+        namer.update(center: .init(latitude: 35.682, longitude: 139.767))
+        await Task.yield()
+        XCTAssertEqual(namer.name, "丸の内")
+        XCTAssertEqual(calls, 1)
+        namer.update(center: .init(latitude: 35.69, longitude: 139.767))
+        for _ in 0..<20 where calls < 2 { await Task.yield() }
+        XCTAssertEqual(calls, 2)
+    }
+
+    func testOldResultDoesNotOverrideNewCenter() async {
+        var pending: [CheckedContinuation<MapAreaNamer.Area?, Error>] = []
+        let namer = MapAreaNamer { _ in
+            try await withCheckedThrowingContinuation { pending.append($0) }
+        }
+        namer.update(center: .init(latitude: 35.681, longitude: 139.767))
+        for _ in 0..<20 where pending.count < 1 { await Task.yield() }
+        XCTAssertEqual(pending.count, 1)
+        guard pending.count == 1 else { return }
+        namer.invalidate()
+        namer.update(center: .init(latitude: 35.69, longitude: 139.767))
+        for _ in 0..<20 where pending.count < 2 { await Task.yield() }
+        XCTAssertEqual(pending.count, 2)
+        guard pending.count == 2 else { pending[0].resume(returning: nil); return }
+        pending[1].resume(returning: .init(subLocality: "新しい地域", locality: nil, administrativeArea: nil))
+        for _ in 0..<20 where namer.name == nil { await Task.yield() }
+        pending[0].resume(returning: .init(subLocality: "古い地域", locality: nil, administrativeArea: nil))
+        await Task.yield()
+        XCTAssertEqual(namer.name, "新しい地域")
+    }
+}

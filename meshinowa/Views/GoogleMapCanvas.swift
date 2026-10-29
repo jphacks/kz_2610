@@ -69,7 +69,8 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
         map.isBuildingsEnabled = false
         map.isMyLocationEnabled = true
         // App markers remain selectable without unrelated built-in POI pins.
-        map.mapStyle = try? GMSMapStyle(jsonString: "[{\"featureType\":\"poi\",\"elementType\":\"labels\",\"stylers\":[{\"visibility\":\"off\"}]}]")
+        map.mapStyle = (try? GMSMapStyle(jsonString: MeshinowaMapStyle.json))
+            ?? (try? GMSMapStyle(jsonString: "[{\"featureType\":\"poi\",\"elementType\":\"labels\",\"stylers\":[{\"visibility\":\"off\"}]}]"))
         return map
     }
 

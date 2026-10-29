@@ -41,3 +41,26 @@ enum MeshinowaTheme {
               blue: Double(value & 0xFF) / 255)
     }
 }
+
+/// Google マップの地図色。施設名は隠し、駅名や道路番号は残す。
+enum MeshinowaMapStyle {
+    static let json = #"""
+    [
+      {"elementType":"geometry","stylers":[{"color":"#F6F1E6"}]},
+      {"elementType":"labels.text.fill","stylers":[{"color":"#7B7F7C"}]},
+      {"elementType":"labels.text.stroke","stylers":[{"color":"#FDF8EE"}]},
+      {"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#EFE8D8"}]},
+      {"featureType":"poi","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+      {"featureType":"poi","elementType":"labels.text","stylers":[{"visibility":"off"}]},
+      {"featureType":"poi.business","stylers":[{"visibility":"off"}]},
+      {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#DDE6D3"}]},
+      {"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#FFFFFF"}]},
+      {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#E6DDCB"}]},
+      {"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#FBF6EC"}]},
+      {"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#FBF6EC"}]},
+      {"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#B9C8C4"}]},
+      {"featureType":"transit.station","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+      {"featureType":"water","elementType":"geometry","stylers":[{"color":"#C9DCE3"}]}
+    ]
+    """#
+}

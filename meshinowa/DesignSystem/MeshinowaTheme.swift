@@ -54,6 +54,7 @@ enum MeshinowaMapStyle {
       {"featureType":"poi","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
       {"featureType":"poi.business","stylers":[{"visibility":"off"}]},
       {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#DDE6D3"}]},
+      {"featureType":"road","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
       {"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#FFFFFF"}]},
       {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#DCD2BE"}]},
       {"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#FFFFFF"}]},

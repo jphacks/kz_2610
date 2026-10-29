@@ -63,7 +63,7 @@ struct FoodGenreMark: View {
             }
         }
         .frame(width: size, height: size * 34 / 36)
-        .opacity(tone == .faint ? 0.4 : 1)
+        .opacity(tone == .faint ? 0.62 : 1)
         .accessibilityHidden(true)
     }
 }

@@ -117,7 +117,7 @@ struct ProfileView: View {
                 ForEach(FoodGenre.allCases.filter { $0 != .other }) { genre in
                     let count = counts[genre] ?? 0
                     VStack(spacing: 5) {
-                        FoodGenreMark(genre: genre, size: 36).opacity(count > 0 ? 1 : 0.4)
+                        FoodGenreMark(genre: genre, tone: count > 0 ? .plain : .faint, size: 36)
                         Text(count > 0 ? "\(genre.title) \(count)" : genre.title)
                             .font(MeshinowaFont.text(11, weight: count > 0 ? .bold : .medium, relativeTo: .caption2))
                             .foregroundStyle(count > 0 ? MeshinowaTheme.ink : MeshinowaTheme.secondaryText)

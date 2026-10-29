@@ -33,13 +33,15 @@ struct GoogleMapCanvas: View {
     @Binding var selectedID: String?
     var topPadding: CGFloat = 0
     var bottomPadding: CGFloat = 0
+    var showsPinNames = true
+    var onCameraMove: (() -> Void)?
     var onUserMove: (() -> Void)?
     var onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
     var body: some View {
         if GooglePlacesService.isMapConfigured {
             GoogleMapRepresentable(position: position, pins: pins, selectedID: $selectedID,
-                                   topPadding: topPadding, bottomPadding: bottomPadding, onUserMove: onUserMove, onCameraEnd: onCameraEnd)
+                                   topPadding: topPadding, bottomPadding: bottomPadding, showsPinNames: showsPinNames, onCameraMove: onCameraMove, onUserMove: onUserMove, onCameraEnd: onCameraEnd)
         } else {
             ContentUnavailableView("地図を表示できません", systemImage: "map", description: Text("Google Mapsの設定を確認してください。"))
         }
@@ -52,6 +54,8 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
     @Binding var selectedID: String?
     let topPadding: CGFloat
     let bottomPadding: CGFloat
+    let showsPinNames: Bool
+    let onCameraMove: (() -> Void)?
     let onUserMove: (() -> Void)?
     let onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
@@ -113,6 +117,33 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
                 markers.removeValue(forKey: id)?.map = nil
                 signatures.removeValue(forKey: id)
             }
+            // すべてのピンの位置を先に確保し、名前が別のピンを覆わないようにする。
+            let pinRects = Dictionary(parent.pins.map { pin in
+                let point = map.projection.point(for: pin.coordinate)
+                let size: CGFloat = pin.id == parent.selectedID ? 58 : 40
+                return (pin.id, CGRect(x: point.x - size / 2, y: point.y - size, width: size, height: size))
+            }, uniquingKeysWith: { first, _ in first })
+            var labelRects: [CGRect] = []
+            var namedIDs = Set<String>()
+            if parent.showsPinNames && map.camera.zoom >= 15.5 {
+                // 地図側は優先度が低い順に渡す。選択中は必ず先に判定する。
+                let ordered = parent.pins.reversed().sorted {
+                    ($0.id == parent.selectedID ? 1 : 0) > ($1.id == parent.selectedID ? 1 : 0)
+                }
+                for pin in ordered {
+                    let point = map.projection.point(for: pin.coordinate)
+                    let name = Self.shortName(pin.title)
+                    let font = UIFont.systemFont(ofSize: pin.id == parent.selectedID ? 12 : 11, weight: .bold)
+                    let width = min(118, ceil((name as NSString).size(withAttributes: [.font: font]).width) + 6)
+                    let rect = CGRect(x: point.x - width / 2, y: point.y + 2, width: width, height: 18)
+                    // 地図の利用規約・Google表記や固定UIを名前で隠さない。
+                    guard rect.minY >= map.padding.top, rect.maxY < map.bounds.height - map.padding.bottom - 30 else { continue }
+                    let coversPin = pinRects.contains { $0.key != pin.id && $0.value.intersects(rect) }
+                    guard !coversPin, !labelRects.contains(where: { $0.intersects(rect) }) else { continue }
+                    namedIDs.insert(pin.id)
+                    labelRects.append(rect)
+                }
+            }
             for (index, pin) in parent.pins.enumerated() {
                 let marker = markers[pin.id] ?? GMSMarker(position: pin.coordinate)
                 let selected = pin.id == parent.selectedID
@@ -120,8 +151,9 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
                 marker.title = pin.title
                 marker.userData = pin.id
                 marker.zIndex = selected ? 1000 : Int32(index)
-                marker.groundAnchor = CGPoint(x: 0.5, y: 1)
-                let signature = "\(pin.genre.rawValue)|\(pin.symbol)|\(pin.mark)|\(pin.showsLikeBadge)|\(selected)|\(pin.scoreTitle ?? "")|\(pin.scoreTag ?? "")"
+                let showName = namedIDs.contains(pin.id)
+                marker.groundAnchor = CGPoint(x: 0.5, y: showName ? (68.0 / 92.0) : 1)
+                let signature = "\(pin.genre.rawValue)|\(pin.symbol)|\(pin.mark)|\(pin.showsLikeBadge)|\(selected)|\(pin.scoreTitle ?? "")|\(pin.scoreTag ?? "")|\(showName ? pin.title : "")"
                 if signatures[pin.id] != signature {
                     let content: AnyView
                     if let title = pin.scoreTitle {
@@ -130,7 +162,24 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
                         content = AnyView(PlacePin(symbol: pin.symbol, genre: pin.genre, mark: pin.mark,
                                                   showsLikeBadge: pin.showsLikeBadge, isSelected: selected))
                     }
-                    let renderer = ImageRenderer(content: content.padding(8).environment(\.colorScheme, .light))
+                    let imageContent: AnyView
+                    if showName {
+                        imageContent = AnyView(VStack(spacing: 0) {
+                            content.frame(height: 60, alignment: .bottom)
+                            Text(Self.shortName(pin.title))
+                                .font(MeshinowaFont.text(selected ? 12 : 11, weight: .bold))
+                                .foregroundStyle(MeshinowaTheme.ink)
+                                .lineLimit(1).fixedSize()
+                                .shadow(color: .white, radius: 1, x: -1, y: 0)
+                                .shadow(color: .white, radius: 1, x: 1, y: 0)
+                                .shadow(color: .white, radius: 1, x: 0, y: -1)
+                                .shadow(color: .white, radius: 1, x: 0, y: 1)
+                                .frame(height: 16)
+                        }.frame(width: 120).padding(8))
+                    } else {
+                        imageContent = AnyView(content.padding(8))
+                    }
+                    let renderer = ImageRenderer(content: imageContent.environment(\.colorScheme, .light))
                     renderer.scale = UIScreen.main.scale
                     marker.icon = renderer.uiImage
                     signatures[pin.id] = signature
@@ -140,6 +189,10 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
             }
         }
 
+        private static func shortName(_ name: String) -> String {
+            name.count > 10 ? String(name.prefix(10)) + "…" : name
+        }
+
         func mapView(_ mapView: GMSMapView, didTap marker: GMSMarker) -> Bool {
             guard let id = marker.userData as? String else { return false }
             parent.selectedID = id
@@ -147,6 +200,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
         }
 
         func mapView(_ mapView: GMSMapView, willMove gesture: Bool) {
+            parent.onCameraMove?()
             if gesture { parent.onUserMove?() }
         }
 
@@ -159,6 +213,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
                                                longitude: bounds.southWest.longitude + longitudeDelta / 2),
                 span: MKCoordinateSpan(latitudeDelta: max(0.00001, bounds.northEast.latitude - bounds.southWest.latitude),
                                        longitudeDelta: max(0.00001, longitudeDelta)))
+            MainActor.assumeIsolated { updatePins(mapView) }
             parent.onCameraEnd?(region, position)
         }
     }

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地図の見やすさ案</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1C1F1D;--body:#4F5550;--sub:#6B716D;--green:#27755B;--mint:#DDF0E4;--mint-ink:#1F6B4F;--field:#F4F5F2;--hairline:#E3E5E2;
+  --heading:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#ECE7DC;color:var(--ink);font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;line-height:1.7;padding:0 16px 80px}
+.wrap{max-width:1180px;margin:0 auto}
+header{padding:44px 0 18px;border-bottom:1px solid #d9d2c4}
+header small{letter-spacing:.25em;color:var(--sub);font-size:12px}
+header h1{font-family:var(--heading);font-size:28px;font-weight:800;margin:4px 0 6px}
+header p{color:var(--body);max-width:880px}
+.phones{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;margin-top:28px}
+.cap{font-size:13px;color:var(--sub);margin-bottom:8px;text-align:center;max-width:300px}
+.cap b{color:var(--ink);font-size:15px;display:block}
+.cap b.g{color:var(--green)}
+.phone{width:300px;height:640px;border-radius:44px;background:#111;padding:10px;box-shadow:0 18px 40px #0003}
+.screen{position:relative;width:100%;height:100%;border-radius:34px;overflow:hidden}
+.island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:86px;height:24px;background:#111;border-radius:14px;z-index:50}
+.status{position:absolute;left:0;right:0;top:0;height:40px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:12px;font-weight:700;z-index:40}
+.search{position:absolute;left:10px;right:10px;top:46px;height:46px;background:#fff;border-radius:23px;box-shadow:0 2px 8px #00000024;display:flex;align-items:center;gap:6px;padding:0 5px 0 12px;font-size:12px;color:var(--sub);z-index:10}
+.search .txt{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.search .area{font-size:10px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:3px}
+.seg{margin-left:auto;display:flex;background:var(--field);border-radius:16px;padding:3px;flex:none}
+.seg span{font-size:11px;font-weight:700;padding:4px 9px;border-radius:13px;color:var(--sub)}
+.seg span.on{background:#fff;color:var(--mint-ink);box-shadow:0 1px 3px #0002}
+.rod{position:absolute;left:12px;right:12px;top:98px;height:5px;border-radius:3px;background:#3B3530;z-index:9}
+.norens{position:absolute;left:10px;right:0;top:102px;display:flex;gap:4px;z-index:9;overflow:hidden}
+.noren{flex:none;width:50px;height:28px;background:#fff;box-shadow:0 1px 4px #00000024;border-radius:0 0 4px 4px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.noren.on{height:42px;background:var(--green);color:#fff;font-weight:700;clip-path:polygon(0 0,100% 0,100% 100%,54% 100%,50% 82%,46% 100%,0 100%)}
+.pin{position:absolute;transform:translate(-50%,-100%);z-index:5;line-height:0;display:flex;flex-direction:column;align-items:center}
+.pin .nm{position:absolute;top:100%;margin-top:2px;white-space:nowrap;font-size:10px;font-weight:700;color:var(--ink);line-height:1.2;
+  text-shadow:0 0 2px #fff,0 0 2px #fff,0 0 3px #fff,0 0 3px #fff}
+.pin .nm.sel{font-size:11.5px}
+.loc{position:absolute;right:12px;bottom:92px;width:40px;height:40px;border-radius:50%;background:#fff;box-shadow:0 2px 6px #0003;z-index:10;display:flex;align-items:center;justify-content:center;color:var(--green);font-size:15px}
+.tabbar{position:absolute;left:12px;right:12px;bottom:14px;height:52px;background:#fff;border-radius:26px;display:flex;align-items:center;justify-content:space-around;z-index:20;box-shadow:0 1px 6px #0000001a}
+.tabbar i{width:18px;height:18px;border:2px solid var(--ink);border-radius:5px;opacity:.75}
+.tabbar .c{width:58px;height:58px;border-radius:50%;background:var(--green);border:3px solid #fff;box-shadow:0 1px 4px #00000026}
+.me{position:absolute;width:16px;height:16px;border-radius:50%;background:#2D7FF9;border:3px solid #fff;box-shadow:0 0 0 10px #2D7FF922,0 1px 3px #0004;z-index:6;transform:translate(-50%,-50%)}
+.box{max-width:960px;margin:26px auto 0;background:#fff;border:1px solid var(--hairline);border-radius:14px;padding:16px 20px;font-size:14px;color:var(--body)}
+.box h3{font-family:var(--heading);color:var(--ink);font-size:16px;margin:6px 0 2px}
+.box li{margin:3px 0 3px 1.2em}
+.box b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <small>MESHINOWA · MAP READABILITY</small>
+  <h1>地図の見やすさ：A＋B と A＋B＋D</h1>
+  <p>左から、今の地図・A＋B・A＋B＋D です。A＝駅名や目印を戻し、高速の表示を消し、道を浮かせる配色。B＝拡大したときアプリのピンの下に店名。D＝検索欄に今見ている地域名。</p>
+</header>
+<div class="phones">
+  <div><div class="cap"><b>今</b>駅名・目印がなく、高速の表示だけ目立つ</div><div class="phone"><div class="screen" id="now"></div></div></div>
+  <div><div class="cap"><b class="g">A＋B</b>駅名・目印が戻り、ピンの下に店名</div><div class="phone"><div class="screen" id="ab"></div></div></div>
+  <div><div class="cap"><b class="g">A＋B＋D</b>検索欄に「東京駅周辺」</div><div class="phone"><div class="screen" id="abd"></div></div></div>
+</div>
+<div class="box">
+  <h3>A：配色（消しすぎない）</h3>
+  <ul>
+    <li><b>出す：</b>駅名と駅のマーク、目印（観光地・公共施設・公園・大きなビル）の名前。地名・町名。</li>
+    <li><b>消す：</b>お店のアイコンと名前（アプリのピンと重ならないように）、高速道路の番号・IC・JCT。</li>
+    <li><b>色：</b>陸地 #F1EADB（今より少し濃く）、街区 #EAE2D0、道路は白で縁を #DCD2BE に。道が陸地から浮いて見える。水・緑は今の淡さのまま。</li>
+  </ul>
+  <h3>B：ピンの下に店名</h3>
+  <ul>
+    <li>ある程度拡大したときだけ出す（目安：表示範囲の幅が約1.5km以下）。引いたときは今どおりピンだけ。</li>
+    <li>名前は1行・最大10文字ほどで切り、白い縁取りの墨色の文字。選んでいるピンは少し大きく。</li>
+    <li>重なったときは、今のピンの間引きの順（選択中 → 友達の評価 → 自分の記録 → 一般）で名前を残す。</li>
+  </ul>
+  <h3>D：今見ている地域名</h3>
+  <ul>
+    <li>検索欄の文字の上に「📍 東京駅周辺」のように小さく出す。地図を動かして止まったときに、地図の中心の地名（駅名や町名）に変わる。</li>
+    <li>現在地の青い点は今も出る。現在地ボタンを押した直後は「現在地の周辺」と出す。</li>
+    <li>地域名の取得は、地図を止めたときの1回だけ（逆ジオコーディング）。検索欄の高さは変えない。</li>
+  </ul>
+</div>
+</div>
+
+<script>
+const G="#27755B",LIKE="#E5577E",MUST="#E8AD45",WOOD="#6B4A32";
+const C={washoku:['M4 17 H32 C32 25 26 30 18 30 C10 30 4 25 4 17Z M6 15.5 C6 9 11 6 18 6 C25 6 30 9 30 15.5Z',22],
+ sushi:['M8 6 H28 L26.5 27 C26.3 29 25 30 23 30 H13 C11 30 9.7 29 9.5 27Z',17],
+ noodle:['M2 13 H34 C34 23 27 30 18 30 C9 30 2 23 2 13Z',22],
+ izakaya:['M7 5 C3 9 3 25 7 29 H29 C33 25 33 9 29 5Z',17],
+ yoshoku:['M5 24 C5 14 11 9 18 9 C25 9 31 14 31 24Z M2 24 H34 V27 C34 28.5 33 29.5 31.5 29.5 H4.5 C3 29.5 2 28.5 2 27Z',19],
+ cafe:['M7 8 H26 V21 C26 26.5 22.5 30 16.5 30 C10.5 30 7 26.5 7 21Z',18],
+ other:['M31 17 C31 24.2 25.2 30 18 30 C10.8 30 5 24.2 5 17 C5 9.8 10.8 4 18 4 C25.2 4 31 9.8 31 17Z',17]};
+function ware(cat,tone,score,size){
+  const [d,cy]=C[cat];const fill={plain:'#fff',liked:LIKE,friend:G,mine:MUST}[tone];const out=tone==='plain';
+  const caps=cat==='izakaya'?'<rect x="10" y="1" width="16" height="4" rx="1.2" fill="#1F4D3D"/><rect x="10" y="29" width="16" height="4" rx="1.2" fill="#1F4D3D"/>':'';
+  const st=cat==='noodle'?`<path d="M21 13 L30 1.5 M24.5 13 L33 2.5" stroke="${WOOD}" stroke-width="1.6" stroke-linecap="round"/>`:'';
+  const inner=score?`<text x="18" y="${cy+3.6}" text-anchor="middle" font-family="M PLUS Rounded 1c" font-weight="800" font-size="10" fill="${tone==='mine'?'#5A3C08':'#fff'}">${score}</text>`
+   :(tone==='liked'?`<path transform="translate(18 ${cy}) scale(.8)" d="M0 4.6S-4.8 1.7-4.8-1.6A2.6 2.6 0 0 1 0-3.2a2.6 2.6 0 0 1 4.8 1.6C4.8 1.7 0 4.6 0 4.6z" fill="#fff"/>`:'');
+  return `<svg width="${size}" height="${size*40/36}" viewBox="0 0 36 40" style="overflow:visible;filter:drop-shadow(0 2px 3px #0000004d)">${st}<path d="M14 30 L18 37 L22 30Z" fill="${out?G:fill}"/><path d="${d}" fill="${fill}" stroke="${out?G:'#fff'}" stroke-width="${out?2.2:1.5}" stroke-linejoin="round"/>${caps}${inner}</svg>`;
+}
+function map(after){
+  const land=after?'#F1EADB':'#F6F1E6', block=after?'#EAE2D0':'#EFE8D8', edge=after?'#DCD2BE':'#ECE4D4';
+  const lbl='#6B716D';
+  const station=(x,y,n)=>after?`<g><rect x="${x-5}" y="${y-5}" width="10" height="10" rx="2.5" fill="#3E6FA8"/><text x="${x}" y="${y+2.5}" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">駅</text><text x="${x+8}" y="${y+4}" font-size="11" font-weight="700" fill="#3B5F86" stroke="#FDF8EE" stroke-width="3" paint-order="stroke">${n}</text></g>`:'';
+  const land2=(x,y,n)=>after?`<text x="${x}" y="${y}" font-size="10" fill="${lbl}" stroke="#FDF8EE" stroke-width="3" paint-order="stroke">${n}</text>`:'';
+  const hw=!after?`<g font-size="10" font-weight="700"><rect x="190" y="420" width="64" height="18" fill="#fff" stroke="#3E8E52" stroke-width="1.5"/><text x="194" y="433" fill="#3E8E52">江戸橋JCT</text><rect x="70" y="560" width="64" height="18" fill="#fff" stroke="#3E8E52" stroke-width="1.5"/><text x="74" y="573" fill="#3E8E52">西銀座JCT</text><circle cx="60" cy="260" r="8" fill="#fff" stroke="#3E6FA8"/><text x="57" y="264" fill="#3E6FA8">1</text><circle cx="240" cy="330" r="8" fill="#fff" stroke="#3E6FA8"/><text x="237" y="334" fill="#3E6FA8">4</text></g>`:'';
+  return `<svg viewBox="0 0 280 620" width="280" height="620" style="position:absolute;inset:0">
+   <rect width="280" height="620" fill="${land}"/>
+   <g fill="${block}"><rect x="96" y="150" width="70" height="80"/><rect x="180" y="160" width="80" height="70"/><rect x="20" y="300" width="60" height="70"/><rect x="180" y="360" width="80" height="60"/><rect x="96" y="380" width="60" height="70"/><rect x="20" y="470" width="60" height="70"/></g>
+   <path d="M0 190 Q30 185 40 260 T15 430 L0 430Z" fill="#DDE6D3"/>
+   <path d="M215 560 Q250 590 280 575 L280 620 L180 620Z" fill="#C9DCE3"/>
+   <g fill="none" stroke-linecap="round"><g stroke="${edge}" stroke-width="12"><path d="M0 140 L280 120"/><path d="M90 0 L120 620"/><path d="M175 0 L165 620"/><path d="M0 350 L280 330"/><path d="M0 460 L280 450"/></g>
+   <g stroke="#fff" stroke-width="9"><path d="M0 140 L280 120"/><path d="M90 0 L120 620"/><path d="M175 0 L165 620"/><path d="M0 350 L280 330"/><path d="M0 460 L280 450"/></g>
+   <g stroke="${edge}" stroke-width="6"><path d="M50 0 L70 620"/><path d="M240 0 L230 620"/><path d="M0 250 L280 240"/><path d="M0 550 L280 540"/></g>
+   <g stroke="#fff" stroke-width="4"><path d="M50 0 L70 620"/><path d="M240 0 L230 620"/><path d="M0 250 L280 240"/><path d="M0 550 L280 540"/></g>
+   <path d="M150 0 L138 620" stroke="#B9C8C4" stroke-width="3"/></g>
+   ${station(140,365,'東京')}${station(90,215,'大手町')}${station(222,262,'日本橋')}${station(34,585,'有楽町')}
+   ${land2(14,300,'皇居外苑')}${land2(190,520,'東京国際フォーラム'.slice(0,0)+'京橋')}${land2(104,410,'丸の内')}${land2(190,410,'八重洲')}
+   ${hw}
+   <text x="8" y="168" font-size="12" fill="${lbl}" font-weight="700" stroke="${land}" stroke-width="3" paint-order="stroke">千代田区</text></svg>`;
+}
+const pins=[['izakaya',60,330,'plain','大衆酒場 ともしび'],['washoku',132,272,'friend','こもれび食堂','4.6'],['noodle',212,330,'mine','めん処 ひだまり','3.5'],['sushi',120,430,'liked','鮨 なぎさ'],['cafe',212,410,'plain','喫茶 まるい'],['other',150,500,'plain','ごはんや 団らん'],['yoshoku',210,210,'plain','洋食 いしかわ']];
+function screen(names,area){
+  const pinHTML=pins.map(([c,x,y,t,n,s],i)=>`<div class="pin" style="left:${x}px;top:${y}px">${ware(c,t,s,i===1&&names?32:28)}${names?`<span class="nm${i===1?' sel':''}">${n.length>10?n.slice(0,9)+'…':n}</span>`:''}</div>`).join('');
+  return map(names)+`<div class="island"></div><div class="status"><span>9:41</span><span>●●●</span></div>
+   <div class="search">🔍<span class="txt">${area?'<span class="area">📍 東京駅周辺</span>':''}<span>お店やジャンルを探す</span></span><span class="seg"><span class="on">すべて</span><span>友達</span></span></div>
+   <div class="rod"></div><div class="norens">${['すべて','和食','寿司','麺','焼肉','居酒屋'].map((n,i)=>`<div class="noren${i===0?' on':''}">${n}</div>`).join('')}</div>
+   ${pinHTML}${area?'<div class="me" style="left:160px;top:350px"></div>':''}
+   <div class="loc">➤</div><div class="tabbar"><i></i><i></i><span class="c"></span><i></i><i></i></div>`;
+}
+document.getElementById('now').innerHTML=screen(false,false);
+document.getElementById('ab').innerHTML=screen(true,false);
+document.getElementById('abd').innerHTML=screen(true,true);
+</script>
+</body>
+</html>

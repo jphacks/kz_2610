@@ -9,6 +9,8 @@ struct MapHomeView: View {
     @EnvironmentObject private var friends: FriendStore
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var searchSession = RestaurantSearchSession()
+    @StateObject private var areaNamer = MapAreaNamer()
+    @State private var showsCurrentArea = false
     @State private var searchTask: Task<Void, Never>?
     @State private var searchesAllPlaces = true
     @State private var friendResults: [RestaurantSearchResult] = []
@@ -134,9 +136,11 @@ struct MapHomeView: View {
         }, selectedID: Binding(get: { selectedID?.uuidString }, set: { selectedID = $0.flatMap(UUID.init(uuidString:)) }),
                         topPadding: headerHeight,
                         bottomPadding: tabBarSpace + (selectedResult == nil ? 0 : cardHeight),
-                        onUserMove: { hasMovedSinceSearch = true }) { region, position in
+                        onCameraMove: { areaNamer.invalidate() },
+                        onUserMove: { hasMovedSinceSearch = true; showsCurrentArea = false }) { region, position in
             visibleRegion = region
             lastCamera = position
+            areaNamer.update(center: position.target)
             if adoptsNextCamera {
                 searchedRegion = region
                 adoptsNextCamera = false
@@ -246,6 +250,8 @@ struct MapHomeView: View {
         .onChange(of: location.location) { _, value in
             guard let value else { return }
             hasMovedSinceSearch = true
+            showsCurrentArea = true
+            areaNamer.invalidate()
             camera = .region(MKCoordinateRegion(center: value.coordinate, latitudinalMeters: 2000, longitudinalMeters: 2000))
             searchedRegion = nil
         }
@@ -334,7 +340,7 @@ struct MapHomeView: View {
     }
 
     private var locationButton: some View {
-        Button { location.request() } label: {
+        Button { showsCurrentArea = true; areaNamer.invalidate(); location.request() } label: {
             Group {
                 if location.isRequesting { ProgressView().controlSize(.small) }
                 else { Image(systemName: "location.fill").font(.system(size: 17, weight: .semibold)) }
@@ -356,13 +362,21 @@ struct MapHomeView: View {
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(MeshinowaTheme.green)
                 .accessibilityHidden(true)
-            TextField(searchesAllPlaces ? "お店やジャンルを探す" : "友達のお店を絞り込む", text: $query)
-                .font(MeshinowaFont.text(16))
-                .focused($isSearchFocused)
-                .submitLabel(.search)
-                .onSubmit { beginSearch(force: true) }
-                .disabled(isSearching)
-                .accessibilityLabel("店名・ジャンルで検索")
+            VStack(alignment: .leading, spacing: 0) {
+                if !isSearchFocused, let area = showsCurrentArea ? "現在地の周辺" : areaNamer.name.map({ $0 + "周辺" }) {
+                    Text(area)
+                        .font(MeshinowaFont.text(11, weight: .bold))
+                        .foregroundStyle(MeshinowaTheme.green)
+                        .lineLimit(1)
+                }
+                TextField(searchesAllPlaces ? "お店やジャンルを探す" : "友達のお店を絞り込む", text: $query)
+                    .font(MeshinowaFont.text(16))
+                    .focused($isSearchFocused)
+                    .submitLabel(.search)
+                    .onSubmit { beginSearch(force: true) }
+                    .disabled(isSearching)
+                    .accessibilityLabel("店名・ジャンルで検索")
+            }
             if !query.isEmpty && !isSearching {
                 Button {
                     query = ""
@@ -563,6 +577,58 @@ struct MapHomeView: View {
         }
     }
 
+}
+
+
+/// 地図中心の地域名を取得する。解決手段を差し替えて通信を伴わず検証できる。
+@MainActor
+final class MapAreaNamer: ObservableObject {
+    struct Area {
+        var subLocality: String?
+        var locality: String?
+        var administrativeArea: String?
+        var name: String? {
+            [subLocality, locality, administrativeArea].compactMap { value in
+                let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed?.isEmpty == false ? trimmed : nil
+            }.first
+        }
+    }
+    typealias Resolver = (CLLocation) async throws -> Area?
+    @Published private(set) var name: String?
+    private let resolver: Resolver
+    private var lastLocation: CLLocation?
+    private var pending = false
+    private var generation = 0
+    private var task: Task<Void, Never>?
+
+    init(resolver: @escaping Resolver = { location in
+        let placemark = try await CLGeocoder().reverseGeocodeLocation(location, preferredLocale: Locale(identifier: "ja_JP")).first
+        return placemark.map { Area(subLocality: $0.subLocality, locality: $0.locality, administrativeArea: $0.administrativeArea) }
+    }) { self.resolver = resolver }
+
+    func invalidate() {
+        generation += 1
+        task?.cancel()
+        task = nil
+        if pending { lastLocation = nil }
+        pending = false
+    }
+
+    func update(center: CLLocationCoordinate2D) {
+        let location = CLLocation(latitude: center.latitude, longitude: center.longitude)
+        if let lastLocation, location.distance(from: lastLocation) < 300 { return }
+        invalidate()
+        lastLocation = location
+        pending = true
+        let current = generation
+        task = Task { [weak self, resolver] in
+            let result = try? await resolver(location)
+            guard let self, !Task.isCancelled, self.generation == current else { return }
+            self.pending = false
+            if let value = result?.name { self.name = value }
+        }
+    }
 }
 
 private struct CarouselSlot: Hashable {

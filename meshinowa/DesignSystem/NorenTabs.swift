@@ -31,10 +31,10 @@ struct NorenTabs<Item: NorenTabItem>: View {
     var body: some View {
         ZStack(alignment: .top) {
             if style != .standard {
-                Capsule().fill(MeshinowaTheme.mustardInk)
-                    .frame(height: 4)
+                Capsule().fill(style == .rod ? MeshinowaTheme.rod : MeshinowaTheme.mustardInk)
+                    .frame(height: style == .rod ? 5 : 4)
                     .shadow(color: .black.opacity(0.25), radius: 1, y: 1)
-                    .padding(.horizontal, style == .collection ? -6 : 0)
+                    .padding(.horizontal, style == .collection ? -6 : 2)
             }
             tabs.padding(.top, style == .standard ? 0 : 3)
         }

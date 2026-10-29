@@ -13,6 +13,7 @@ enum MeshinowaTheme {
 
     // 文字
     static let ink = hex(0x1C1F1D)
+    static let rod = hex(0x3B3530)
     static let bodyText = hex(0x4F5550)
     static let secondaryText = hex(0x6B716D)
 

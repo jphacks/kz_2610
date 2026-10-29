@@ -134,6 +134,8 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
                     let font = UIFont.systemFont(ofSize: pin.id == parent.selectedID ? 12 : 11, weight: .bold)
                     let width = min(118, ceil((name as NSString).size(withAttributes: [.font: font]).width) + 6)
                     let rect = CGRect(x: point.x - width / 2, y: point.y + 2, width: width, height: 18)
+                    // 地図の利用規約・Google表記や固定UIを名前で隠さない。
+                    guard rect.minY >= map.padding.top, rect.maxY < map.bounds.height - map.padding.bottom - 30 else { continue }
                     let coversPin = pinRects.contains { $0.key != pin.id && $0.value.intersects(rect) }
                     guard !coversPin, !labelRects.contains(where: { $0.intersects(rect) }) else { continue }
                     namedIDs.insert(pin.id)

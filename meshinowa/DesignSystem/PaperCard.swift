@@ -37,6 +37,7 @@ struct SoftTag: View {
             .padding(.vertical, compact ? 1 : 4)
             .foregroundStyle(foreground)
             .background(background, in: RoundedRectangle(cornerRadius: compact ? 4 : 6, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: compact ? 4 : 6, style: .continuous).strokeBorder(tone == .neutral ? MeshinowaTheme.hairline : .clear, lineWidth: 1))
     }
 
     private var foreground: Color {
@@ -53,7 +54,7 @@ struct SoftTag: View {
         case .mint: return MeshinowaTheme.mint
         case .mustard: return MeshinowaTheme.mustardSoft
         case .like: return MeshinowaTheme.likeSoft
-        case .neutral: return MeshinowaTheme.field
+        case .neutral: return MeshinowaTheme.card
         }
     }
 }
@@ -90,7 +91,7 @@ struct UnderlineTabs<Value: Hashable>: View {
                     .frame(minHeight: 48)
                     .overlay(alignment: .bottom) {
                         Rectangle()
-                            .fill(isSelected ? MeshinowaTheme.ink : .clear)
+                            .fill(isSelected ? MeshinowaTheme.green : .clear)
                             .frame(height: 3)
                     }
                     .contentShape(Rectangle())
@@ -315,6 +316,7 @@ struct RestaurantActionTile: View {
         .foregroundStyle(tint)
         .frame(maxWidth: .infinity, minHeight: 56)
         .background(background, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(MeshinowaTheme.hairline, lineWidth: 1))
         .contentShape(RoundedRectangle(cornerRadius: 14))
     }
 }

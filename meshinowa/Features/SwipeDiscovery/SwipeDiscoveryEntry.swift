@@ -125,7 +125,7 @@ struct SwipeWantToGoButton: View {
             if tile {
                 RestaurantActionTile(title: "行きたい", symbol: isOn ? "flag.fill" : "flag",
                                      tint: MeshinowaTheme.green,
-                                     background: isOn ? MeshinowaTheme.mint : MeshinowaTheme.field)
+                                     background: isOn ? MeshinowaTheme.mint : MeshinowaTheme.card)
             } else if compact {
                 Image(systemName: isOn ? "flag.fill" : "flag")
                     .font(.system(size: 19, weight: .regular))

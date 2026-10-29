@@ -92,7 +92,8 @@ struct ReviewShopHeader: View {
         HStack(spacing: 12) {
             FoodGenreMark(genre: item.foodGenre, size: 34)
                 .frame(width: 54, height: 54)
-                .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(MeshinowaTheme.hairline))
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name ?? "飲食店")
                     .font(MeshinowaFont.heading(19, relativeTo: .title3))

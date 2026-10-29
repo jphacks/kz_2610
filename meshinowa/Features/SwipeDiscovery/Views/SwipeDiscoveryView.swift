@@ -270,6 +270,7 @@ struct SwipeDiscoveryView: View {
         .padding(.trailing, 4)
         .padding(.vertical, 2)
         .background(SwipeTheme.field, in: Capsule())
+        .overlay(Capsule().strokeBorder(SwipeTheme.hairline))
         .padding(.top, 4)
     }
 

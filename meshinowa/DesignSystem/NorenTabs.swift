@@ -391,7 +391,7 @@ struct NorenCloth: Shape {
         var body: some View {
             NorenTabs(items: RestaurantGenre.allCases, selection: $genre)
                 .padding(12)
-                .background(MeshinowaTheme.field)
+                .background(MeshinowaTheme.ground)
         }
     }
     return Demo()

@@ -210,7 +210,8 @@ struct SavedRestaurantsView: View {
         }
         .padding(.leading, 16)
         .frame(height: 44)
-        .background(MeshinowaTheme.field, in: Capsule())
+        .background(MeshinowaTheme.card, in: Capsule())
+        .overlay(Capsule().strokeBorder(MeshinowaTheme.hairline))
     }
 
     private var emptyState: some View {

@@ -3,6 +3,7 @@ import SwiftUI
 /// 白地に写真とカードを並べる v3 デザインの共通色。
 enum MeshinowaTheme {
     // 面
+    static let ground = hex(0xFDF8EE)
     static let paper = Color.white
     static let card = Color.white
     static let field = hex(0xF4F5F2)

@@ -39,7 +39,8 @@ struct FriendsHomeView: View {
                         .foregroundStyle(MeshinowaTheme.bodyText)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(MeshinowaTheme.hairline))
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
                 }
@@ -64,7 +65,7 @@ struct FriendsHomeView: View {
             guard isActive && scenePhase == .active else { return }
             await store.refreshIfNeeded()
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.ground)
         .foregroundStyle(MeshinowaTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showsAddFriend) { FriendAddSheet(startsWithSearch: startsWithIDSearch) }
@@ -127,7 +128,7 @@ struct FriendsHomeView: View {
     /// つながっていないときの空の状態。ほかの画面と同じ形（ミントの丸・見出し・主ボタン・副ボタン）。
     private var disconnected: some View {
         VStack(spacing: 12) {
-            BowlMark(size: 52, holes: MeshinowaTheme.mint)
+            BowlMark(size: 52, holes: MeshinowaTheme.card)
                 .frame(width: 84, height: 84)
                 .background(MeshinowaTheme.mint, in: Circle())
             Text("友達の機能に\nつながっていません")
@@ -165,9 +166,10 @@ struct FriendsHomeView: View {
 
     private var firstFriend: some View {
         VStack(spacing: 12) {
-            BowlMark(size: 52, holes: MeshinowaTheme.mint)
+            BowlMark(size: 52, holes: MeshinowaTheme.card)
                 .frame(width: 84, height: 84)
-                .background(MeshinowaTheme.mint, in: Circle())
+                .background(MeshinowaTheme.card, in: Circle())
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 1)
             Text("まずは友達とつながろう").font(MeshinowaFont.heading(20))
             Text("友達がつけた評価が、地図のピンと\nこのページのおすすめに集まります。")
                 .font(MeshinowaFont.text(14))
@@ -196,7 +198,8 @@ struct FriendsHomeView: View {
                     .buttonStyle(.plain)
                 }
                 .padding(.vertical, 14).padding(.horizontal, 16)
-                .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 14))
+                .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(MeshinowaTheme.hairline))
                 .padding(.top, 12)
                 ShareLink(item: "メシノワで友達になろう！ ID: @\(me.handle)") {
                     Text("IDを送って友達を招く")
@@ -414,7 +417,7 @@ private struct FriendConnectionsSection: View {
                     Text("ID: \(friend.handle)").font(MeshinowaFont.text(14))
                     Text(friend.bio ?? "").font(MeshinowaFont.text(16)).multilineTextAlignment(.center)
                     Spacer()
-                }.padding(24).frame(maxWidth: .infinity).background(MeshinowaTheme.paper)
+                }.padding(24).frame(maxWidth: .infinity).background(MeshinowaTheme.ground)
                     .navigationTitle("友達のプロフィール").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { selectedProfile = nil } } }
             }.presentationDetents([.medium, .large])
@@ -547,7 +550,7 @@ private struct FriendAddSheet: View {
                 .padding(20)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(MeshinowaTheme.paper)
+            .background(MeshinowaTheme.ground)
             .foregroundStyle(MeshinowaTheme.ink)
             .navigationTitle("友達を追加")
             .navigationBarTitleDisplayMode(.inline)
@@ -615,7 +618,8 @@ private struct FriendAddSheet: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 22))
+        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 22))
+                .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(MeshinowaTheme.hairline))
     }
 
     private var search: some View {

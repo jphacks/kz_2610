@@ -105,7 +105,7 @@ struct ReviewEditor: View {
                         inputDivider
                         photoRow.padding(12)
                     }
-                    .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 14))
+                    .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 14))
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(MeshinowaTheme.hairline))
 
                     Label(friends.isAvailable
@@ -118,7 +118,7 @@ struct ReviewEditor: View {
                 .padding(.bottom, 12)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(MeshinowaTheme.paper)
+            .background(MeshinowaTheme.ground)
             .foregroundStyle(MeshinowaTheme.ink)
             .disabled(isSaving)
             .safeAreaInset(edge: .bottom) {
@@ -130,7 +130,7 @@ struct ReviewEditor: View {
                 .disabled(!canSave)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
-                .background(MeshinowaTheme.paper.overlay(alignment: .top) {
+                .background(MeshinowaTheme.ground.overlay(alignment: .top) {
                     Rectangle().fill(MeshinowaTheme.hairline).frame(height: 1)
                 })
             }
@@ -185,7 +185,7 @@ struct ReviewEditor: View {
             } message: { Text(error ?? "") }
         }
         .ratingSealOnSave(rating: rating, isPresented: $showsSeal) { dismiss() }
-        .presentationBackground(MeshinowaTheme.paper)
+        .presentationBackground(MeshinowaTheme.ground)
     }
 
     private func save() {
@@ -254,9 +254,9 @@ struct ReviewEditor: View {
                         }
                         .foregroundStyle(MeshinowaTheme.green)
                         .frame(width: 64, height: 64)
-                        .background(MeshinowaTheme.paper, in: RoundedRectangle(cornerRadius: 12))
+                        .background(MeshinowaTheme.ground, in: RoundedRectangle(cornerRadius: 12))
                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(MeshinowaTheme.outline, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
+                            .strokeBorder(MeshinowaTheme.green, style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
                     }
                     .disabled(isLoadingPhotos)
                     .accessibilityLabel("写真を選ぶ、あと\(5 - retainedPhotoNames.count - newPhotos.count)枚")

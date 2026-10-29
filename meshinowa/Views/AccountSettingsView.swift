@@ -47,7 +47,7 @@ struct SWAccountSettingsView: View {
                 Text("おいしい店は、友達が知っている。")
             }
         }
-        .font(MeshinowaFont.text(15)).scrollContentBackground(.hidden).background(MeshinowaTheme.paper)
+        .font(MeshinowaFont.text(15)).scrollContentBackground(.hidden).background(MeshinowaTheme.ground)
         .navigationTitle("設定").navigationBarTitleDisplayMode(.inline).reservesFloatingTabBarSpace()
         .task {
             guard friends.isAvailable else { return }

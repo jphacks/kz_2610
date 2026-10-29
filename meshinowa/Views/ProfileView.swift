@@ -53,7 +53,7 @@ struct ProfileView: View {
                     statistic("いいね", count: saved.restaurants.filter(\.isLiked).count) { Image(systemName: "heart.fill").foregroundStyle(MeshinowaTheme.like) }
                     divider
                     statistic("友達", count: friends.friends.count) { Image(systemName: "person.2.fill").foregroundStyle(MeshinowaTheme.green) }
-                }.padding(.vertical, 14).background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 16))
+                }.padding(.vertical, 14).background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(MeshinowaTheme.hairline))
 
                 if friends.isAvailable && !reviews.pending.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
@@ -92,7 +92,7 @@ struct ProfileView: View {
             }.padding(20)
         }
         .refreshable { await friends.retryConnection() }
-        .background(MeshinowaTheme.paper).foregroundStyle(MeshinowaTheme.ink)
+        .background(MeshinowaTheme.ground).foregroundStyle(MeshinowaTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $editing) { ReviewEditor(item: $0.restaurant.mapItem, existing: $0) }
         .sheet(isPresented: $editsProfile) { ProfileEditorView() }
@@ -163,14 +163,14 @@ struct ProfileIcon: View {
     var body: some View {
         Group {
             if symbol == Self.defaultSymbol {
-                BowlMark(size: size * 0.66, holes: MeshinowaTheme.mint)
+                BowlMark(size: size * 0.66, holes: MeshinowaTheme.card)
             } else {
                 Image(systemName: symbol).font(.system(size: size * 0.4, weight: .semibold))
                     .foregroundStyle(MeshinowaTheme.green)
             }
         }
         .frame(width: size, height: size)
-        .background(MeshinowaTheme.mint, in: Circle()).accessibilityHidden(true)
+        .background(MeshinowaTheme.card, in: Circle()).shadow(color: .black.opacity(0.08), radius: 4, y: 1).accessibilityHidden(true)
     }
 }
 
@@ -218,7 +218,7 @@ struct ProfileEditorView: View {
                 Section { Text(friends.isAvailable ? "表示名・アイコン・自己紹介は、友達やID検索であなたを見つけた人に表示されます。" : "この端末に保存します。") }
                 if let error { Section { Text(error).foregroundStyle(.red) } }
             }
-            .font(MeshinowaFont.text(15)).scrollContentBackground(.hidden).background(MeshinowaTheme.paper)
+            .font(MeshinowaFont.text(15)).scrollContentBackground(.hidden).background(MeshinowaTheme.ground)
             .navigationTitle("プロフィールを編集").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("キャンセル") { dismiss() }.disabled(isSaving) }
@@ -271,7 +271,7 @@ struct MyReviewsView: View {
             }
             .padding(20)
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.ground)
         .foregroundStyle(MeshinowaTheme.ink)
         .navigationTitle("自分のレビュー")
         .reservesFloatingTabBarSpace()
@@ -295,7 +295,8 @@ private struct LocalReviewRow: View {
                             Image(uiImage: image).resizable().scaledToFill()
                         } else {
                             FoodGenreMark(genre: review.restaurant.foodGenre, size: 30)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity).background(MeshinowaTheme.photo)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity).background(MeshinowaTheme.card)
+                                .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(MeshinowaTheme.hairline))
                         }
                     }
                     .frame(width: 46, height: 46).clipShape(RoundedRectangle(cornerRadius: 11))
@@ -364,7 +365,7 @@ struct MyRestaurantMapView: View {
             }
             .padding(20)
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.ground)
         .foregroundStyle(MeshinowaTheme.ink)
         .navigationTitle("マイマップ")
         .reservesFloatingTabBarSpace()

@@ -64,14 +64,14 @@ struct RestaurantPreview: View {
                     RestaurantActionTile(title: rating.map { "自分 " + $0.formatted(.number.precision(.fractionLength(1))) } ?? "評価する",
                                          symbol: rating == nil ? "star" : "star.fill",
                                          tint: rating == nil ? MeshinowaTheme.accent : MeshinowaTheme.mustardInk,
-                                         background: rating == nil ? MeshinowaTheme.field : MeshinowaTheme.mustardSoft)
+                                         background: rating == nil ? MeshinowaTheme.card : MeshinowaTheme.mustardSoft)
                 }
                 .disabled(reviews.loadError != nil)
                 .accessibilityLabel(rating.map { "自分の評価、\($0.formatted(.number.precision(.fractionLength(1))))点。変更する" } ?? "行ったお店を評価する")
                 Button { showsError = !saved.setLiked(item, isLiked: !isLiked) } label: {
                     RestaurantActionTile(title: "いいね", symbol: isLiked ? "heart.fill" : "heart",
                                          tint: MeshinowaTheme.like,
-                                         background: isLiked ? MeshinowaTheme.likeSoft : MeshinowaTheme.field)
+                                         background: isLiked ? MeshinowaTheme.likeSoft : MeshinowaTheme.card)
                 }
                 .accessibilityLabel("いいね")
                 .accessibilityValue(isLiked ? "登録済み" : "未登録")
@@ -81,7 +81,7 @@ struct RestaurantPreview: View {
         }
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(10)
-        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(MeshinowaTheme.ground, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .shadow(color: .black.opacity(0.18), radius: 14, y: 4)
         .accessibilityElement(children: .contain)
         .accessibilityAction(named: "お店の情報を開く") { showsDetails = true }
@@ -126,7 +126,7 @@ struct QuickRatingSheet: View {
         .ratingSealOnSave(rating: rating, isPresented: $showsSeal) { dismiss() }
         .presentationDetents([.height(380)])
         .presentationDragIndicator(.visible)
-        .presentationBackground(MeshinowaTheme.paper)
+        .presentationBackground(MeshinowaTheme.ground)
         .onAppear { rating = existing?.rating ?? 0 }
         .sheet(isPresented: $showsEditor, onDismiss: {
             if reviews.review(for: item) != nil { dismiss() }
@@ -250,7 +250,7 @@ struct RestaurantInformationView: View {
             }
             .padding(20)
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.ground)
         .foregroundStyle(MeshinowaTheme.ink)
         .safeAreaInset(edge: .bottom) {
             HStack(spacing: 12) {
@@ -260,7 +260,7 @@ struct RestaurantInformationView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
                 .padding(.bottom, 6)
-                .background(MeshinowaTheme.paper)
+                .background(MeshinowaTheme.ground)
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)

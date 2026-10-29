@@ -129,7 +129,7 @@ struct FriendRecommendationsView: View {
         .foregroundStyle(MeshinowaTheme.ink)
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
-        .background(MeshinowaTheme.paper.ignoresSafeArea(edges: .top))
+        .background(MeshinowaTheme.ground.ignoresSafeArea(edges: .top))
     }
 
     private var lensShortTitle: String {
@@ -203,7 +203,7 @@ struct FriendRecommendationsView: View {
         .padding(.bottom, 12)
         .background(
             UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22, style: .continuous)
-                .fill(MeshinowaTheme.card)
+                .fill(MeshinowaTheme.ground)
                 .shadow(color: .black.opacity(0.08), radius: 10, y: -2)
                 .ignoresSafeArea(edges: .bottom)
         )

@@ -64,7 +64,7 @@ struct FriendLensPicker: View {
                 .padding(20)
             }
             .foregroundStyle(MeshinowaTheme.ink)
-            .background(MeshinowaTheme.paper)
+            .background(MeshinowaTheme.ground)
             .safeAreaInset(edge: .bottom) {
                 Button("\(count)人の評価で表示") {
                     lens = draft
@@ -72,7 +72,7 @@ struct FriendLensPicker: View {
                 }
                 .buttonStyle(PaperButtonStyle())
                 .padding(20)
-                .background(MeshinowaTheme.paper)
+                .background(MeshinowaTheme.ground)
             }
             .navigationTitle("Friend Lens")
             .navigationBarTitleDisplayMode(.inline)

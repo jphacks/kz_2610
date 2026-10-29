@@ -49,10 +49,10 @@ struct WelcomeView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity)
-            .background(MeshinowaTheme.paper)
+            .background(MeshinowaTheme.ground)
         }
         .foregroundStyle(MeshinowaTheme.ink)
-        .background(MeshinowaTheme.paper.ignoresSafeArea())
+        .background(MeshinowaTheme.ground.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
     }
 

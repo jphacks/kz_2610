@@ -9,6 +9,8 @@ struct FriendsHomeView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var section: Section = .recommended
     @State private var showsAddFriend = false
+    @State private var copiedID = false
+    @State private var startsWithIDSearch = false
 
     /// 接続状態にかかわらず、取得済みの実データだけを表示する。
     private var dataset: FriendDataset {
@@ -21,7 +23,7 @@ struct FriendsHomeView: View {
                 HStack {
                     ScreenTitle(text: "友達")
                     Spacer()
-                    Button { showsAddFriend = true } label: {
+                    Button { startsWithIDSearch = false; showsAddFriend = true } label: {
                         Label("追加", systemImage: "person.badge.plus")
                     }
                     .buttonStyle(PillButtonStyle(isOn: false))
@@ -37,7 +39,8 @@ struct FriendsHomeView: View {
                         .foregroundStyle(MeshinowaTheme.bodyText)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(MeshinowaTheme.hairline))
                         .padding(.horizontal, 20)
                         .padding(.top, 12)
                 }
@@ -62,10 +65,10 @@ struct FriendsHomeView: View {
             guard isActive && scenePhase == .active else { return }
             await store.refreshIfNeeded()
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.ground)
         .foregroundStyle(MeshinowaTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showsAddFriend) { FriendAddSheet() }
+        .sheet(isPresented: $showsAddFriend) { FriendAddSheet(startsWithSearch: startsWithIDSearch) }
         .alert("変更できませんでした", isPresented: Binding(
             get: { store.actionError != nil },
             set: { if !$0 { store.actionError = nil } }
@@ -125,7 +128,7 @@ struct FriendsHomeView: View {
     /// つながっていないときの空の状態。ほかの画面と同じ形（ミントの丸・見出し・主ボタン・副ボタン）。
     private var disconnected: some View {
         VStack(spacing: 12) {
-            BowlMark(size: 52, holes: MeshinowaTheme.mint)
+            BowlMark(size: 52, holes: MeshinowaTheme.card)
                 .frame(width: 84, height: 84)
                 .background(MeshinowaTheme.mint, in: Circle())
             Text("友達の機能に\nつながっていません")
@@ -154,8 +157,65 @@ struct FriendsHomeView: View {
     @ViewBuilder private var recommended: some View {
         if isDisconnected {
             disconnected
+        } else if store.friends.isEmpty {
+            firstFriend
         } else {
             connectedRecommendations
+        }
+    }
+
+    private var firstFriend: some View {
+        VStack(spacing: 12) {
+            BowlMark(size: 52, holes: MeshinowaTheme.card)
+                .frame(width: 84, height: 84)
+                .background(MeshinowaTheme.card, in: Circle())
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 1)
+            Text("まずは友達とつながろう").font(MeshinowaFont.heading(20))
+            Text("友達がつけた評価が、地図のピンと\nこのページのおすすめに集まります。")
+                .font(MeshinowaFont.text(14))
+                .foregroundStyle(MeshinowaTheme.bodyText)
+                .multilineTextAlignment(.center)
+                .lineSpacing(5)
+            if let me = store.me {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("あなたのID").font(MeshinowaFont.text(12, weight: .bold))
+                            .foregroundStyle(MeshinowaTheme.bodyText)
+                        Text("@\(me.handle)").font(MeshinowaFont.number(22)).tracking(0.5)
+                            .lineLimit(1).minimumScaleFactor(0.6).textSelection(.enabled)
+                    }
+                    Spacer(minLength: 0)
+                    Button {
+                        UIPasteboard.general.string = me.handle
+                        copiedID = true
+                    } label: {
+                        Label(copiedID ? "コピーしました" : "コピー", systemImage: copiedID ? "checkmark" : "doc.on.doc")
+                            .font(MeshinowaFont.text(13, weight: .bold))
+                            .padding(.horizontal, 12).frame(minHeight: 36)
+                            .background(MeshinowaTheme.card, in: Capsule())
+                            .overlay(Capsule().strokeBorder(MeshinowaTheme.outline))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 14).padding(.horizontal, 16)
+                .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 14))
+                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(MeshinowaTheme.hairline))
+                .padding(.top, 12)
+                ShareLink(item: "メシノワで友達になろう！ ID: @\(me.handle)") {
+                    Text("IDを送って友達を招く")
+                }
+                .buttonStyle(PaperButtonStyle())
+            }
+            Button("友達のIDで探す") { startsWithIDSearch = true; showsAddFriend = true }
+                .buttonStyle(PaperButtonStyle(kind: .secondary))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.top, 40)
+        .task(id: copiedID) {
+            guard copiedID else { return }
+            try? await Task.sleep(for: .seconds(2))
+            if !Task.isCancelled { copiedID = false }
         }
     }
 
@@ -173,23 +233,6 @@ struct FriendsHomeView: View {
                 }
             }
             .padding(.horizontal, 20)
-
-            if store.isAvailable && store.friends.isEmpty {
-                Button { showsAddFriend = true } label: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("まずは友達とつながろう")
-                            .font(MeshinowaFont.heading(17))
-                        Text("「追加」から自分のIDを伝えるか、友達のIDで申請できます。")
-                            .font(MeshinowaFont.text(14))
-                            .foregroundStyle(MeshinowaTheme.bodyText)
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .paperCard()
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 20)
-            }
 
             if !dataset.latestReviews.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
@@ -374,7 +417,7 @@ private struct FriendConnectionsSection: View {
                     Text("ID: \(friend.handle)").font(MeshinowaFont.text(14))
                     Text(friend.bio ?? "").font(MeshinowaFont.text(16)).multilineTextAlignment(.center)
                     Spacer()
-                }.padding(24).frame(maxWidth: .infinity).background(MeshinowaTheme.paper)
+                }.padding(24).frame(maxWidth: .infinity).background(MeshinowaTheme.ground)
                     .navigationTitle("友達のプロフィール").navigationBarTitleDisplayMode(.inline)
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("閉じる") { selectedProfile = nil } } }
             }.presentationDetents([.medium, .large])
@@ -466,6 +509,7 @@ private struct RecentReviewCard: View {
 
 /// IDの共有と申請を一か所にまとめる。検索は明示操作時だけ完全一致で行う。
 private struct FriendAddSheet: View {
+    var startsWithSearch = false
     @EnvironmentObject private var store: FriendStore
     @Environment(\.dismiss) private var dismiss
     @State private var handle = ""
@@ -506,7 +550,7 @@ private struct FriendAddSheet: View {
                 .padding(20)
             }
             .scrollDismissesKeyboard(.interactively)
-            .background(MeshinowaTheme.paper)
+            .background(MeshinowaTheme.ground)
             .foregroundStyle(MeshinowaTheme.ink)
             .navigationTitle("友達を追加")
             .navigationBarTitleDisplayMode(.inline)
@@ -515,7 +559,10 @@ private struct FriendAddSheet: View {
                     Button("閉じる") { dismiss() }
                 }
             }
-            .task { await store.refreshIfNeeded() }
+            .task {
+                await store.refreshIfNeeded()
+                if startsWithSearch && store.me != nil { focusesID = true }
+            }
         }
         .tint(MeshinowaTheme.green)
         .presentationDetents([.large])
@@ -571,7 +618,8 @@ private struct FriendAddSheet: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(MeshinowaTheme.field, in: RoundedRectangle(cornerRadius: 22))
+        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 22))
+                .overlay(RoundedRectangle(cornerRadius: 22).strokeBorder(MeshinowaTheme.hairline))
     }
 
     private var search: some View {

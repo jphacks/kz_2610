@@ -3,6 +3,7 @@ import SwiftUI
 /// 白地に写真とカードを並べる v3 デザインの共通色。
 enum MeshinowaTheme {
     // 面
+    static let ground = hex(0xFDF8EE)
     static let paper = Color.white
     static let card = Color.white
     static let field = hex(0xF4F5F2)
@@ -12,6 +13,7 @@ enum MeshinowaTheme {
 
     // 文字
     static let ink = hex(0x1C1F1D)
+    static let rod = hex(0x3B3530)
     static let bodyText = hex(0x4F5550)
     static let secondaryText = hex(0x6B716D)
 
@@ -31,6 +33,7 @@ enum MeshinowaTheme {
     /// 「いいね」だけに使うピンク。
     static let like = hex(0xE5577E)
     static let likeSoft = hex(0xFCE4EB)
+    static let danger = hex(0xD93A3A)
     static let likeInk = hex(0xA3254B)
 
     private static func hex(_ value: UInt32) -> Color {
@@ -38,4 +41,27 @@ enum MeshinowaTheme {
               green: Double((value >> 8) & 0xFF) / 255,
               blue: Double(value & 0xFF) / 255)
     }
+}
+
+/// Google マップの地図色。施設名は隠し、駅名や道路番号は残す。
+enum MeshinowaMapStyle {
+    static let json = #"""
+    [
+      {"elementType":"geometry","stylers":[{"color":"#F6F1E6"}]},
+      {"elementType":"labels.text.fill","stylers":[{"color":"#7B7F7C"}]},
+      {"elementType":"labels.text.stroke","stylers":[{"color":"#FDF8EE"}]},
+      {"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#EFE8D8"}]},
+      {"featureType":"poi","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+      {"featureType":"poi","elementType":"labels.text","stylers":[{"visibility":"off"}]},
+      {"featureType":"poi.business","stylers":[{"visibility":"off"}]},
+      {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#DDE6D3"}]},
+      {"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#FFFFFF"}]},
+      {"featureType":"road","elementType":"geometry.stroke","stylers":[{"color":"#E6DDCB"}]},
+      {"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#FBF6EC"}]},
+      {"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#FBF6EC"}]},
+      {"featureType":"transit.line","elementType":"geometry","stylers":[{"color":"#B9C8C4"}]},
+      {"featureType":"transit.station","elementType":"labels.icon","stylers":[{"visibility":"off"}]},
+      {"featureType":"water","elementType":"geometry","stylers":[{"color":"#C9DCE3"}]}
+    ]
+    """#
 }

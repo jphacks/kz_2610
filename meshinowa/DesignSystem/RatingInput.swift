@@ -6,43 +6,32 @@ struct BigStarRating: View {
     @Binding var rating: Double
     var starSize: CGFloat = 40
 
+    var inline = false
+    @AppStorage("didShowHalfStarHint") private var didShowHint = false
+    @State private var showsHint = false
+
     var body: some View {
         VStack(spacing: 6) {
-            HStack(spacing: 6) {
-                ForEach(1...5, id: \.self) { value in
-                    Button {
-                        rating = rating == Double(value) ? Double(value) - 0.5 : Double(value)
-                    } label: {
-                        Image(systemName: rating >= Double(value) ? "star.fill"
-                              : (rating >= Double(value) - 0.5 ? "star.leadinghalf.filled" : "star"))
-                            .font(.system(size: starSize))
-                            .foregroundStyle(MeshinowaTheme.accent)
-                            .frame(minWidth: 48, minHeight: 48)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHidden(true)
+            if inline {
+                ViewThatFits(in: .horizontal) {
+                    band(size: starSize)
+                    band(size: 30)
                 }
+                .padding(.vertical, 14).padding(.horizontal, 16)
+                .background(MeshinowaTheme.mustardSoft, in: RoundedRectangle(cornerRadius: 16))
+            } else {
+                stars(size: starSize, spacing: 6)
+                score
             }
-            .sensoryFeedback(.selection, trigger: rating)
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                if rating > 0 {
-                    Text("あなたの評価")
-                        .font(MeshinowaFont.text(12, weight: .bold, relativeTo: .caption))
-                    Text(rating, format: .number.precision(.fractionLength(1)))
-                        .font(MeshinowaFont.number(30, relativeTo: .title))
-                } else {
-                    Text("星を選んでください")
-                        .font(MeshinowaFont.text(14, weight: .bold))
-                }
+            if showsHint {
+                Text("同じ星をもう一度押すと0.5下がります")
+                    .font(MeshinowaFont.text(11, relativeTo: .caption2))
+                    .foregroundStyle(MeshinowaTheme.secondaryText)
             }
-            .foregroundStyle(rating > 0 ? MeshinowaTheme.mustardInk : MeshinowaTheme.secondaryText)
-            .frame(minHeight: 38)
-            Text("同じ星をもう一度押すと0.5下がります")
-                .font(MeshinowaFont.text(11, relativeTo: .caption2))
-                .foregroundStyle(MeshinowaTheme.secondaryText)
         }
         .frame(maxWidth: .infinity)
+        .onAppear { showsHint = !didShowHint; didShowHint = true }
+        .sensoryFeedback(.selection, trigger: rating)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("自分の評価")
         .accessibilityValue(rating > 0 ? "\(rating.formatted(.number.precision(.fractionLength(1))))点" : "未選択")
@@ -54,6 +43,45 @@ struct BigStarRating: View {
             }
         }
     }
+
+    private func stars(size: CGFloat, spacing: CGFloat) -> some View {
+        HStack(spacing: spacing) {
+            ForEach(1...5, id: \.self) { value in
+                Button {
+                    rating = rating == Double(value) ? Double(value) - 0.5 : Double(value)
+                } label: {
+                    Image(systemName: rating >= Double(value) ? "star.fill"
+                          : (rating >= Double(value) - 0.5 ? "star.leadinghalf.filled" : "star"))
+                        .resizable().scaledToFit()
+                        .frame(width: size, height: size)
+                        .foregroundStyle(MeshinowaTheme.accent)
+                        .frame(width: size, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private func band(size: CGFloat) -> some View {
+        HStack(spacing: 10) {
+            stars(size: size, spacing: 2)
+            Spacer(minLength: 0)
+            score
+        }
+    }
+
+    private var score: some View {
+        VStack(alignment: inline ? .trailing : .center, spacing: 2) {
+            Text(rating > 0 ? rating.formatted(.number.precision(.fractionLength(1))) : "—")
+                .font(MeshinowaFont.number(30, relativeTo: .title))
+            Text(rating > 0 ? "あなたの評価" : "星を選んでください")
+                .font(MeshinowaFont.text(11, weight: .bold, relativeTo: .caption))
+                .fixedSize()
+        }
+        .foregroundStyle(MeshinowaTheme.mustardInk)
+    }
 }
 
 /// 評価するお店の見出し。ジャンルの器・店名・場所。
@@ -64,7 +92,8 @@ struct ReviewShopHeader: View {
         HStack(spacing: 12) {
             FoodGenreMark(genre: item.foodGenre, size: 34)
                 .frame(width: 54, height: 54)
-                .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(MeshinowaTheme.hairline))
             VStack(alignment: .leading, spacing: 2) {
                 Text(item.name ?? "飲食店")
                     .font(MeshinowaFont.heading(19, relativeTo: .title3))
@@ -80,11 +109,8 @@ struct ReviewShopHeader: View {
     }
 
     private var subtitle: String {
-        let address = (item.placemark.title?.withoutPostalCode ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            // 「日本橋」などの地名は残し、末尾に独立して付いた国名だけを除く。
-            .replacingOccurrences(of: #"[\s,、]+日本$"#, with: "", options: .regularExpression)
-        return [item.restaurantCategory, address].filter { !$0.isEmpty }.joined(separator: "・")
+        let address = (item.placemark.title ?? "").restaurantLocalAddress
+        return [item.foodGenre == .other ? "" : item.foodGenre.title, address].filter { !$0.isEmpty }.joined(separator: "・")
     }
 }
 

@@ -33,12 +33,13 @@ struct GoogleMapCanvas: View {
     @Binding var selectedID: String?
     var topPadding: CGFloat = 0
     var bottomPadding: CGFloat = 0
+    var onUserMove: (() -> Void)?
     var onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
     var body: some View {
         if GooglePlacesService.isMapConfigured {
             GoogleMapRepresentable(position: position, pins: pins, selectedID: $selectedID,
-                                   topPadding: topPadding, bottomPadding: bottomPadding, onCameraEnd: onCameraEnd)
+                                   topPadding: topPadding, bottomPadding: bottomPadding, onUserMove: onUserMove, onCameraEnd: onCameraEnd)
         } else {
             ContentUnavailableView("地図を表示できません", systemImage: "map", description: Text("Google Mapsの設定を確認してください。"))
         }
@@ -51,6 +52,7 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
     @Binding var selectedID: String?
     let topPadding: CGFloat
     let bottomPadding: CGFloat
+    let onUserMove: (() -> Void)?
     let onCameraEnd: ((MKCoordinateRegion, GMSCameraPosition) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -67,7 +69,8 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
         map.isBuildingsEnabled = false
         map.isMyLocationEnabled = true
         // App markers remain selectable without unrelated built-in POI pins.
-        map.mapStyle = try? GMSMapStyle(jsonString: "[{\"featureType\":\"poi\",\"elementType\":\"labels\",\"stylers\":[{\"visibility\":\"off\"}]}]")
+        map.mapStyle = (try? GMSMapStyle(jsonString: MeshinowaMapStyle.json))
+            ?? (try? GMSMapStyle(jsonString: "[{\"featureType\":\"poi\",\"elementType\":\"labels\",\"stylers\":[{\"visibility\":\"off\"}]}]"))
         return map
     }
 
@@ -141,6 +144,10 @@ private struct GoogleMapRepresentable: UIViewRepresentable {
             guard let id = marker.userData as? String else { return false }
             parent.selectedID = id
             return true
+        }
+
+        func mapView(_ mapView: GMSMapView, willMove gesture: Bool) {
+            if gesture { parent.onUserMove?() }
         }
 
         func mapView(_ mapView: GMSMapView, idleAt position: GMSCameraPosition) {

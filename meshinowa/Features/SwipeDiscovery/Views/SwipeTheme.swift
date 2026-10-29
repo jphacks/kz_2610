@@ -6,9 +6,9 @@ import UIKit
 enum SwipeTheme {
     // MARK: 面
     /// ほかの画面と同じ白の背景。
-    static let background = dynamic(light: 0xFFFFFF, dark: 0x171A18)
+    static let background = dynamic(light: 0xFDF8EE, dark: 0x171A18)
     static let card = dynamic(light: 0xFFFFFF, dark: 0x242826)
-    static let field = dynamic(light: 0xF4F5F2, dark: 0x2E3230)
+    static let field = dynamic(light: 0xFFFFFF, dark: 0x2E3230)
     static let hairline = dynamic(light: 0xE3E5E2, dark: 0x3A3F3C)
     static let mapPlaceholder = dynamic(light: 0xE7EDE4, dark: 0x2B3330)
 

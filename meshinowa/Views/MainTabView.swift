@@ -107,7 +107,7 @@ private struct FloatingTabBar: View {
         }
         .padding(.horizontal, 8)
         .frame(height: 60)
-        .background(Capsule().fill(MeshinowaTheme.card).shadow(color: .black.opacity(0.14), radius: 10, y: 2))
+        .background(Capsule().fill(MeshinowaTheme.card).shadow(color: .black.opacity(0.07), radius: 6, y: 1))
         .padding(.horizontal, 14)
         .padding(.bottom, 4)
         .sensoryFeedback(.selection, trigger: selection)
@@ -151,7 +151,7 @@ private struct FloatingTabBar: View {
             BowlBadge(size: 62)
                 .padding(3)
                 .background(Circle().fill(MeshinowaTheme.card))
-                .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
+                .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
         }
         .buttonStyle(PressScaleStyle())
         .frame(width: 80)

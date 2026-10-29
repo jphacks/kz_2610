@@ -9,6 +9,7 @@ struct RestaurantPhotoView: View {
     var expanded = false
     var showsGoogleAttribution = true
     var imageHeight: CGFloat? = nil
+    var overlaysCredits = false
     @ObservedObject private var store = RestaurantPhotoStore.shared
     @State private var loaded: LoadedRestaurantPhoto?
 
@@ -52,25 +53,20 @@ struct RestaurantPhotoView: View {
             .frame(height: imageHeight ?? (expanded ? 230 : 140))
             .clipShape(RoundedRectangle(cornerRadius: 14))
             .accessibilityLabel(photo == nil ? "店舗写真なし" : "店舗写真")
+            .overlay(alignment: .bottom) {
+                if photo != nil && overlaysCredits {
+                    credits
+                        .foregroundStyle(MeshinowaTheme.paper)
+                        .tint(MeshinowaTheme.paper)
+                        .padding(8)
+                        .padding(.top, 12)
+                        .background(LinearGradient(colors: [.clear, .black.opacity(0.75)], startPoint: .top, endPoint: .bottom))
+                        .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 14, bottomTrailingRadius: 14))
+                }
+            }
 
-            if photo != nil {
-                // Google attribution is required on detail/list screens without a visible Google map.
-                HStack(alignment: .top, spacing: 6) {
-                    if showsGoogleAttribution { Text("Google Maps").font(.system(size: 12)) }
-                    Spacer(minLength: 0)
-                    if let credits = metadata?.attributions { Text(credits).font(.system(size: 11)) }
-                }
-                if let credits = placeAttributions { Text(credits).font(.system(size: 11)) }
-                if let metadata {
-                    ForEach(Array(metadata.authorAttributions.filter(needsSeparateCredit).enumerated()), id: \.offset) { _, author in
-                        if let url = author.url {
-                            Link("写真：" + author.displayName, destination: url)
-                                .font(.system(size: 11)).tint(MeshinowaTheme.green)
-                        } else {
-                            Text("写真：" + author.displayName).font(.system(size: 11))
-                        }
-                    }
-                }
+            if photo != nil && !overlaysCredits {
+                credits
             } else if failed {
                 Button("写真を再読み込み") { retry += 1 }
                     .font(MeshinowaFont.text(12)).frame(minHeight: 44)
@@ -94,4 +90,27 @@ struct RestaurantPhotoView: View {
             }
         }
     }
+
+    private var credits: some View {
+        VStack(alignment: .leading, spacing: 2) {
+                // Google attribution is required on detail/list screens without a visible Google map.
+                HStack(alignment: .top, spacing: 6) {
+                    if showsGoogleAttribution { Text("Google Maps").font(.system(size: 12)) }
+                    Spacer(minLength: 0)
+                    if let credits = metadata?.attributions { Text(credits).font(.system(size: 11)) }
+                }
+                if let credits = placeAttributions { Text(credits).font(.system(size: 11)) }
+                if let metadata {
+                    ForEach(Array(metadata.authorAttributions.filter(needsSeparateCredit).enumerated()), id: \.offset) { _, author in
+                        if let url = author.url {
+                            Link("写真：" + author.displayName, destination: url)
+                                .font(.system(size: 11)).tint(MeshinowaTheme.green)
+                        } else {
+                            Text("写真：" + author.displayName).font(.system(size: 11))
+                        }
+                    }
+                }
+        }
+    }
+
 }

@@ -135,7 +135,7 @@ struct PlacePin: View {
         // からし色の上は白い文字が読みにくいので、自分の評価の文字色にする。
         let contentColor = tone == .mine ? MeshinowaTheme.mustardInk : Color.white
         VStack(spacing: -1) {
-            FoodGenreMark(genre: genre, tone: tone, size: width)
+            FoodGenreMark(genre: genre, tone: tone, size: width, outlineWidth: tone == .plain ? 2.2 : 1.5)
                 .overlay {
                     GeometryReader { proxy in
                         content
@@ -158,7 +158,7 @@ struct PlacePin: View {
                 .fill(tailColor)
                 .frame(width: isSelected ? 12 : 8, height: isSelected ? 8 : 6)
         }
-        .shadow(color: .black.opacity(isSelected ? 0.3 : 0.22), radius: isSelected ? 6 : 3, y: isSelected ? 3 : 1.5)
+        .shadow(color: .black.opacity(isSelected ? 0.3 : (tone == .plain ? 0.35 : 0.22)), radius: isSelected ? 6 : (tone == .plain ? 3.5 : 3), y: isSelected ? 3 : 1.5)
         .animation(.spring(response: 0.28, dampingFraction: 0.75), value: isSelected)
         .accessibilityHidden(true)
     }

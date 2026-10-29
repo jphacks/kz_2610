@@ -52,7 +52,7 @@ struct SearchResultsView: View {
                 }
                 .padding(20)
             }
-            .background(MeshinowaTheme.paper)
+            .background(MeshinowaTheme.ground)
             .foregroundStyle(MeshinowaTheme.ink)
             .navigationTitle("検索結果")
             .navigationBarTitleDisplayMode(.inline)

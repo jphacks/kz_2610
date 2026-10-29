@@ -22,32 +22,24 @@ struct ProfileView: View {
                         .buttonStyle(CircleIconButtonStyle())
                         .accessibilityLabel("設定を開く")
                 }
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 16) {
-                        ProfileIcon(symbol: friends.me?.avatarSymbol ?? localSymbol, size: 68)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(friends.me?.displayName ?? localName).font(MeshinowaFont.heading(24))
-                            if let me = friends.me {
-                                Text("ID: \(me.handle)").font(MeshinowaFont.text(13)).textSelection(.enabled)
-                            } else {
-                                Text(friends.connectionLabel)
-                                    .font(MeshinowaFont.text(13)).foregroundStyle(MeshinowaTheme.secondaryText)
-                            }
-                        }
-                        Spacer(minLength: 0)
+                HStack(spacing: 12) {
+                    ProfileIcon(symbol: friends.me?.avatarSymbol ?? localSymbol, size: 64)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(friends.me?.displayName ?? localName).font(MeshinowaFont.heading(22))
+                        Text("この端末のプロフィール")
+                            .font(MeshinowaFont.text(13)).foregroundStyle(MeshinowaTheme.secondaryText)
                     }
-                    let bio = friends.me?.bio ?? localBio
-                    if !bio.isEmpty { Text(bio).font(MeshinowaFont.text(15)).fixedSize(horizontal: false, vertical: true) }
-                    Button("プロフィールを編集") { editsProfile = true }
-                        .buttonStyle(PaperButtonStyle(kind: .secondary))
-                        .disabled(friends.isAvailable && friends.me == nil)
-                    if let me = friends.me {
-                        ShareLink(item: "meshinowaで友達になろう！ ID: \(me.handle)") {
-                            Label("友達にIDを送る", systemImage: "square.and.arrow.up")
-                        }.font(MeshinowaFont.text(14, weight: .bold))
+                    Spacer(minLength: 0)
+                    Button { editsProfile = true } label: {
+                        Label("編集", systemImage: "pencil")
+                            .font(MeshinowaFont.text(13, weight: .bold))
+                            .padding(.horizontal, 12).frame(minHeight: 36)
+                            .overlay(Capsule().strokeBorder(MeshinowaTheme.outline))
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("プロフィールを編集")
+                    .disabled(friends.isAvailable && friends.me == nil)
                 }
-                .padding(20).paperCard()
                 if case .failed(let message) = friends.status {
                     VStack(alignment: .leading, spacing: 10) {
                         Text(message).font(MeshinowaFont.text(14))
@@ -61,7 +53,7 @@ struct ProfileView: View {
                     statistic("いいね", count: saved.restaurants.filter(\.isLiked).count) { Image(systemName: "heart.fill").foregroundStyle(MeshinowaTheme.like) }
                     divider
                     statistic("友達", count: friends.friends.count) { Image(systemName: "person.2.fill").foregroundStyle(MeshinowaTheme.green) }
-                }.padding(.vertical, 16).paperCard()
+                }.padding(.vertical, 14).background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 16)).overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(MeshinowaTheme.hairline))
 
                 if friends.isAvailable && !reviews.pending.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
@@ -72,73 +64,67 @@ struct ProfileView: View {
                 }
                 genreShelf
 
-                VStack(spacing: 0) {
-                    NavigationLink { MyReviewsView(onFindRestaurants: onFindRestaurants) } label: {
-                        linkRow("自分のレビュー一覧", symbol: "text.bubble")
-                    }
-                    NavigationLink { MyRestaurantMapView(onFindRestaurants: onFindRestaurants) } label: {
-                        linkRow("マイマップ", symbol: "map")
-                    }
-                    if friends.isAvailable {
-                        NavigationLink { SWAccountSettingsView() } label: {
-                            linkRow("公開設定・データの引き継ぎ", symbol: "person.crop.circle.badge.checkmark")
-                        }
-                    }
-                }.buttonStyle(.plain)
                 if let error = reviews.loadError {
                     Text(error).font(MeshinowaFont.text(14))
                     Button("レビューを再読み込み") { reviews.reload() }
                 }
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("最近のレビュー").font(MeshinowaFont.heading(20, relativeTo: .title2))
+                    HStack {
+                        Text("最近のレビュー").font(MeshinowaFont.heading(20, relativeTo: .title2))
+                        Spacer()
+                        NavigationLink { MyReviewsView(onFindRestaurants: onFindRestaurants) } label: {
+                            Text("すべて見る").font(MeshinowaFont.text(13, weight: .bold))
+                                .foregroundStyle(MeshinowaTheme.green)
+                        }
+                    }
                     if reviews.reviews.isEmpty && reviews.loadError == nil {
                         Text("まだレビューがありません。お店の詳細から星だけでも記録できます。")
                             .font(MeshinowaFont.text(14)).padding(.top, 6)
                     }
                     ForEach(Array(reviews.reviews.prefix(3))) { review in
-                        LocalReviewRow(review: review) { editing = review }
+                        LocalReviewRow(review: review, compact: true) { editing = review }
                     }
                 }
-                Text(friends.isAvailable
-                     ? "評価・ひとこと・おすすめ料理は友達に共有されます。写真と来店日は友達に公開されません。設定から自分専用のバックアップを作れます。"
-                     : "記録はこの端末だけに保存されます。アプリを削除すると端末内のデータも消えます。")
-                    .font(MeshinowaFont.text(12, relativeTo: .caption)).foregroundStyle(MeshinowaTheme.secondaryText)
+                NavigationLink { MyRestaurantMapView(onFindRestaurants: onFindRestaurants) } label: {
+                    linkRow("マイマップ", symbol: "map")
+                }
+                .buttonStyle(.plain)
             }.padding(20)
         }
         .refreshable { await friends.retryConnection() }
-        .background(MeshinowaTheme.paper).foregroundStyle(MeshinowaTheme.ink)
+        .background(MeshinowaTheme.ground).foregroundStyle(MeshinowaTheme.ink)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(item: $editing) { ReviewEditor(item: $0.restaurant.mapItem, existing: $0) }
         .sheet(isPresented: $editsProfile) { ProfileEditorView() }
     }
 
     private var divider: some View {
-        Rectangle().fill(MeshinowaTheme.hairline).frame(width: 1, height: 40)
+        Rectangle().fill(MeshinowaTheme.hairline).frame(width: 1, height: 36)
     }
 
     /// レビューしたお店を、ジャンルの器の形で数える。まだ行っていないジャンルは薄く出し、集める楽しさを作る。
     private var genreShelf: some View {
         let counts = Dictionary(grouping: reviews.reviews, by: { $0.restaurant.foodGenre }).mapValues(\.count)
         return VStack(alignment: .leading, spacing: 10) {
-            Text("よく行くジャンル")
-                .font(MeshinowaFont.heading(20, relativeTo: .title2))
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(FoodGenre.allCases.filter { $0 != .other }) { genre in
-                        let count = counts[genre] ?? 0
-                        VStack(spacing: 3) {
-                            FoodGenreMark(genre: genre, tone: count > 0 ? .mine : .faint, size: 38)
-                            Text("\(count)")
-                                .font(MeshinowaFont.number(15, relativeTo: .caption))
-                                .foregroundStyle(count > 0 ? MeshinowaTheme.ink : MeshinowaTheme.secondaryText)
-                            Text(genre.title)
-                                .font(MeshinowaFont.text(11, relativeTo: .caption2))
-                                .foregroundStyle(MeshinowaTheme.bodyText)
-                        }
-                        .frame(minWidth: 44)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(genre.title)、\(count)件")
+            HStack {
+                Text("よく行くジャンル").font(MeshinowaFont.heading(20, relativeTo: .title2))
+                Spacer()
+                let genres = FoodGenre.allCases.filter { $0 != .other }
+                Text("\(genres.filter { (counts[$0] ?? 0) > 0 }.count) / \(genres.count) ジャンル")
+                    .font(MeshinowaFont.text(13)).foregroundStyle(MeshinowaTheme.secondaryText)
+            }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 5), spacing: 12) {
+                ForEach(FoodGenre.allCases.filter { $0 != .other }) { genre in
+                    let count = counts[genre] ?? 0
+                    VStack(spacing: 5) {
+                        FoodGenreMark(genre: genre, tone: count > 0 ? .plain : .faint, size: 36)
+                        Text(count > 0 ? "\(genre.title) \(count)" : genre.title)
+                            .font(MeshinowaFont.text(11, weight: count > 0 ? .bold : .medium, relativeTo: .caption2))
+                            .foregroundStyle(count > 0 ? MeshinowaTheme.ink : MeshinowaTheme.secondaryText)
+                            .lineLimit(1).minimumScaleFactor(0.7)
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(genre.title)、\(count)件")
                 }
             }
         }
@@ -146,7 +132,7 @@ struct ProfileView: View {
 
     private func statistic<Mark: View>(_ title: String, count: Int, @ViewBuilder mark: () -> Mark) -> some View {
         VStack(spacing: 2) {
-            Text("\(count)").font(MeshinowaFont.number(26))
+            Text("\(count)").font(MeshinowaFont.number(24))
             HStack(spacing: 4) {
                 mark().font(.system(size: 11)).accessibilityHidden(true)
                 Text(title)
@@ -177,14 +163,14 @@ struct ProfileIcon: View {
     var body: some View {
         Group {
             if symbol == Self.defaultSymbol {
-                BowlMark(size: size * 0.66, holes: MeshinowaTheme.mint)
+                BowlMark(size: size * 0.66, holes: MeshinowaTheme.card)
             } else {
                 Image(systemName: symbol).font(.system(size: size * 0.4, weight: .semibold))
                     .foregroundStyle(MeshinowaTheme.green)
             }
         }
         .frame(width: size, height: size)
-        .background(MeshinowaTheme.mint, in: Circle()).accessibilityHidden(true)
+        .background(MeshinowaTheme.card, in: Circle()).shadow(color: .black.opacity(0.08), radius: 4, y: 1).accessibilityHidden(true)
     }
 }
 
@@ -232,7 +218,7 @@ struct ProfileEditorView: View {
                 Section { Text(friends.isAvailable ? "表示名・アイコン・自己紹介は、友達やID検索であなたを見つけた人に表示されます。" : "この端末に保存します。") }
                 if let error { Section { Text(error).foregroundStyle(.red) } }
             }
-            .font(MeshinowaFont.text(15)).scrollContentBackground(.hidden).background(MeshinowaTheme.paper)
+            .font(MeshinowaFont.text(15)).scrollContentBackground(.hidden).background(MeshinowaTheme.ground)
             .navigationTitle("プロフィールを編集").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("キャンセル") { dismiss() }.disabled(isSaving) }
@@ -285,7 +271,7 @@ struct MyReviewsView: View {
             }
             .padding(20)
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.ground)
         .foregroundStyle(MeshinowaTheme.ink)
         .navigationTitle("自分のレビュー")
         .reservesFloatingTabBarSpace()
@@ -295,27 +281,43 @@ struct MyReviewsView: View {
 
 private struct LocalReviewRow: View {
     let review: LocalReview
+    var compact = false
     var onEdit: () -> Void
+    @EnvironmentObject private var reviews: LocalReviewStore
 
     var body: some View {
         Button(action: onEdit) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(alignment: .center, spacing: 12) {
-                    FoodGenreMark(genre: review.restaurant.foodGenre, tone: .reviewed, size: 30)
-                        .frame(width: 46, height: 46)
-                        .background(MeshinowaTheme.photo, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    Text(review.restaurant.name)
-                        .font(MeshinowaFont.heading(17))
+                    Group {
+                        if let name = review.photoFileNames.first, let url = reviews.photoURL(name),
+                           let image = UIImage(contentsOfFile: url.path) {
+                            Image(uiImage: image).resizable().scaledToFill()
+                        } else {
+                            FoodGenreMark(genre: review.restaurant.foodGenre, size: 30)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity).background(MeshinowaTheme.card)
+                                .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(MeshinowaTheme.hairline))
+                        }
+                    }
+                    .frame(width: 46, height: 46).clipShape(RoundedRectangle(cornerRadius: 11))
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(review.restaurant.name).font(MeshinowaFont.heading(16)).lineLimit(2)
+                        if compact {
+                            Text(review.visitedOn ?? review.updatedAt, style: .date)
+                                .font(MeshinowaFont.text(12, relativeTo: .caption))
+                                .foregroundStyle(MeshinowaTheme.secondaryText)
+                        }
+                    }
                     Spacer(minLength: 8)
                     MyRatingTag(rating: review.rating)
                 }
-                if !review.comment.isEmpty {
+                if !compact && !review.comment.isEmpty {
                     Text(review.comment)
                         .font(MeshinowaFont.text(14))
                         .foregroundStyle(MeshinowaTheme.bodyText)
                         .lineLimit(3)
                 }
-                HStack {
+                if !compact { HStack {
                     Text(review.updatedAt, style: .date)
                         .font(MeshinowaFont.text(12, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.secondaryText)
@@ -323,7 +325,7 @@ private struct LocalReviewRow: View {
                     Label("編集する", systemImage: "square.and.pencil")
                         .font(MeshinowaFont.text(13, weight: .bold, relativeTo: .caption))
                         .foregroundStyle(MeshinowaTheme.green)
-                }
+                } }
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .padding(.vertical, 14)
@@ -363,7 +365,7 @@ struct MyRestaurantMapView: View {
             }
             .padding(20)
         }
-        .background(MeshinowaTheme.paper)
+        .background(MeshinowaTheme.ground)
         .foregroundStyle(MeshinowaTheme.ink)
         .navigationTitle("マイマップ")
         .reservesFloatingTabBarSpace()

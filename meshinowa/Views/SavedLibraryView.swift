@@ -92,6 +92,8 @@ struct SavedRestaurantsView: View {
                             .background(selected ? MeshinowaTheme.mint : MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 12))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel(item.title)
+                        .accessibilityValue("\(count(of: item))件")
                         .accessibilityAddTraits(selected ? .isSelected : [])
                     }
                 }

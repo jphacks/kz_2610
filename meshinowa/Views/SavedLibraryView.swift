@@ -77,9 +77,27 @@ struct SavedRestaurantsView: View {
                 }
                 .padding(.horizontal, 20)
 
-                NorenTabs(items: [SavedCollection.liked, .wantToGo], selection: $collection,
-                          style: .collection,
-                          counts: [.liked: count(of: .liked), .wantToGo: count(of: .wantToGo)])
+                HStack(spacing: 4) {
+                    ForEach(SavedCollection.allCases) { item in
+                        let selected = collection == item
+                        Button { collection = item } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: item.symbol)
+                                Text(item.title)
+                                Text("\(count(of: item))").font(MeshinowaFont.number(14))
+                            }
+                            .font(MeshinowaFont.text(14, weight: .bold))
+                            .foregroundStyle(selected ? MeshinowaTheme.mintInk : MeshinowaTheme.bodyText)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(selected ? MeshinowaTheme.mint : MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 12))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                    }
+                }
+                .padding(4)
+                .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(MeshinowaTheme.hairline))
                     .padding(.horizontal, 20)
                     .padding(.top, 14)
 

@@ -353,13 +353,27 @@ struct SwipeFilterSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("半径") {
-                    Picker("半径", selection: $radius) {
-                        ForEach(SwipeDeckViewModel.radiusOptions, id: \.self) { value in
-                            Text(SwipeDistanceFormatter.radiusText(meters: value)).tag(value)
-                        }
+                Section {
+                    Slider(value: radiusStep, in: 0...Double(options.count - 1), step: 1) {
+                        Text("半径")
+                    } minimumValueLabel: {
+                        Text(SwipeDistanceFormatter.radiusText(meters: options[0]))
+                    } maximumValueLabel: {
+                        Text(SwipeDistanceFormatter.radiusText(meters: options[options.count - 1]))
                     }
-                    .pickerStyle(.segmented)
+                    .tint(SwipeTheme.brand)
+                    .accessibilityValue(SwipeDistanceFormatter.radiusText(meters: radius))
+                    .font(SwipeTheme.text(12, relativeTo: .caption))
+                    .foregroundStyle(.secondary)
+                } header: {
+                    HStack {
+                        Text("半径")
+                        Spacer()
+                        Text(SwipeDistanceFormatter.radiusText(meters: radius))
+                            .font(SwipeTheme.text(15, bold: true))
+                            .foregroundStyle(SwipeTheme.brand)
+                            .monospacedDigit()
+                    }
                 }
                 Section("カテゴリー") {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -406,6 +420,15 @@ struct SwipeFilterSheet: View {
                 category = viewModel.category
             }
         }
+    }
+
+    private var options: [Double] { SwipeDeckViewModel.radiusOptions }
+
+    /// スライダーは目盛りの番号で動かし、半径（m）に読み替える。
+    private var radiusStep: Binding<Double> {
+        Binding(
+            get: { Double(options.lastIndex { $0 <= radius } ?? 0) },
+            set: { radius = options[min(max(Int($0.rounded()), 0), options.count - 1)] })
     }
 
     private func chip(_ title: String, isOn: Bool, action: @escaping () -> Void) -> some View {

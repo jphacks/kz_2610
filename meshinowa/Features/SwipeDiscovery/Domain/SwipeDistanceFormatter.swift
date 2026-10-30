@@ -31,7 +31,7 @@ enum SwipeDistanceFormatter {
         "\(distanceText(meters: meters))、徒歩約\(walkingMinutes(meters: meters))分"
     }
 
-    /// 半径の表示（500m／1km／3km）。
+    /// 半径の表示（500m／1km／50km）。
     static func radiusText(meters: Double) -> String {
         meters < 1000 ? "\(Int(meters))m" : (meters.truncatingRemainder(dividingBy: 1000) == 0
             ? "\(Int(meters / 1000))km" : String(format: "%.1fkm", meters / 1000))

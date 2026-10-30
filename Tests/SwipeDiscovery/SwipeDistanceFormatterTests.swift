@@ -18,5 +18,6 @@ final class SwipeDistanceFormatterTests: XCTestCase {
         XCTAssertEqual(SwipeDistanceFormatter.radiusText(meters: 500), "500m")
         XCTAssertEqual(SwipeDistanceFormatter.radiusText(meters: 1000), "1km")
         XCTAssertEqual(SwipeDistanceFormatter.radiusText(meters: 3000), "3km")
+        XCTAssertEqual(SwipeDistanceFormatter.radiusText(meters: 50_000), "50km")
     }
 }

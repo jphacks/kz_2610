@@ -15,7 +15,8 @@ final class SwipeDeckViewModel: ObservableObject {
         case failed(String)
     }
 
-    static let radiusOptions: [Double] = [500, 1000, 3000]
+    /// 半径の目盛り。スライダーはこの段階で止まり、「範囲を広げる」は次の段階へ進む。
+    static let radiusOptions: [Double] = [500, 1000, 2000, 3000, 5000, 10_000, 20_000, 30_000, 50_000]
 
     @Published private(set) var phase: Phase = .loading
     @Published private(set) var deck = SwipeDeck()

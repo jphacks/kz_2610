@@ -88,6 +88,18 @@ final class SwipeDeckViewModelTests: XCTestCase {
         XCTAssertTrue(empty.usesDefaultArea)
     }
 
+    func testRadiusExpandsUpTo50km() async {
+        let viewModel = makeViewModel(bridge: MockSavedShopsBridge(), candidates: [SwipeFixtures.candidate("far", metersNorth: 40_000)])
+        await viewModel.apply(radius: 30_000, category: nil, lens: .all)
+        XCTAssertEqual(viewModel.phase, .empty)
+        XCTAssertTrue(viewModel.canExpandRadius)
+
+        await viewModel.expandRadius()
+        XCTAssertEqual(viewModel.radius, 50_000)
+        XCTAssertEqual(viewModel.deck.top?.id, "far")
+        XCTAssertFalse(viewModel.canExpandRadius)
+    }
+
     func testGuideCompletesOnFirstDecisionAndUndoDoesNotRestoreIt() async {
         let viewModel = makeViewModel(bridge: MockSavedShopsBridge())
         await viewModel.reload()

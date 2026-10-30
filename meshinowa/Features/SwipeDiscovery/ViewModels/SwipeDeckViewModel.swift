@@ -15,7 +15,8 @@ final class SwipeDeckViewModel: ObservableObject {
         case failed(String)
     }
 
-    static let radiusOptions: [Double] = [500, 1000, 3000]
+    /// 半径の目盛り。スライダーはこの段階で止まる。
+    static let radiusOptions: [Double] = [500, 1000, 2000, 3000, 5000, 10_000, 20_000, 30_000, 50_000]
 
     @Published private(set) var phase: Phase = .loading
     @Published private(set) var deck = SwipeDeck()
@@ -52,7 +53,6 @@ final class SwipeDeckViewModel: ObservableObject {
     var savedShops: SavedShopsBridge { dependencies.savedShops }
     var guideMode: SwipeGuideMode { SwipeGuidePolicy.mode(for: guideState) }
     var canUndo: Bool { deck.canUndo && !isProcessing }
-    var canExpandRadius: Bool { Self.radiusOptions.contains { $0 > radius } }
     var hasActiveNotInterested: Bool {
         SwipeDecisionReconciler.hasActiveNotInterested(decisions, now: now())
     }
@@ -79,7 +79,7 @@ final class SwipeDeckViewModel: ObservableObject {
         await reload()
     }
 
-    /// 候補を取り直してデッキを作る（範囲・カテゴリー・Friend Lens を変えた時、再試行、範囲を広げる）。
+    /// 候補を取り直してデッキを作る（範囲・カテゴリー・Friend Lens を変えた時、再試行）。
     func reload() async {
         phase = .loading
         if let location = await dependencies.location.currentLocation() {
@@ -147,12 +147,6 @@ final class SwipeDeckViewModel: ObservableObject {
         case .failure(let error):
             errorMessage = error.message
         }
-    }
-
-    func expandRadius() async {
-        guard let next = Self.radiusOptions.first(where: { $0 > radius }) else { return }
-        radius = next
-        await reload()
     }
 
     func apply(radius: Double, category: SwipeCategory?, lens: SwipeFriendLens) async {

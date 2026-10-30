@@ -11,6 +11,7 @@ struct SwipeDiscoveryView: View {
     @State private var request: SwipeRequest?
     @State private var showsResults = false
     @State private var showsFilter = false
+    @State private var showsRadius = false
     @State private var showsLens = false
     @State private var showsResetConfirmation = false
     /// 絞り込みシートを閉じてから「イマイチをリセット」の確認を出す。
@@ -55,6 +56,10 @@ struct SwipeDiscoveryView: View {
                              onShowGuide: { viewModel.resetGuide() },
                              onResetNotInterested: { resetAfterFilter = true })
                 .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showsRadius) {
+            SwipeRadiusSheet(viewModel: viewModel)
+                .presentationDetents([.height(190)])
         }
         .sheet(isPresented: $showsLens) {
             SwipeLensPicker(friends: viewModel.friends, current: viewModel.lens,
@@ -133,17 +138,13 @@ struct SwipeDiscoveryView: View {
             stateView(symbol: "person.2.slash",
                       title: "近くに友達のレビューがありません",
                       message: "\(SwipeDistanceFormatter.radiusText(meters: viewModel.radius))以内に、友達がレビューしたお店が見つかりませんでした。") {
-                if viewModel.canExpandRadius {
-                    primaryButton("範囲を広げる") { Task { await viewModel.expandRadius() } }
-                }
+                primaryButton("範囲を変える") { showsRadius = true }
                 secondaryButton("友達を見る") { dismiss() }
             }
         case .finished:
             stateView(symbol: "checkmark.seal", title: "この近くの友達のおすすめは全部見ました",
                       message: "右にスワイプしたお店は「\(viewModel.savedShops.wantToGoTitle)」に入っています。") {
-                if viewModel.canExpandRadius {
-                    primaryButton("範囲を広げる") { Task { await viewModel.expandRadius() } }
-                }
+                primaryButton("範囲を変える") { showsRadius = true }
                 if viewModel.hasActiveNotInterested {
                     secondaryButton("イマイチをリセット") { showsResetConfirmation = true }
                 }
@@ -340,6 +341,82 @@ struct SwipeDiscoveryView: View {
     }
 }
 
+/// 「範囲を変える」で出す、半径だけのシート。
+struct SwipeRadiusSheet: View {
+    @ObservedObject var viewModel: SwipeDeckViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var radius: Double = 1000
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    SwipeRadiusSlider(radius: $radius)
+                } header: {
+                    SwipeRadiusHeader(radius: radius)
+                }
+            }
+            .font(SwipeTheme.text(15))
+            .navigationTitle("範囲")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("キャンセル") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("この範囲で探す") {
+                        let selectedRadius = radius
+                        dismiss()
+                        Task { await viewModel.apply(radius: selectedRadius, category: viewModel.category, lens: viewModel.lens) }
+                    }
+                }
+            }
+            .onAppear { radius = viewModel.radius }
+        }
+    }
+}
+
+/// 半径の見出し。選んでいる値を右に出す。
+struct SwipeRadiusHeader: View {
+    let radius: Double
+
+    var body: some View {
+        HStack {
+            Text("半径")
+            Spacer()
+            Text(SwipeDistanceFormatter.radiusText(meters: radius))
+                .font(SwipeTheme.text(15, bold: true))
+                .foregroundStyle(SwipeTheme.brand)
+                .monospacedDigit()
+        }
+    }
+}
+
+/// 半径のスライダー。目盛り（radiusOptions）の番号で動かし、半径（m）に読み替える。
+struct SwipeRadiusSlider: View {
+    @Binding var radius: Double
+
+    private var options: [Double] { SwipeDeckViewModel.radiusOptions }
+
+    private var step: Binding<Double> {
+        Binding(
+            get: { Double(options.lastIndex { $0 <= radius } ?? 0) },
+            set: { radius = options[min(max(Int($0.rounded()), 0), options.count - 1)] })
+    }
+
+    var body: some View {
+        Slider(value: step, in: 0...Double(options.count - 1), step: 1) {
+            Text("半径")
+        } minimumValueLabel: {
+            Text(SwipeDistanceFormatter.radiusText(meters: options[0]))
+        } maximumValueLabel: {
+            Text(SwipeDistanceFormatter.radiusText(meters: options[options.count - 1]))
+        }
+        .tint(SwipeTheme.brand)
+        .accessibilityValue(SwipeDistanceFormatter.radiusText(meters: radius))
+        .font(SwipeTheme.text(12, relativeTo: .caption))
+        .foregroundStyle(.secondary)
+    }
+}
+
 /// 絞り込み（F-18）。半径・カテゴリー・ガイドの再表示（F-23）・イマイチのリセット（F-20）。
 struct SwipeFilterSheet: View {
     @ObservedObject var viewModel: SwipeDeckViewModel
@@ -353,13 +430,10 @@ struct SwipeFilterSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("半径") {
-                    Picker("半径", selection: $radius) {
-                        ForEach(SwipeDeckViewModel.radiusOptions, id: \.self) { value in
-                            Text(SwipeDistanceFormatter.radiusText(meters: value)).tag(value)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                Section {
+                    SwipeRadiusSlider(radius: $radius)
+                } header: {
+                    SwipeRadiusHeader(radius: radius)
                 }
                 Section("カテゴリー") {
                     ScrollView(.horizontal, showsIndicators: false) {

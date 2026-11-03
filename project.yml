@@ -37,6 +37,10 @@ targets:
         CFBundleDevelopmentRegion: ja
         CFBundleLocalizations:
           - ja
+        CFBundleURLTypes:
+          - CFBundleURLName: jp.meshinowa.invite
+            CFBundleURLSchemes:
+              - meshinowa
         CloudflareAPIURL: $(CLOUDFLARE_API_URL)
         GooglePlacesAPIKey: $(GOOGLE_PLACES_IOS_API_KEY)
         NSAppTransportSecurity:
@@ -56,6 +60,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: jp.meshinowa.app
+        CODE_SIGN_ENTITLEMENTS: Config/Meshinowa.entitlements
         OTHER_LDFLAGS: $(inherited) -ObjC
         TARGETED_DEVICE_FAMILY: "1"
         MARKETING_VERSION: "0.1.0"

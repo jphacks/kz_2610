@@ -41,6 +41,48 @@ final class FriendStoreTests: XCTestCase {
         XCTAssertEqual(calls, 1)
     }
 
+    func testInviteUsesConfirmedTokenWithoutLookingUpHandle() async throws {
+        XCTAssertTrue(credentials.save(token))
+        let inviteToken = String(repeating: "d", count: 64)
+        var paths: [String] = []
+        BackendURLProtocol.handler = { request in
+            let path = request.url!.path
+            paths.append(path)
+            switch path {
+            case "/v1/invites":
+                XCTAssertEqual(request.httpMethod, "POST")
+                return (200, Data("{\"token\":\"\(inviteToken)\",\"url\":\"https://api.example.test/i/\(inviteToken)\"}".utf8))
+            case "/v1/invites/\(inviteToken)/request":
+                XCTAssertEqual(request.httpMethod, "POST")
+                return (200, Data(#"{"state":"pending_sent","request_id":"r1","profile":{"id":"f1","display_name":"架空の友達","handle":"changed_name"}}"#.utf8))
+            default:
+                XCTFail("招待ではIDを再検索しない")
+                return (404, Data())
+            }
+        }
+        let subject = store()
+        let invite = try await subject.makeInvite()
+        let result = try await subject.inviteResult(token: invite.token, send: true)
+        XCTAssertEqual(result.state, "pending_sent")
+        XCTAssertEqual(result.profile?.id, "f1")
+        XCTAssertEqual(paths.count, 2)
+    }
+
+    func testCommonWishlistDeduplicatesLegacyAndGoogleStores() async throws {
+        XCTAssertTrue(credentials.save(token))
+        BackendURLProtocol.handler = { request in
+            XCTAssertEqual(request.url?.path, "/v1/want-to-go/common")
+            let row: [String: Any] = ["id":"legacy","external_key":"legacy","name":"架空のカフェ", "latitude":35.0,"longitude":139.0,"address":"架空の住所"]
+            var google = row
+            google["id"] = "google"
+            google["external_key"] = "google:test"
+            google["google_place_id"] = "test"
+            return (200, try JSONSerialization.data(withJSONObject: ["state":"ok","restaurants":[row, google]]))
+        }
+        let result = try await store().commonWantToGo(friendID: UUID().uuidString)
+        XCTAssertEqual(result.restaurants.count, 1)
+    }
+
     func testProfileLookupRejectsInvalidIDWithoutNetworkAndAllowsNoMatch() async throws {
         XCTAssertTrue(credentials.save(token))
         var calls = 0

@@ -7,6 +7,7 @@ struct SWAccountSettingsView: View {
     @EnvironmentObject private var transfer: LibraryTransfer
     @State private var allowSearch = true
     @State private var includeAverage = true
+    @State private var shareWantToGo = false
     @State private var saving = false
     @State private var recoveryKey: String?
     @State private var enteredKey = ""
@@ -27,6 +28,7 @@ struct SWAccountSettingsView: View {
                 }
             } else if friends.isAvailable {
                 privacySection
+                wantToGoSection
                 blocksSection
                 backupSection
                 recoverySection
@@ -54,6 +56,7 @@ struct SWAccountSettingsView: View {
             await friends.loadSettings()
             allowSearch = friends.preferences?.allowIdSearch != 0
             includeAverage = friends.preferences?.includeInFriendAvg != 0
+            shareWantToGo = friends.preferences?.shareWantToGo == 1
         }
         .onDisappear { recoveryKey = nil; enteredKey = "" }
         .confirmationDialog("バックアップを更新しますか？", isPresented: $confirmsBackup, titleVisibility: .visible) {
@@ -112,6 +115,22 @@ struct SWAccountSettingsView: View {
             Text("ブロックは友達一覧や届いた申請のメニューから行えます。解除しても友達には戻りません。")
                 .font(.caption).foregroundStyle(.secondary)
         }
+    }
+
+    private var wantToGoSection: some View {
+        Section {
+            Toggle("行きたいを友達と共有", isOn: $shareWantToGo)
+            Button(saving ? "保存中…" : "行きたいの共有設定を保存") {
+                saving = true; error = nil
+                Task {
+                    defer { saving = false }
+                    do { try await friends.updateWantToGoSharing(shareWantToGo) }
+                    catch { self.error = "共有設定を保存できませんでした。もう一度お試しください。" }
+                }
+            }.disabled(saving || friends.preferences == nil)
+        } header: { Text("行きたいの共有") } footer: {
+            Text("共有をオンにしている友達全員と、共通のお店だけがお互いに表示されます。「行きたい」の一覧全体や「いいね」は見えません。解除・ブロックした相手には表示されません。")
+        }.disabled(saving)
     }
 
     private var backupSection: some View {

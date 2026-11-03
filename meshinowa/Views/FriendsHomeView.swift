@@ -201,9 +201,7 @@ struct FriendsHomeView: View {
                 .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 14))
                 .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(MeshinowaTheme.hairline))
                 .padding(.top, 12)
-                ShareLink(item: "メシノワで友達になろう！ ID: @\(me.handle)") {
-                    Text("IDを送って友達を招く")
-                }
+                Button("友達を招待する") { startsWithIDSearch = false; showsAddFriend = true }
                 .buttonStyle(PaperButtonStyle())
             }
             Button("友達のIDで探す") { startsWithIDSearch = true; showsAddFriend = true }
@@ -320,7 +318,7 @@ struct FriendsHomeView: View {
 }
 
 /// 友達のおすすめマップ。実データは開いている間も最新の状態を反映する。
-private struct FriendMapScreen: View {
+struct FriendMapScreen: View {
     var initialSelection: String? = nil
     var friendID: String? = nil
     @EnvironmentObject private var store: FriendStore
@@ -416,6 +414,11 @@ private struct FriendConnectionsSection: View {
                     Text(friend.displayName).font(MeshinowaFont.heading(26))
                     Text("ID: \(friend.handle)").font(MeshinowaFont.text(14))
                     Text(friend.bio ?? "").font(MeshinowaFont.text(16)).multilineTextAlignment(.center)
+                    NavigationLink {
+                        CommonWantToGoView(friend: friend)
+                    } label: {
+                        Label("一緒に行きたいお店", systemImage: "flag.fill")
+                    }.buttonStyle(PaperButtonStyle())
                     Spacer()
                 }.padding(24).frame(maxWidth: .infinity).background(MeshinowaTheme.ground)
                     .navigationTitle("友達のプロフィール").navigationBarTitleDisplayMode(.inline)
@@ -529,6 +532,7 @@ private struct FriendAddSheet: View {
                         step(2, "相手が\n承認する")
                         step(3, "お互いの評価が\n地図に出る")
                     }
+                    if store.isAvailable && !startsWithSearch { FriendInviteCard() }
                     myID
                     if store.isAvailable {
                         search

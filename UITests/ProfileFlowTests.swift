@@ -1,6 +1,28 @@
 import XCTest
 
 final class ProfileFlowTests: XCTestCase {
+    func testInviteLinkOpensDisconnectedNoticeWithoutSendingRequest() {
+        let app = XCUIApplication()
+        app.launchEnvironment["MESHINOWA_OFFLINE"] = "1"
+        app.launchEnvironment["MESHINOWA_UI_TEST_ID"] = UUID().uuidString
+        app.launchArguments = ["-hasOpenedMeshinowa", "YES"]
+        app.launch()
+        let token = String(repeating: "a", count: 64)
+        XCUIDevice.shared.system.open(URL(string: "meshinowa://invite/\(token)")!)
+        let system = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let open = system.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "開く", "Open")).firstMatch
+        if open.waitForExistence(timeout: 3) { open.tap() }
+        XCTAssertTrue(app.navigationBars["友達への招待"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["友達の機能につながっていません"].exists)
+        XCTAssertFalse(app.buttons["友達申請を送る"].exists)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "招待リンク・未接続"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.buttons["閉じる"].tap()
+        XCTAssertTrue(app.buttons["友達"].waitForExistence(timeout: 5))
+    }
+
     func testFriendAddSheetOpensAndClosesWithoutConnection() {
         let app = XCUIApplication()
         app.launchEnvironment["MESHINOWA_OFFLINE"] = "1"

@@ -54,6 +54,7 @@ final class FriendStore: ObservableObject {
         var allowIdSearch: Int
         var showVisitDate: Int
         var includeInFriendAvg: Int
+        var shareWantToGo: Int? = nil
     }
     struct BlockedProfile: Decodable, Identifiable {
         let blockedId: String
@@ -533,6 +534,11 @@ final class FriendStore: ObservableObject {
     func updatePreferences(allowSearch: Bool, includeInAverage: Bool) async throws {
         let _: [String: Bool] = try await call("/preferences", method: "PUT", json: ["allow_id_search": allowSearch,
                        "show_visit_date": false, "include_in_friend_avg": includeInAverage])
+        await loadSettings()
+    }
+
+    func updateWantToGoSharing(_ enabled: Bool) async throws {
+        let _: [String: Bool] = try await call("/preferences/want-to-go", method: "PUT", json: ["share_want_to_go": enabled])
         await loadSettings()
     }
 

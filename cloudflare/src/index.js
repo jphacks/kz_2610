@@ -1,4 +1,5 @@
 import { hash, now, randomToken } from "./auth.js";
+import { invitePage } from "./invite-page.js";
 
 const MAX_PHOTO = 5 * 1024 * 1024;
 const uuid = (value) =>
@@ -128,6 +129,19 @@ async function route(request, env) {
     if (!result.success) fail(429, "rate_limited");
   }
   if (path === "/health" && method === "GET") return json({ status: "ok" });
+  // 公開リンクは推測不能な招待だけを確認する。認証用トークンとは別物。
+  const landing = path.match(/^\/i\/([a-f0-9]{64})$/);
+  if (landing && method === "GET") {
+    const result = await env.AUTH_RATE_LIMITER.limit({ key: "invite-web:" + (request.headers.get("CF-Connecting-IP") ?? "local") });
+    if (!result.success) fail(429, "rate_limited");
+    const profile = await one("select p.display_name from friend_invites i join profiles p on p.id=i.user_id where i.token=?", landing[1]);
+    return invitePage(profile, landing[1], env.APP_STORE_URL);
+  }
+  if (path === "/.well-known/apple-app-site-association" && method === "GET") {
+    if (!/^[A-Z0-9]{10}\.jp\.meshinowa\.app$/.test(env.APPLE_APP_ID ?? "")) fail(404, "not_configured");
+    return json({ applinks: { details: [{ appIDs: [env.APPLE_APP_ID], components: [{ "/": "/i/*" }] }] } });
+  }
+
   // Development recovery is unavailable on deployed hosts, even if a local config was copied.
   if (path === "/v1/auth/local-state" && method === "GET") {
     if (env.LOCAL_DEVELOPMENT !== "true" || !["localhost","127.0.0.1","[::1]"].includes(url.hostname)) fail(404,"not_found");
@@ -216,6 +230,39 @@ async function route(request, env) {
   );
   if (!session) fail(401, "authentication_required");
   const actor = session.user_id;
+  if (path.startsWith("/v1/invites")) {
+    const result = await env.AUTH_RATE_LIMITER.limit({ key: "invite:" + actor });
+    if (!result.success) fail(429, "rate_limited");
+  }
+  if (path === "/v1/invites" && method === "POST") {
+    const b = await body(request);
+    const rotate = b.rotate === undefined ? false : Boolean(bool(b.rotate));
+    await run(rotate
+      ? "insert into friend_invites(user_id,token) values(?,?) on conflict(user_id) do update set token=excluded.token,created_at=strftime('%Y-%m-%dT%H:%M:%fZ','now')"
+      : "insert into friend_invites(user_id,token) values(?,?) on conflict(user_id) do nothing", actor, randomToken());
+    const invite = await one("select token from friend_invites where user_id=?", actor);
+    return json({ token: invite.token, url: `${url.origin}/i/${invite.token}` });
+  }
+  const inviteMatch = path.match(/^\/v1\/invites\/([a-f0-9]{64})(\/request)?$/);
+  if (inviteMatch && (method === "GET" || method === "POST" && inviteMatch[2])) {
+    const profile = await one(`select p.id,p.display_name,p.handle,p.avatar_symbol from friend_invites i join profiles p on p.id=i.user_id where i.token=? and not ${blocked("?2", "p.id")}`, inviteMatch[1], actor);
+    if (!profile) return json({ state: "invalid" });
+    let state = "ok";
+    let requestID;
+    if (profile.id === actor) state = "self";
+    else if (await one(`select 1 where ${connected("?1", "?2")}`, actor, profile.id)) state = "friend";
+    else {
+      const pending = await one("select id,from_id from friend_requests where status='pending' and ((from_id=?1 and to_id=?2) or (from_id=?2 and to_id=?1))", actor, profile.id);
+      if (pending) { state = pending.from_id === actor ? "pending_sent" : "pending_received"; requestID = pending.id; }
+    }
+    if (method === "POST" && state === "ok") {
+      // 発行し直しと競合しても、現在の招待だけで申請できる。
+      const created = await one(`insert into friend_requests(id,from_id,to_id,invite_token) select ?,?,user_id,token from friend_invites where token=? on conflict(from_id,to_id) do update set status='pending',invite_token=excluded.invite_token,created_at=strftime('%Y-%m-%dT%H:%M:%fZ','now') returning id`, crypto.randomUUID(), actor, inviteMatch[1]);
+      return json({ state: created ? "pending_sent" : "invalid", ...(created ? {profile, request_id:created.id} : {}) });
+    }
+    return json({ state, profile, request_id: requestID });
+  }
+
   if (path === "/v1/auth/session" && method === "DELETE") {
     await run("delete from sessions where token_hash=?", tokenHash);
     return json({ ok: true });
@@ -288,6 +335,11 @@ async function route(request, env) {
     return json(
       await one("select * from profile_preferences where user_id=?", actor),
     );
+  if (path === "/v1/preferences/want-to-go" && method === "PUT") {
+    const b = await body(request);
+    await run("update profile_preferences set share_want_to_go=? where user_id=?", bool(b.share_want_to_go), actor);
+    return json({ ok: true });
+  }
   if (path === "/v1/preferences" && method === "PUT") {
     const b = await body(request);
     await run(
@@ -329,7 +381,7 @@ async function route(request, env) {
   if (path === "/v1/requests" && method === "GET")
     return json(
       await all(
-        `select q.*,f.display_name as from_name,f.handle as from_handle,t.display_name as to_name,t.handle as to_handle from friend_requests q join profiles f on f.id=q.from_id join profiles t on t.id=q.to_id where (q.from_id=?1 or q.to_id=?1) and not ${blocked("q.from_id", "q.to_id")} order by q.created_at desc limit 1000`,
+        `select q.id,q.from_id,q.to_id,q.status,q.created_at,f.display_name as from_name,f.handle as from_handle,t.display_name as to_name,t.handle as to_handle from friend_requests q join profiles f on f.id=q.from_id join profiles t on t.id=q.to_id where (q.from_id=?1 or q.to_id=?1) and not ${blocked("q.from_id", "q.to_id")} order by q.created_at desc limit 1000`,
         actor,
       ),
     );
@@ -590,6 +642,20 @@ async function route(request, env) {
     return json({ ok: true });
   }
   // 「行きたい」：いいね・保存一覧とは別。レビューを書くとトリガーで外れる。
+  if (path === "/v1/want-to-go/common" && method === "GET") {
+    const friend = id(url.searchParams.get("friend_id"));
+    // 関係・ブロック・両者の設定を、一覧を読むSQLでも確認する。
+    const permitted = `${connected("?1", "?2")} and exists(select 1 from profile_preferences where user_id=?1 and share_want_to_go=1) and exists(select 1 from profile_preferences where user_id=?2 and share_want_to_go=1)`;
+    if (!await one(`select 1 where ${connected("?1", "?2")}`, actor, friend)) return json({ state: "not_friend", restaurants: [] });
+    const mine = await one("select share_want_to_go from profile_preferences where user_id=?", actor);
+    if (!mine?.share_want_to_go) return json({ state: "self_off", restaurants: [] });
+    const partner = await one("select share_want_to_go from profile_preferences where user_id=?", friend);
+    if (!partner?.share_want_to_go) return json({ state: "partner_off", restaurants: [] });
+    // Google移行前後の別レコードも、両方にPlace IDがある場合はその一致、それ以外は店名・座標で照合する。
+    const sameStore = `(s.id=t.id or case when s.google_place_id is not null and t.google_place_id is not null then s.google_place_id=t.google_place_id else s.external_key=t.external_key or (lower(trim(s.name))=lower(trim(t.name)) and round(s.latitude*10000)=round(t.latitude*10000) and round(s.longitude*10000)=round(t.longitude*10000)) end)`;
+    const restaurants = await all(`select s.id,s.external_key,s.google_place_id,s.name,s.category,s.address,s.latitude,s.longitude,max(max(a.added_at,b.added_at)) as added_at from want_to_go a join restaurants s on s.id=a.restaurant_id join want_to_go b on b.user_id=?2 join restaurants t on t.id=b.restaurant_id where a.user_id=?1 and ${sameStore} and ${permitted} group by s.id order by added_at desc,s.id limit 1000`, actor, friend);
+    return json({ state: "ok", restaurants });
+  }
   if (path === "/v1/want-to-go" && method === "GET")
     return json(
       await all(

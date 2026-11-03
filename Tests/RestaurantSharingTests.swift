@@ -34,4 +34,31 @@ final class RestaurantSharingTests: XCTestCase {
             add(attachment)
         }
     }
+
+    @MainActor func testShareEditorLayoutAtPhoneSize() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let reviews = LocalReviewStore(fileURL: folder.appendingPathComponent("reviews.json"))
+        let item = MKMapItem(placemark: MKPlacemark(coordinate: .init(latitude: 35, longitude: 139)))
+        item.name = "【テスト】喫茶こはる"
+        try reviews.save(item: item, rating: 4.5, comment: "プリンとコーヒーの組み合わせがおすすめ。")
+        let editor = RestaurantShareCardEditor(item: item)
+            .environmentObject(reviews).environmentObject(FriendStore(backend: nil))
+        let controller = UIHostingController(rootView: editor)
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(400))
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "共有カード・作成画面"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        window.isHidden = true
+    }
 }

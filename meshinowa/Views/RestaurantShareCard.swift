@@ -35,7 +35,7 @@ struct RestaurantShareCardEditor: View {
                         .font(MeshinowaFont.heading(22))
                     card
                         .scaleEffect(0.8, anchor: .top)
-                        .frame(width: 288, height: 360)
+                        .frame(width: 288, height: 360, alignment: .top)
                         .accessibilityLabel("共有するカードのプレビュー")
                     VStack(spacing: 14) {
                         Toggle("自分の名前", isOn: $includesName)
@@ -113,6 +113,14 @@ struct RestaurantShareCard: View {
                 GenreRibbon(genre: genre).padding(10)
             }
             .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(alignment: .bottomTrailing) {
+                if photo != nil {
+                    Text("写真：\(name ?? "投稿者")")
+                        .font(MeshinowaFont.text(9)).padding(4)
+                        .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 4))
+                        .padding(6)
+                }
+            }
             HStack(alignment: .top, spacing: 8) {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(item.name ?? "飲食店").font(MeshinowaFont.heading(22)).lineLimit(2)

@@ -1,10 +1,21 @@
 # 引き継ぎメモ
 
-最終更新：2026-10-29
+最終更新：2026-11-04
 
 ## いまの作業ブランチ
 
-- ブランチ：`codex/map-readability`（`codex/ui-polish` の `d6354c7` から分岐）
+- ブランチ：`codex/friend-sharing`（pull済みの `origin/main` / `29515de` から分岐）
+- 2026-11-03：mainのPR #9までpull済み。ronpaouさんのスワイプ範囲スライダー（最大50km）を含む。
+- 今回の採用範囲・API・公開前の設定は [招待・共通の行きたい・共有カード](tasks/2026-11-03-friend-sharing.md) を参照。元のZIPを丸ごと実装せず、ユーザー確認済みの最小版を実装。
+- 共有カード：店舗詳細の共有メニューから4:5の画像を作成。名前は初期オフ、写真は自分のレビュー写真だけ。端末内で動作する。
+- 招待リンク・QR・受け取り確認・申請・承認と、両者がオンのときだけ表示する共通の行きたい一覧を追加。共通一覧の入口は友達プロフィールだけ。新しいタブや専用地図は追加しない。
+- 2026-11-04：ユーザー依頼で招待QRを原案1b「緑のつぶ」（緑の丸い点・丸い目・中央のお椀ロゴ）へ変更。Core Imageで読み取り8条件成功、全単体165件（1件スキップ）成功。追加のVision CPU互換性テストは標準QRも読めない環境のためスキップ。実機カメラは未確認。見本は `output/wa-design/friend-sharing-preview/invite-qr-green-dots.png`。
+- 検証：Cloudflare31件、アプリ単体163件（1件スキップ・失敗0）、既存UI3件成功。書き出しカードの写真なし・長文を目視確認。作成画面も目視確認し、プレビューと見出しの重なりを修正。修正後の共有カード3テストも成功。通常ビルド成功。iPhone 17 Proに上書きインストール済み。追加の招待リンクUIテスト1件も成功（未接続の案内・申請ボタン非表示・閉じる操作）。
+- **公開先未設定**：ユーザー確認済みでCloudflare公開URL・ドメインは未用意。`Cloudflare.xcconfig.local` は未作成。公開前にD1 migration 0006・0007、API接続先、AASAの `APPLE_APP_ID`、Associated Domainsを設定し、実機2台で確認する。ストアURLも未設定。
+- ブランチはpush済み。[PR #10](https://github.com/jphacks/kz_2610/pull/10) でmainへ取り込む。2026-11-04にユーザーがpush・main反映を承認済み。公開リソース作成・デプロイは未実施。下記は以前のUI作業の履歴。
+
+### 以前のUI作業
+
 - 前の `fix/ids-and-pin-scores` は [PR #6](https://github.com/jphacks/kz_2610/pull/6) でmainへマージ済み。
 - 今回はユーザーの `UI改善の相談.zip` の採用案1b・2b・3a・4a・5aを実装。参照仕様は `output/wa-design/ui-handoff-20261028.md`。
 - 状態：未push。通常のCloudflare接続設定は変更していない。UI確認用の一時APIと確認用データは `/private/tmp/` と専用シミュレータだけに置き、アプリ本体には追加しない。

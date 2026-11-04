@@ -9,6 +9,10 @@ struct MeshinowaApp: App {
     @StateObject private var location = LocationStore()
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasOpenedMeshinowa") private var hasOpened = false
+    @State private var incomingInvite: IncomingInvite?
+    private struct IncomingInvite: Identifiable {
+        let id: String
+    }
     private let preferenceStore: UserDefaults
     init() {
         if let testID = ProcessInfo.processInfo.environment["MESHINOWA_UI_TEST_ID"], UUID(uuidString: testID) != nil {
@@ -44,6 +48,19 @@ struct MeshinowaApp: App {
             .environmentObject(friends)
             .environmentObject(transfer)
             .environmentObject(location)
+            .onOpenURL { url in
+                let backendURL = (try? BackendConfiguration.load(info: Bundle.main.infoDictionary ?? [:]))?.url
+                if let token = InviteLink.token(from: url, backendURL: backendURL) {
+                    incomingInvite = IncomingInvite(id: token)
+                }
+            }
+            .sheet(item: $incomingInvite) { invite in
+                FriendInviteLanding(token: invite.id)
+                    .environmentObject(friends)
+                    .environmentObject(saved)
+                    .environmentObject(reviews)
+                    .environmentObject(location)
+            }
             .alert("操作を完了できませんでした", isPresented: Binding(get: { friends.actionError != nil }, set: { if !$0 { friends.actionError = nil } })) {
                 Button("閉じる", role: .cancel) { friends.actionError = nil }
             } message: { Text(friends.actionError ?? "") }

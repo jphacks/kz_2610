@@ -75,6 +75,94 @@ before(async () => {
 after(async () => {
   await mf?.dispose();
 });
+
+test("invites bypass only ID search, require confirmation, rotate and respect blocks", async () => {
+  await sql("update profile_preferences set allow_id_search=0 where user_id=?", A).run();
+  const invite = await data(A, "POST", "/invites", {});
+  assert.match(invite.token, /^[a-f0-9]{64}$/);
+  assert.equal((await data(A, "POST", "/invites", {})).token, invite.token);
+  assert.equal((await data(A, "GET", `/invites/${invite.token}`)).state, "self");
+  assert.equal((await data(B, "GET", `/invites/${invite.token}`)).state, "ok");
+  assert.equal((await data(A, "GET", "/requests")).length, 0);
+  await data(B, "POST", "/requests", { target_id: A }, 409);
+  const sent = await data(B, "POST", `/invites/${invite.token}/request`);
+  assert.equal(sent.state, "pending_sent");
+  const incoming = await data(A, "GET", `/invites/${(await data(B, "POST", "/invites", {})).token}`);
+  assert.equal(incoming.state, "pending_received");
+  assert.equal(incoming.request_id, sent.request_id);
+  await data(A, "PATCH", `/requests/${sent.request_id}`, { accept: true });
+  assert.equal((await data(B, "GET", `/invites/${invite.token}`)).state, "friend");
+  const rotated = await data(A, "POST", "/invites", { rotate: true });
+  assert.notEqual(rotated.token, invite.token);
+  assert.deepEqual(await data(C, "GET", `/invites/${invite.token}`), { state: "invalid" });
+  assert.deepEqual(await data(C, "POST", `/invites/${invite.token}/request`), { state: "invalid" });
+  await data(A, "PUT", `/blocks/${C}`);
+  assert.deepEqual(await data(C, "GET", `/invites/${rotated.token}`), { state: "invalid" });
+  assert.deepEqual(await data(C, "POST", `/invites/${rotated.token}/request`), { state: "invalid" });
+  await data(null, "POST", "/invites", {}, 401);
+});
+
+test("invite pages escape names and omit IDs, handles and fake store links", async () => {
+  await sql("update profiles set display_name=? where id=?", '<img src=x onerror="alert(1)">', A).run();
+  const invite = await data(A, "POST", "/invites", {});
+  const response = await worker.fetch(new Request(invite.url), env);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Referrer-Policy"), "no-referrer");
+  assert.equal(response.headers.get("Cache-Control"), "private, no-store");
+  const html = await response.text();
+  assert.ok(html.includes("&lt;img"));
+  assert.ok(!html.includes('<img src=x'));
+  assert.ok(!html.includes(A));
+  assert.ok(!html.includes("test_1"));
+  assert.ok(!html.includes("App Storeで入手"));
+  const association = await worker.fetch(new Request("https://api.example.test/.well-known/apple-app-site-association"), {...env, APPLE_APP_ID: "ABCDEFGHIJ.jp.meshinowa.app"});
+  assert.equal(association.status, 200);
+  assert.deepEqual((await association.json()).applinks.details[0].components, [{"/":"/i/*"}]);
+  await data(A, "POST", "/invites", {rotate:true});
+  assert.equal((await worker.fetch(new Request(invite.url),env)).status,404);
+});
+
+test("common wishlists require both consents and a current friendship, and never return private lists", async () => {
+  const first = await data(A, "POST", "/restaurants", {external_key:"common:first",name:"架空のカフェ",latitude:35.1,longitude:139},201);
+  const privateShop = await data(A, "POST", "/restaurants", {external_key:"common:private",name:"架空の非共通店",latitude:35.2,longitude:139},201);
+  await data(A,"PUT",`/want-to-go/${first.id}`);
+  await data(B,"PUT",`/want-to-go/${first.id}`);
+  await data(B,"PUT",`/want-to-go/${privateShop.id}`);
+  const common = () => data(A,"GET",`/want-to-go/common?friend_id=${B}`);
+  assert.equal((await common()).state,"not_friend");
+  await connect();
+  assert.equal((await common()).state,"self_off");
+  await data(A,"PUT","/preferences/want-to-go",{share_want_to_go:true});
+  assert.equal((await common()).state,"partner_off");
+  await data(B,"PUT","/preferences/want-to-go",{share_want_to_go:true});
+  const result = await common();
+  assert.equal(result.state,"ok");
+  assert.deepEqual(result.restaurants.map(r=>r.id),[first.id]);
+  // 古いクライアントが公開設定を保存しても、新しい共有設定を上書きしない。
+  await data(A,"PUT","/preferences",{allow_id_search:true,show_visit_date:false,include_in_friend_avg:true});
+  assert.equal((await common()).state,"ok");
+  await data(B,"PUT","/preferences/want-to-go",{share_want_to_go:false});
+  assert.deepEqual(await common(),{state:"partner_off",restaurants:[]});
+  await data(B,"PUT","/preferences/want-to-go",{share_want_to_go:true});
+  await data(A,"PUT","/reviews",{restaurant_id:first.id,rating:4});
+  assert.deepEqual((await common()).restaurants,[]);
+  await data(B,"PUT",`/blocks/${A}`);
+  assert.deepEqual(await common(),{state:"not_friend",restaurants:[]});
+  await data(null,"GET",`/want-to-go/common?friend_id=${B}`,undefined,401);
+  await data(A,"GET","/want-to-go/common?friend_id=invalid",undefined,400);
+});
+
+test("common wishlists match a legacy store and its Google store without exposing other stores", async () => {
+  const legacy = await data(A,"POST","/restaurants",{external_key:"legacy:cafe",name:"架空のカフェ",latitude:35.1234,longitude:139.1234},201);
+  const google = await data(B,"POST","/restaurants",{external_key:"google:cafe",google_place_id:"cafe",name:"架空のカフェ",latitude:35.1234,longitude:139.1234},201);
+  await data(A,"PUT",`/want-to-go/${legacy.id}`);
+  await data(B,"PUT",`/want-to-go/${google.id}`);
+  await connect();
+  for (const user of [A,B]) await data(user,"PUT","/preferences/want-to-go",{share_want_to_go:true});
+  const result = await data(A,"GET",`/want-to-go/common?friend_id=${B}`);
+  assert.equal(result.restaurants.length,1);
+  assert.equal(result.restaurants[0].id,legacy.id);
+});
 beforeEach(async () => {
   await db.batch(
     [

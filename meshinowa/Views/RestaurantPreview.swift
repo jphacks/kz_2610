@@ -158,6 +158,7 @@ struct RestaurantInformationView: View {
     @State private var lens: FriendLens
     @State private var showsLens = false
     @State private var showsError = false
+    @State private var showsShareCard = false
 
     init(item: MKMapItem, friendIDs: Set<String>? = nil) {
         self.item = item
@@ -181,11 +182,16 @@ struct RestaurantInformationView: View {
                         .buttonStyle(CircleIconButtonStyle())
                         .accessibilityLabel("閉じる")
                     Spacer()
-                    ShareLink(item: [item.name, item.placemark.title].compactMap { $0 }.joined(separator: "\n")) {
+                    Menu {
+                        Button("カードにして共有") { showsShareCard = true }
+                        ShareLink(item: RestaurantSharing.message(for: item, invitation: true)) {
+                            Label("店名と地図のリンクを送る", systemImage: "link")
+                        }
+                    } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
                     .buttonStyle(CircleIconButtonStyle())
-                    .accessibilityLabel("店名と住所を共有")
+                    .accessibilityLabel("お店を共有")
                     Button {
                         showsError = !saved.setLiked(item, isLiked: !isLiked)
                     } label: {
@@ -265,6 +271,7 @@ struct RestaurantInformationView: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showsLens) { FriendLensPicker(lens: $lens, dataset: friends.dataset) }
+        .sheet(isPresented: $showsShareCard) { RestaurantShareCardEditor(item: item) }
         .alert("保存を変更できませんでした", isPresented: $showsError) {
             Button("閉じる", role: .cancel) {}
         } message: { Text(saved.errorMessage ?? "もう一度お試しください。") }

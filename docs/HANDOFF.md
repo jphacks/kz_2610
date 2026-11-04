@@ -12,7 +12,7 @@
 - 2026-11-04：ユーザー依頼で招待QRを原案1b「緑のつぶ」（緑の丸い点・丸い目・中央のお椀ロゴ）へ変更。Core Imageで読み取り8条件成功、全単体165件（1件スキップ）成功。追加のVision CPU互換性テストは標準QRも読めない環境のためスキップ。実機カメラは未確認。見本は `output/wa-design/friend-sharing-preview/invite-qr-green-dots.png`。
 - 検証：Cloudflare31件、アプリ単体163件（1件スキップ・失敗0）、既存UI3件成功。書き出しカードの写真なし・長文を目視確認。作成画面も目視確認し、プレビューと見出しの重なりを修正。修正後の共有カード3テストも成功。通常ビルド成功。iPhone 17 Proに上書きインストール済み。追加の招待リンクUIテスト1件も成功（未接続の案内・申請ボタン非表示・閉じる操作）。
 - **公開先未設定**：ユーザー確認済みでCloudflare公開URL・ドメインは未用意。`Cloudflare.xcconfig.local` は未作成。公開前にD1 migration 0006・0007、API接続先、AASAの `APPLE_APP_ID`、Associated Domainsを設定し、実機2台で確認する。ストアURLも未設定。
-- 本ブランチは未push。公開リソース作成・デプロイ・mainへの取り込みはしていない。下記は以前のUI作業の履歴。
+- ブランチはpush済み。[PR #10](https://github.com/jphacks/kz_2610/pull/10) でmainへ取り込む。2026-11-04にユーザーがpush・main反映を承認済み。公開リソース作成・デプロイは未実施。下記は以前のUI作業の履歴。
 
 ### 以前のUI作業
 

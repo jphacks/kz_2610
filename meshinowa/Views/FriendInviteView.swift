@@ -13,10 +13,11 @@ struct FriendInviteCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("友達を招待する").font(MeshinowaFont.heading(20))
             if busy { ProgressView("招待を用意しています…") }
-            if let invite, let image = qrImage(invite.url) {
-                Image(uiImage: image).interpolation(.none).resizable()
-                    .frame(width: 184, height: 184).padding(12)
-                    .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 16))
+            if let invite, let code = InviteQRCode(url: invite.url) {
+                InviteQRCodeView(code: code)
+                    .padding(12)
+                    .background(MeshinowaTheme.card, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(MeshinowaTheme.hairline))
                     .frame(maxWidth: .infinity)
                     .accessibilityLabel("招待QRコード。iPhoneのカメラで読み取ると申請画面が開きます")
                 Text("iPhoneのカメラで読み取るか、リンクを送って招待できます。")
@@ -66,14 +67,78 @@ struct FriendInviteCard: View {
         } catch { self.error = "招待リンクを用意できませんでした。IDでの追加も使えます。" }
     }
 
-    private func qrImage(_ url: URL) -> UIImage? {
+}
+
+/// 生成したQRの行列。白い外周を除き、表示側で4セル分の余白を確保する。
+struct InviteQRCode {
+    let modules: [[Bool]]
+
+    init?(url: URL) {
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(url.absoluteString.utf8)
-        filter.correctionLevel = "M"
-        guard let output = filter.outputImage,
-              let image = CIContext().createCGImage(output.transformed(by: .init(scaleX: 8, y: 8)),
-                                                    from: output.extent.applying(.init(scaleX: 8, y: 8))) else { return nil }
-        return UIImage(cgImage: image)
+        filter.correctionLevel = "H"
+        guard let output = filter.outputImage else { return nil }
+        let side = Int(output.extent.width)
+        guard side > 0, side <= 200 else { return nil }
+        var pixels = [UInt8](repeating: 255, count: side * side)
+        CIContext().render(output, toBitmap: &pixels, rowBytes: side, bounds: output.extent,
+                           format: .L8, colorSpace: CGColorSpaceCreateDeviceGray())
+        let dark = (0..<side * side).filter { pixels[$0] < 128 }
+        guard let minX = dark.map({ $0 % side }).min(), let maxX = dark.map({ $0 % side }).max(),
+              let minY = dark.map({ $0 / side }).min(), let maxY = dark.map({ $0 / side }).max(),
+              maxX - minX == maxY - minY else { return nil }
+        modules = (minY...maxY).map { y in (minX...maxX).map { x in pixels[y * side + x] < 128 } }
+    }
+}
+
+/// 案1b「緑のつぶ」。点の色とロゴは既存のテーマを使う。
+struct InviteQRCodeView: View {
+    let code: InviteQRCode
+    var size: CGFloat = 184
+
+    private var count: Int { code.modules.count }
+    private var unit: CGFloat { size / CGFloat(count + 8) }
+    private var logoModules: Int { max(3, Int((Double(count) * 0.22).rounded()) / 2 * 2 + 1) }
+    private var logoSize: CGFloat { CGFloat(logoModules) * unit }
+
+    var body: some View {
+        ZStack {
+            Canvas { context, _ in
+                let middle = count / 2
+                let halfLogo = logoModules / 2
+                for y in 0..<count {
+                    for x in 0..<count where code.modules[y][x] {
+                        let eye = (x < 7 && y < 7) || (x >= count - 7 && y < 7) || (x < 7 && y >= count - 7)
+                        let logo = abs(x - middle) <= halfLogo && abs(y - middle) <= halfLogo
+                        guard !eye && !logo else { continue }
+                        let circle = CGRect(x: (CGFloat(x) + 4.07) * unit, y: (CGFloat(y) + 4.07) * unit,
+                                            width: 0.86 * unit, height: 0.86 * unit)
+                        context.fill(Path(ellipseIn: circle), with: .color(MeshinowaTheme.mintInk))
+                    }
+                }
+                for (x, y) in [(0, 0), (count - 7, 0), (0, count - 7)] {
+                    let origin = CGPoint(x: CGFloat(x + 4) * unit, y: CGFloat(y + 4) * unit)
+                    let outer = CGRect(x: origin.x + 0.5 * unit, y: origin.y + 0.5 * unit,
+                                       width: 6 * unit, height: 6 * unit)
+                    context.stroke(Path(roundedRect: outer, cornerRadius: 2.4 * unit),
+                                   with: .color(MeshinowaTheme.mintInk), lineWidth: unit)
+                    let inner = CGRect(x: origin.x + 2 * unit, y: origin.y + 2 * unit,
+                                       width: 3 * unit, height: 3 * unit)
+                    context.fill(Path(roundedRect: inner, cornerRadius: 1.2 * unit),
+                                 with: .color(MeshinowaTheme.mintInk))
+                }
+            }
+            Circle().fill(MeshinowaTheme.mint)
+                .frame(width: logoSize - 1.2 * unit, height: logoSize - 1.2 * unit)
+                .padding(0.6 * unit)
+                .background(MeshinowaTheme.card, in: Circle())
+                .overlay { BowlMark(size: logoSize * 0.74, holes: MeshinowaTheme.mint) }
+        }
+        .frame(width: size, height: size)
+        .background(MeshinowaTheme.card)
+        .environment(\.colorScheme, .light)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("招待QRコード。iPhoneのカメラで読み取ると申請画面が開きます")
     }
 }
 

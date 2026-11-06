@@ -9,9 +9,9 @@ struct CloudflareWantToGoRemote: SwipeWantToGoRemote {
     private let backend: CloudflareBackend
     private let credentials: GuestCredentialStore
 
-    init(backend: CloudflareBackend, credentials: GuestCredentialStore = GuestCredentialStore()) {
+    init(backend: CloudflareBackend, credentials: GuestCredentialStore? = nil) {
         self.backend = backend
-        self.credentials = credentials
+        self.credentials = credentials ?? GuestCredentialStore.scoped(to: backend.configuration)
     }
 
     /// Cloudflare が未設定なら nil（端末内だけで使う）。

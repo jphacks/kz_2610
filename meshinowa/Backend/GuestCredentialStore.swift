@@ -13,6 +13,15 @@ struct GuestCredentialStore: GuestCredentials {
     var service = "jp.meshinowa.app.guest"
     private let account = "access_token"
 
+    /// 開発用の鍵を公開先へ送らない。ローカルの既存アカウントはそのまま残す。
+    static func scoped(to configuration: BackendConfiguration?) -> GuestCredentialStore {
+        guard let configuration, !configuration.isDevelopmentHost else { return GuestCredentialStore() }
+        let url = configuration.url
+        let origin = "\(url.scheme?.lowercased() ?? "https")://\(url.host?.lowercased() ?? "")"
+            + (url.port.map { ":\($0)" } ?? "")
+        return GuestCredentialStore(service: "jp.meshinowa.app.guest." + origin)
+    }
+
     func load() -> String? {
         var query = baseQuery
         query[kSecReturnData as String] = true

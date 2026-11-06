@@ -1,8 +1,17 @@
 # 引き継ぎメモ
 
-最終更新：2026-11-04
+最終更新：2026-11-06
 
 ## いまの作業ブランチ
+
+- 現在：`codex/cloudflare-remote-deploy`（最新のローカルmainから分岐）。以下の友達共有ブランチの記載は以前の作業履歴。
+- 2026-11-06：ユーザー承認でセキュリティチェック後にCloudflareへ公開し、iOSの接続先と招待リンク設定まで実施。詳細は [Cloudflare公開](tasks/2026-11-06-cloudflare-deploy.md)、確認結果は [セキュリティ確認](security_best_practices_report.md)。
+- APIは `https://meshinowa-api.morimo1371.workers.dev`。専用D1・非公開R2を新規作成、migration 0001〜0007を適用。公開APIの基本応答と開発API無効化、R2非公開を確認。
+- ユーザー指定でローカルの開発用データは移さず、新しいクラウドで開始。Keychainを公開先ごとに分け、ローカルの認証情報は残す。端末の記録も削除していない。
+- iOS単体167件（2件スキップ・失敗0）、バックエンド31件成功、npm auditの脆弱性0件。実機用ビルド成功、署名済みAssociated Domains・プロファイル権限・API接続先も確認済み。
+- 実機へのインストール、2台での申請・承認・レビュー共有・招待起動はユーザーが確認する。push・main反映は今回未承認・未実施。
+
+### 以前の友達共有作業
 
 - ブランチ：`codex/friend-sharing`（pull済みの `origin/main` / `29515de` から分岐）
 - 2026-11-03：mainのPR #9までpull済み。ronpaouさんのスワイプ範囲スライダー（最大50km）を含む。

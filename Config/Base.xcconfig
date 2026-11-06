@@ -1,5 +1,5 @@
 // API origin only. Never embed Cloudflare management credentials in the app.
-CLOUDFLARE_API_URL =
+CLOUDFLARE_API_URL = https:/$()/meshinowa-api.morimo1371.workers.dev
 #include? "Cloudflare.xcconfig.local"
 
 // iOS-restricted Maps / Places key. Never put a server/management key here.

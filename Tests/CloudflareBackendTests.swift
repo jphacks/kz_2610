@@ -3,6 +3,17 @@ import XCTest
 @testable import meshinowa
 
 final class CloudflareBackendTests: XCTestCase {
+    func testCredentialsSeparateRemoteOriginsAndRetainLocalAccount() {
+        func store(_ value: String) -> GuestCredentialStore {
+            GuestCredentialStore.scoped(to: BackendConfiguration(url: URL(string: value)!))
+        }
+        XCTAssertEqual(store("http://localhost:8787").service, GuestCredentialStore().service)
+        XCTAssertNotEqual(store("https://api.example.test").service, GuestCredentialStore().service)
+        XCTAssertNotEqual(store("https://api.example.test").service, store("https://other.example.test").service)
+        XCTAssertEqual(store("https://api.example.test").service, store("https://api.example.test/").service)
+        XCTAssertNotEqual(store("https://api.example.test:8443").service, store("https://api.example.test").service)
+    }
+
     private func client() -> CloudflareBackend {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [BackendURLProtocol.self]

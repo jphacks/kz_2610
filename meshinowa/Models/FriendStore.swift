@@ -106,11 +106,11 @@ final class FriendStore: ObservableObject {
     private var token: String?
 
     init(backend: CloudflareBackend? = try? CloudflareBackend.makeClient(),
-         credentials: any GuestCredentials = GuestCredentialStore(),
+         credentials: (any GuestCredentials)? = nil,
          environmentStore: UserDefaults = .standard, now: @escaping () -> Date = Date.init) {
         self.now = now
         self.backend = backend
-        self.credentials = credentials
+        self.credentials = credentials ?? GuestCredentialStore.scoped(to: backend?.configuration)
         self.environmentStore = environmentStore
         status = backend == nil ? .unavailable : .connecting
     }
